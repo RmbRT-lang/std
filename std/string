@@ -1,0 +1,97 @@
+(/rl/)
+
+INCLUDE 'std/memory'
+
+::std
+{
+	::helper CString {}
+	cstring: helper::CString#;
+
+	[C: TYPE]
+	strbuf(str: C! \) [C!]Buffer!
+		:= [C!]Buffer(str, strlen(str));
+
+	[C: TYPE]
+	strlen(str: C! #\) Size
+	{
+		i: Size := 0;
+		WHILE(str[i]) ++i;
+		RETURN i;
+	}
+
+	[C: TYPE]
+	strcmp(
+		lhs: [C!]Buffer#&,
+		rhs: [C!]Buffer#&) SSize
+	{
+		minSz #::= lhs.Size > rhs.Size ? rhs.Size : lhs.Size;
+
+		FOR(i:Size := 0; i < minSz; i++)
+			IF(lhs.Data[i] != rhs.Data[i])
+				RETURN lhs.Data[i] - rhs.Data[i];
+
+		RETURN (lhs.Size - rhs.Size);
+	}
+
+	[C: TYPE]
+	String
+	{
+		PRIVATE Content: [C!]Buffer;
+
+		CONSTRUCTOR() {}
+		CONSTRUCTOR(str: C #\, helper::CString):
+			Content(clone(str, strlen(str)+1));
+		CONSTRUCTOR(str: C #\):
+			Content(clone(str, strlen(str)));
+		CONSTRUCTOR(
+			cpy: [C]String #&):
+			Content(clone(cpy.Content));
+		CONSTRUCTOR(
+			mv: [C]String &&):
+			Content(mv.Content)
+		{
+			mv.Content := NULL;
+		}
+		DESTRUCTOR
+		{
+			IF(Content.Data)
+				free(Content);
+		}
+
+		# data() INLINE ::= Content.Data;
+		# size() INLINE ::= Content.Size ? Content.Size: 0;
+		# content() INLINE ::= Content;
+		# at(i: Index) ::= Content.at(i);
+
+		append(str: [C#]Buffer #&) VOID
+			:= append(str.Data, str.Size);
+		append(str: C #\, size: Size) VOID
+		{
+			new ::= [C]alloc(Content.Size + size);
+			copy_construct(new.Data, Content.Data, Content.Size);
+			copy_construct(new.Data+Content.Size, str, size);
+			DESTRUCTOR();
+			Content := new;
+		}
+
+		append(str: C #\) VOID := append(strbuf(str));
+
+		# substring(start: Index, size: Size) [C!#]Buffer
+		{
+			IF(start + size > Content.Size)
+				THROW;
+
+			RETURN [C!#]Buffer(Content.Data + start, size);
+		}
+
+		substring(start: Index, size: Size) [C!]Buffer
+		{
+			IF(start + size > Content.Size)
+				THROW;
+
+			RETURN [C!]Buffer(Content.Data + start, size);
+		}
+	}
+
+	TYPE Utf8 := [char]String;
+}

@@ -1,0 +1,9 @@
+(/rl/)
+
+INCLUDE 'std/io/stream'
+
+::std Error
+{
+	ABSTRACT print(
+		io::OStream &) VOID;
+}

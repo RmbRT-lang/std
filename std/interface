@@ -1,0 +1,26 @@
+(/rl/)
+
+::std
+{
+	[I: TYPE]
+	Interface
+	{
+		[T: TYPE]
+		(// Helper type for interface wrappers.
+			An interface wrapper is a type that wraps around a pointer to a type that does not derive from an interface type, but implements its methods and promotes it to a virtual pointer type. /)
+		Wrapper -> I
+		{
+			CONSTRUCTOR(v: T! &) INLINE : Impl(v);
+			PRIVATE Impl: T;
+
+			#impl() INLINE ::= detail::to_ptr(&Impl);
+		}
+	}
+}
+
+::std::detail
+{
+	[T:TYPE]to_ptr(p: T! \) T! \ := p;
+	[T:TYPE]to_ptr(p: T! \*) ::= to_ptr(*p);
+	[T:TYPE]to_ptr(p: T! \#*) ::= to_ptr(*p);
+}

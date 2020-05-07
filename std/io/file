@@ -1,0 +1,55 @@
+(/rl/)
+
+INCLUDE 'std/types'
+INCLUDE 'std/io/stream'
+
+::std::io
+{
+	out: File(libc::stdout);
+	in: File(libc::stdin);
+	err: File(libc::stderr);
+
+	File
+	{
+		PRIVATE F: libc::FileHandle \;
+
+		CONSTRUCTOR(h: libc::FileHandle \): F(h)
+		{
+			IF(!F)
+				THROW;
+		}
+		write_some(d: VOID #\, s: Size) INLINE Size := libc::fwrite(d, 1, s, F);
+		write(d: VOID #\, s: Size) INLINE ::= io::OStream::from(THIS).write(d, s);
+		read(d: VOID \, s: Size) INLINE Size := libc::fread(d, 1, s, F);
+		flush() INLINE int := libc::fflush(F);
+		eof() INLINE bool := libc::feof(F);
+
+		DESTRUCTOR { libc::fclose(F); }
+		CONSTRUCTOR(file: char #\, mode: char#\):
+			F(libc::fopen(file, mode))
+		{
+			IF(!F)
+				THROW;
+		}
+
+		print(str: char #\) ::= libc::fputs(str, F);
+	}
+}
+
+::std::io::libc
+{
+	FileHandle {}
+	EXTERN fopen(char#\,char#\) FileHandle *;
+	EXTERN fclose(FileHandle *) VOID;
+	EXTERN fwrite(VOID#\, size_t, size_t, FileHandle *) size_t;
+	EXTERN fread(VOID\, size_t, size_t, FileHandle *) size_t;
+	EXTERN feof(FileHandle *) int;
+	EXTERN ferror(FileHandle *) int;
+	EXTERN fflush(FileHandle \) int;
+	EXTERN fputs(char #\, FileHandle \) int;
+
+	EXTERN stdin: FileHandle *;
+	EXTERN stdout: FileHandle *;
+	EXTERN stderr: FileHandle *;
+	EXTERN errno: int;
+}

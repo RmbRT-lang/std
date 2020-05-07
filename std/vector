@@ -1,0 +1,63 @@
+(/rl/)
+
+INCLUDE 'std/copy'
+INCLUDE 'std/memory'
+
+
+::std [T: TYPE] Vector
+{
+PRIVATE:
+	Content: [T!]Buffer;
+PUBLIC:
+	CONSTRUCTOR();
+	CONSTRUCTOR(size: size_t):
+		Content([T]alloc(size))
+	{
+		FOR(i ::= 0; i < Content.Size; i++)
+			Content.Data[i].CONSTRUCTOR();
+	}
+	CONSTRUCTOR(copy: [T!]Vector#&):
+		Content(clone(copy.Content));
+	CONSTRUCTOR(move: [T!]Vector&&):
+		Content(move.Content)
+	{
+		move.Content := NULL;
+	}
+	DESTRUCTOR
+	{
+		FOR(i ::= 0; i < Content.Size; i++)
+			Content.Data[i].DESTRUCTOR();
+
+		IF(Content.Size)
+			free(Content);
+	}
+
+	push_back(v: T #&) VOID
+	{
+		new ::= [T]alloc(Content.Size+1);
+		move_construct(new.Data, Content.Data, Content.Size);
+		IF(Content.Size)
+		{
+			destroy(Content);
+			free(Content);
+		}
+		Content := new;
+		Content.Data[Content.Size-1].CONSTRUCTOR(v);
+	}
+
+	push_back(v: T &&) VOID
+	{
+		new ::= [T]alloc(Content.Size+1);
+		move_construct(new.Data, Content.Data, Content.Size);
+		IF(Content.Size)
+		{
+			destroy(Content);
+			free(Content);
+		}
+		Content := new;
+		Content.Data[Content.Size-1].CONSTRUCTOR(__cpp_std::move(v));
+	}
+
+	at(i: Size) ::= Content.at(i);
+	# at(i: Size) ::= Content.at(i);
+}

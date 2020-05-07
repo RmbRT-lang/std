@@ -1,0 +1,136 @@
+(/rl/)
+
+INCLUDE 'std/types'
+INCLUDE 'std/copy'
+
+::std
+{
+	(// A bunch keeps track of allocated memory. /)
+	[T: TYPE] Buffer
+	{
+		Data: T! *;
+		Size: std::Size;
+
+		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
+		CONSTRUCTOR(): Data(NULL), Size(0);
+		CONSTRUCTOR(s: T! \, c: std::Size): Data(s), Size(c);
+
+		# end() INLINE T! * := Data + Size;
+
+		# at(i: std::Size) T!#&
+		{
+			IF(i >= Size)
+				THROW;
+			RETURN Data[i];
+		}
+		at(i: std::Size) T!&
+		{
+			IF(i >= Size)
+				THROW;
+			RETURN Data[i];
+		}
+	}
+
+	[T: TYPE] Dynamic
+	{
+		Ptr: T! *;
+		CONSTRUCTOR();
+		CONSTRUCTOR(p: T! *): Ptr(p);
+		(/CONSTRUCTOR(copy: [T!]Dynamic#&):
+			Ptr(copy.Ptr ? ::[T]new(*copy.Ptr) : NULL);/)
+		CONSTRUCTOR(move: [T!]Dynamic &&):
+			Ptr(move.Ptr)
+		{
+			move.Ptr := NULL;
+		}
+
+		ASSIGN(p: T! *) [T!]Dynamic &
+		{
+			DESTRUCTOR();
+			CONSTRUCTOR(p);
+			RETURN *THIS;
+		}
+
+		ASSIGN(move: [T!]Dynamic&&) [T!]Dynamic &
+		{
+			IF(&move != THIS)
+			{
+				DESTRUCTOR();
+				CONSTRUCTOR(__cpp_std::move(move));
+			}
+			RETURN *THIS;
+		}
+
+		DESTRUCTOR
+		{
+			IF(Ptr)
+				::delete(Ptr);
+		}
+	}
+
+	[T: TYPE]
+	clone(data: T! #\, size: Size) [T]Buffer
+	{
+		tmp ::= [T]alloc(size);
+		copy_construct(tmp.Data, data, size);
+		RETURN [T]Buffer(tmp.Data, tmp.Size);
+	}
+	[T: TYPE]
+	clone_move(data: T! #\, size: Size) [T]Buffer
+	{
+		tmp ::= [T]alloc(size);
+		move_construct(tmp.Data, data, size);
+		RETURN [T]Buffer(tmp.Data, tmp.Size);
+	}
+
+	[T: TYPE]
+	clone(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
+
+
+	alloc(bytes: Size) VOID* := detail::libc::malloc(bytes);
+	[T: TYPE] alloc() INLINE ::= <T \>(alloc(SIZEOF(T)));
+	[T: TYPE] alloc(count: Size) [T]Buffer
+		:= [T]Buffer(
+			<T \>(detail::libc::malloc(count * SIZEOF(T))),
+			count);
+
+
+	calloc(bytes: Size) VOID* := detail::libc::calloc(bytes, 1);
+	[T: TYPE] calloc() T *
+	{
+		v ::= <T \>(alloc(SIZEOF(T)));
+		v->CONSTRUCTOR();
+		RETURN v;
+	}
+	[T: TYPE] calloc(count: Size) [T]Buffer
+	{
+		v ::= [T]alloc(count);
+		FOR(i ::= 0; i < count; i++)
+			v.Data[i].CONSTRUCTOR();
+		RETURN v;
+	}
+
+	[T: TYPE] destroy(
+		v: [T!]Buffer) VOID
+	{
+		FOR(i ::= 0; i < v.Size; i++)
+			v.Data[i].DESTRUCTOR();
+	}
+
+
+	free(mem: VOID#\) VOID  := detail::libc::free(mem);
+
+	[T: TYPE] free(v: [T!]Buffer!#&) INLINE VOID
+	{ detail::libc::free(v.Data); }
+
+	[T: TYPE] free(v: T! #\) INLINE VOID
+	{ detail::libc::free(v); }
+}
+
+::std::detail::libc
+{
+	EXTERN malloc(ulong) VOID *;
+	EXTERN calloc(Size, Size) VOID *;
+	EXTERN free(VOID #\) VOID;
+	EXTERN realloc(VOID #\, Size) VOID;
+}

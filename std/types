@@ -1,0 +1,5 @@
+(/rl/)
+
+::std TYPE Size := ::size_t;
+::std TYPE SSize := ::__cpp_std::[Size]make_signed_t;
+::std TYPE Index := ::size_t;

@@ -1,0 +1,60 @@
+(/rl/)
+
+INCLUDE 'std/interface'
+INCLUDE 'std/types'
+INCLUDE 'std/memory'
+INCLUDE 'std/string'
+
+::std::io
+{
+	OStream -> [OStream]Interface
+	{
+		ABSTRACT write_some(VOID #\, Size) Size;
+
+		[T: TYPE] Wrapper -> [OStream]Interface::[T!]Wrapper
+		{
+			CONSTRUCTOR(v:T!&): [OStream]Interface::[T!]Wrapper(v);
+
+			FINAL write_some(data: VOID #\, size: Size) Size := THIS->impl()->write_some(data, size);
+		}
+		[T: TYPE] STATIC from(v: T! \) INLINE OStream::[T! \]Wrapper := v;
+
+		write(data: VOID #\, size: Size) Size
+		{
+			p ::= <char#\>(data);
+			FOR(left ::= size; left > 0;)
+			{
+				written ::= write_some(p, size);
+				left := left - written;
+				p := p + written;
+			}
+			RETURN size;
+		}
+
+		write_some(str: char #\) Size
+			:= write_some(str, strlen(str));
+		write(str: char #\) Size
+			:= write(str, strlen(str));
+
+		[T: TYPE]
+		write_some(buf: [T!]Buffer #&) INLINE Size
+			:= write_some(buf.Data, buf.Size * SIZEOF(T));
+
+		[T: TYPE]
+		write(buf: [T!]Buffer #&) INLINE Size
+			:= write(buf.Data, buf.Size * SIZEOF(T));
+	}
+
+	IStream -> [IStream]Interface
+	{
+		ABSTRACT read(VOID \, Size) Size;
+
+		[T: TYPE] Wrapper -> [IStream]Interface::[T]Wrapper
+		{
+			CONSTRUCTOR(v: T#&): [IStream]Interface::[T]Wrapper(v);
+
+			FINAL read(data: VOID \, size: Size) ::= THIS->impl()->read(data, size);
+		}
+		[T: TYPE] STATIC from(v: T#&) INLINE IStream::[T]Wrapper := v;
+	}
+}
