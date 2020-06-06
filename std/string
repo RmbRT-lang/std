@@ -40,7 +40,12 @@ INCLUDE 'std/memory'
 
 		CONSTRUCTOR() {}
 		CONSTRUCTOR(str: C #\, helper::CString):
-			Content(clone(str, strlen(str)+1));
+			Content(clone(str, strlen(str)+1))
+		{
+			// Remove the terminating 0-byte from the content.
+			Content.Size--;
+		}
+
 		CONSTRUCTOR(str: C #\):
 			Content(clone(str, strlen(str)));
 		CONSTRUCTOR(
