@@ -34,7 +34,7 @@ INCLUDE 'std/copy'
 	[T: TYPE] Dynamic
 	{
 		Ptr: T! *;
-		CONSTRUCTOR();
+		CONSTRUCTOR(): Ptr(NULL);
 		CONSTRUCTOR(p: T! *): Ptr(p);
 		(/CONSTRUCTOR(copy: [T!]Dynamic#&):
 			Ptr(copy.Ptr ? ::[T]new(*copy.Ptr) : NULL);/)
@@ -67,6 +67,9 @@ INCLUDE 'std/copy'
 				::delete(Ptr);
 		}
 	}
+
+	[T: TYPE] dup(value: T! &&) T! * := ::[T!]new(__cpp_std::move(value));
+	[T: TYPE] dup(value: T! #&) T! * := ::[T!]new(value);
 
 	[T: TYPE]
 	clone(data: T! #\, size: Size) [T]Buffer
