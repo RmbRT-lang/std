@@ -58,6 +58,7 @@ PUBLIC:
 		Content.Data[Content.Size-1].CONSTRUCTOR(__cpp_std::move(v));
 	}
 
-	at(i: Size) ::= Content.at(i);
-	# at(i: Size) ::= Content.at(i);
+	at(i: Size) INLINE ::= Content.at(i);
+	# at(i: Size) INLINE ::= Content.at(i);
+	# size() INLINE Size := Content.Size;
 }
