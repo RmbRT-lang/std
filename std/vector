@@ -61,4 +61,5 @@ PUBLIC:
 	at(i: Size) INLINE ::= Content.at(i);
 	# at(i: Size) INLINE ::= Content.at(i);
 	# size() INLINE Size := Content.Size;
+	# empty() INLINE bool := size() == 0;
 }
