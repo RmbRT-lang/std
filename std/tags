@@ -13,3 +13,18 @@
 	CONSTRUCTOR(NoMove #&);
 	ASSIGN(NoMove #&) NoMove & := *THIS;
 }
+
+::std [T: TYPE] AutoMoveAssign
+{
+	ASSIGN(move: T&&) T&
+	{
+		this ::= <T! *>(THIS);
+		IF(this != &move)
+		{
+			this->DESTRUCTOR();
+			this->CONSTRUCTOR(__cpp_std::move(move));
+		}
+
+		RETURN *this;
+	}
+}
