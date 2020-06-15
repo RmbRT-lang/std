@@ -2,9 +2,9 @@
 
 INCLUDE 'std/copy'
 INCLUDE 'std/memory'
+INCLUDE 'std/tags'
 
-
-::std [T: TYPE] Vector
+::std [T: TYPE] Vector -> [[T!]Vector]AutoMoveAssign
 {
 PRIVATE:
 	Content: [T!]Buffer;
