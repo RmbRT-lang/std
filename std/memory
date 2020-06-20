@@ -3,10 +3,11 @@
 INCLUDE 'std/types'
 INCLUDE 'std/range'
 INCLUDE 'std/help'
+INCLUDE 'std/tags'
 
 ::std
 {
-	(// A bunch keeps track of allocated memory. /)
+	(// A buffer keeps track of allocated memory but does not own it. /)
 	[T: TYPE] Buffer
 	{
 		Data: T! *;
@@ -34,6 +35,8 @@ INCLUDE 'std/help'
 
 	[T: TYPE] Dynamic
 	{
+		NoCopy;
+
 		Ptr: T! *;
 		CONSTRUCTOR(): Ptr(NULL);
 		CONSTRUCTOR(p: T! *): Ptr(p);
