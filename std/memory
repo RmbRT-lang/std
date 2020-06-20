@@ -1,7 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/types'
-INCLUDE 'std/copy'
+INCLUDE 'std/range'
 
 ::std
 {
@@ -75,14 +75,14 @@ INCLUDE 'std/copy'
 	clone(data: T! #\, size: Size) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
-		copy_construct(tmp.Data, data, size);
+		range::copy_construct(tmp.Data, data, size);
 		RETURN [T]Buffer(tmp.Data, tmp.Size);
 	}
 	[T: TYPE]
 	clone_move(data: T! #\, size: Size) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
-		move_construct(tmp.Data, data, size);
+		range::move_construct(tmp.Data, data, size);
 		RETURN [T]Buffer(tmp.Data, tmp.Size);
 	}
 

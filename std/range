@@ -1,0 +1,31 @@
+(/rl/)
+
+::std::range
+{
+	[T: TYPE] copy_assign(
+		dst: T! \,
+		src: T!# \,
+		count: size_t) VOID
+	{
+		FOR(i ::= 0; i<count; i++)
+			dst[i] := src[i];
+	}
+
+	[T: TYPE] copy_construct(
+		dst: T! \,
+		src: T!# \,
+		count: size_t) VOID
+	{
+		FOR(i ::= 0; i<count; i++)
+			__rl::placement_new(&dst[i], src[i]);
+	}
+
+	[T: TYPE] move_construct(
+		dst: T! \,
+		src: T! \,
+		count: size_t) VOID
+	{
+		FOR(i ::= 0; i<count; i++)
+			__rl::placement_new(&dst[i], ::__cpp_std::move(src[i]));
+	}
+}

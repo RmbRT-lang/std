@@ -73,8 +73,8 @@ INCLUDE 'std/memory'
 		append(str: C #\, size: Size) VOID
 		{
 			new ::= [C]alloc(Content.Size + size);
-			copy_construct(new.Data, Content.Data, Content.Size);
-			copy_construct(new.Data+Content.Size, str, size);
+			range::copy_construct(new.Data, Content.Data, Content.Size);
+			range::copy_construct(new.Data+Content.Size, str, size);
 			DESTRUCTOR();
 			Content := new;
 		}

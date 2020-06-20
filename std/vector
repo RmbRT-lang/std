@@ -1,6 +1,6 @@
 (/rl/)
 
-INCLUDE 'std/copy'
+INCLUDE 'std/range'
 INCLUDE 'std/memory'
 INCLUDE 'std/tags'
 
@@ -35,7 +35,7 @@ PUBLIC:
 	push_back(v: T #&) VOID
 	{
 		new ::= [T]alloc(Content.Size+1);
-		move_construct(new.Data, Content.Data, Content.Size);
+		range::move_construct(new.Data, Content.Data, Content.Size);
 		IF(Content.Size)
 		{
 			destroy(Content);
@@ -48,7 +48,7 @@ PUBLIC:
 	push_back(v: T &&) VOID
 	{
 		new ::= [T]alloc(Content.Size+1);
-		move_construct(new.Data, Content.Data, Content.Size);
+		range::move_construct(new.Data, Content.Data, Content.Size);
 		IF(Content.Size)
 		{
 			destroy(Content);
