@@ -2,6 +2,7 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/range'
+INCLUDE 'std/help'
 
 ::std
 {
@@ -44,22 +45,9 @@ INCLUDE 'std/range'
 			move.Ptr := NULL;
 		}
 
-		ASSIGN(p: T! *) [T!]Dynamic &
-		{
-			DESTRUCTOR();
-			CONSTRUCTOR(p);
-			RETURN *THIS;
-		}
+		ASSIGN(p: T! *) [T!]Dynamic & := help::custom_assign(*THIS, p);
 
-		ASSIGN(move: [T!]Dynamic&&) [T!]Dynamic &
-		{
-			IF(&move != THIS)
-			{
-				DESTRUCTOR();
-				CONSTRUCTOR(__cpp_std::move(move));
-			}
-			RETURN *THIS;
-		}
+		ASSIGN(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(*THIS, move);
 
 		DESTRUCTOR
 		{

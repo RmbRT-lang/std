@@ -2,9 +2,9 @@
 
 INCLUDE 'std/range'
 INCLUDE 'std/memory'
-INCLUDE 'std/tags'
+INCLUDE 'std/help'
 
-::std [T: TYPE] Vector -> [[T!]Vector]AutoMoveAssign
+::std [T: TYPE] Vector
 {
 PRIVATE:
 	Content: [T!]Buffer;
@@ -23,6 +23,9 @@ PUBLIC:
 	{
 		move.Content := NULL;
 	}
+
+	ASSIGN(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(*THIS, move);
+
 	DESTRUCTOR
 	{
 		FOR(i ::= 0; i < Content.Size; i++)
