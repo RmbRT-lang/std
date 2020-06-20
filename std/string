@@ -76,7 +76,7 @@ INCLUDE 'std/memory'
 			range::copy_construct(new.Data, Content.Data, Content.Size);
 			range::copy_construct(new.Data+Content.Size, str, size);
 			DESTRUCTOR();
-			Content := new;
+			Content.CONSTRUCTOR(new);
 		}
 
 		append(str: C #\) VOID := append(strbuf(str));
