@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/memory'
+INCLUDE 'std/help'
 
 ::std
 {
@@ -63,6 +64,9 @@ INCLUDE 'std/memory'
 				free(Content);
 		}
 
+		ASSIGN(rhs: [C!]String#&) [C!]String& := help::copy_assign(*THIS, rhs);
+		ASSIGN(rhs: [C!]String&&) [C!]String& := help::move_assign(*THIS, rhs);
+
 		# data() INLINE ::= Content.Data;
 		# size() INLINE ::= Content.Size ? Content.Size: 0;
 		# content() INLINE ::= Content;
@@ -96,6 +100,8 @@ INCLUDE 'std/memory'
 
 			RETURN [C!]Buffer(Content.Data + start, size);
 		}
+
+		# cmp(rhs: [C!]String #&) SSize := strcmp(content(), rhs.content());
 	}
 
 	TYPE Utf8 := [char]String;
