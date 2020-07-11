@@ -2,6 +2,7 @@
 
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
+INCLUDE 'std/transfer'
 
 ::std
 {
@@ -48,6 +49,7 @@ INCLUDE 'std/help'
 		}
 
 		CONSTRUCTOR(data: [C#]Buffer #&): Content(clone(data));
+		CONSTRUCTOR(data: [C#]Buffer #&, Transfer): Content(data);
 
 		CONSTRUCTOR(str: C #\):
 			Content(clone(str, strlen(str)));
@@ -82,7 +84,7 @@ INCLUDE 'std/help'
 			range::copy_construct(new.Data, Content.Data, Content.Size);
 			range::copy_construct(new.Data+Content.Size, str, size);
 			DESTRUCTOR();
-			Content.CONSTRUCTOR(new);
+			CONSTRUCTOR(new, std::transfer);
 		}
 
 		append(str: C #\) VOID := append(strbuf(str));
