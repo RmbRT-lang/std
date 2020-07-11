@@ -49,7 +49,7 @@ INCLUDE 'std/transfer'
 		}
 
 		CONSTRUCTOR(data: [C#]Buffer #&): Content(clone(data));
-		CONSTRUCTOR(data: [C#]Buffer #&, Transfer): Content(data);
+		CONSTRUCTOR(data: [C!]Buffer #&, Transfer): Content(data);
 
 		CONSTRUCTOR(str: C #\):
 			Content(clone(str, strlen(str)));
@@ -73,7 +73,8 @@ INCLUDE 'std/transfer'
 
 		# data() INLINE ::= Content.Data;
 		# size() INLINE ::= Content.Size ? Content.Size: 0;
-		# content() INLINE ::= Content;
+		# content() INLINE [C!#]Buffer := Content;
+		content() INLINE ::= Content;
 		# at(i: Index) ::= Content.at(i);
 
 		append(str: [C#]Buffer #&) VOID
