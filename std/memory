@@ -16,6 +16,7 @@ INCLUDE 'std/tags'
 		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
 		CONSTRUCTOR(): Data(NULL), Size(0);
 		CONSTRUCTOR(s: T! \, c: std::Size): Data(s), Size(c);
+		CONSTRUCTOR(copy: [T]Buffer#&): Data(copy.Data), Size(copy.Size);
 
 		# end() INLINE T! * := Data + Size;
 
