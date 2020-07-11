@@ -47,6 +47,8 @@ INCLUDE 'std/help'
 			Content.Size--;
 		}
 
+		CONSTRUCTOR(data: [C#]Buffer #&): Content(clone(data));
+
 		CONSTRUCTOR(str: C #\):
 			Content(clone(str, strlen(str)));
 		CONSTRUCTOR(
