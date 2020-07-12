@@ -14,7 +14,7 @@ PUBLIC:
 		Content([T]alloc(size))
 	{
 		FOR(i ::= 0; i < Content.Size; i++)
-			Content.Data[i].CONSTRUCTOR();
+			__rl::CONSTRUCTOR(Content.Data[i]);
 	}
 	CONSTRUCTOR(copy: [T!]Vector#&):
 		Content(clone(copy.Content));
@@ -29,7 +29,7 @@ PUBLIC:
 	DESTRUCTOR
 	{
 		FOR(i ::= 0; i < Content.Size; i++)
-			Content.Data[i].DESTRUCTOR();
+			__rl::DESTRUCTOR(Content.Data[i]);
 
 		IF(Content.Size)
 			free(Content);
@@ -40,12 +40,9 @@ PUBLIC:
 		new ::= [T]alloc(Content.Size+1);
 		range::move_construct(new.Data, Content.Data, Content.Size);
 		IF(Content.Size)
-		{
-			destroy(Content);
-			free(Content);
-		}
+			delete(Content);
 		Content := new;
-		Content.Data[Content.Size-1].CONSTRUCTOR(v);
+		__rl::CONSTRUCTOR(Content.Data[Content.Size-1], v);
 	}
 
 	push_back(v: T &&) VOID
@@ -53,12 +50,9 @@ PUBLIC:
 		new ::= [T]alloc(Content.Size+1);
 		range::move_construct(new.Data, Content.Data, Content.Size);
 		IF(Content.Size)
-		{
-			destroy(Content);
-			free(Content);
-		}
+			delete(Content);
 		Content := new;
-		Content.Data[Content.Size-1].CONSTRUCTOR(__cpp_std::move(v));
+		__rl::CONSTRUCTOR(Content.Data[Content.Size-1], __cpp_std::move(v));
 	}
 
 	at(i: Size) INLINE ::= Content.at(i);
