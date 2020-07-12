@@ -94,22 +94,23 @@ INCLUDE 'std/tags'
 	[T: TYPE] calloc() T *
 	{
 		v ::= <T \>(alloc(SIZEOF(T)));
-		v->CONSTRUCTOR();
+		__rl::CONSTRUCTOR(v);
 		RETURN v;
 	}
 	[T: TYPE] calloc(count: Size) [T]Buffer
 	{
 		v ::= [T]alloc(count);
-		FOR(i ::= 0; i < count; i++)
-			v.Data[i].CONSTRUCTOR();
+		range::default_construct(v, count);
 		RETURN v;
 	}
 
-	[T: TYPE] destroy(
-		v: [T!]Buffer) VOID
+	::range [T: TYPE] destroy(v: [T!]Buffer) INLINE VOID
+		:= destroy(v.Data, v.Size);
+
+	[T: TYPE] delete(v: [T!]Buffer) INLINE VOID
 	{
-		FOR(i ::= 0; i < v.Size; i++)
-			v.Data[i].DESTRUCTOR();
+		range::destroy(v);
+		free(v);
 	}
 
 
