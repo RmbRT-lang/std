@@ -41,8 +41,6 @@ INCLUDE 'std/tags'
 		Ptr: T! *;
 		CONSTRUCTOR(): Ptr(NULL);
 		CONSTRUCTOR(p: T! *): Ptr(p);
-		(/CONSTRUCTOR(copy: [T!]Dynamic#&):
-			Ptr(copy.Ptr ? ::[T]new(*copy.Ptr) : NULL);/)
 		CONSTRUCTOR(move: [T!]Dynamic &&):
 			Ptr(move.Ptr)
 		{
