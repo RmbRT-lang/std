@@ -4,9 +4,33 @@ INCLUDE 'std/types'
 INCLUDE 'std/range'
 INCLUDE 'std/help'
 INCLUDE 'std/tags'
+INCLUDE 'std/math/limit'
 
 ::std
 {
+
+	[T: TYPE] memcmp(
+		lhs: T! #\,
+		rhs: T! #\,
+		elements: Size) SSize
+	{
+		FOR(i::= 0; i<elements; i++)
+			IF(lhs[i] != rhs[i])
+				RETURN lhs[i] - rhs[i];
+		RETURN 0;
+	}
+
+	[T: TYPE] memcmp(
+		lhs: [T!]Buffer #&,
+		rhs: [T!]Buffer #&) SSize
+	{
+		minSz ::= math::min(lhs.Size, rhs.Size);
+		IF(sign ::= memcmp(lhs.Data, rhs.Data, minSz))
+			RETURN sign;
+		ELSE
+			RETURN lhs.Size - rhs.Size;
+	}
+
 	(// A buffer keeps track of allocated memory but does not own it. /)
 	[T: TYPE] Buffer
 	{
@@ -32,6 +56,15 @@ INCLUDE 'std/tags'
 				THROW;
 			RETURN Data[i];
 		}
+
+		# range(
+			start: std::Index,
+			size: std::Size) [T!]Buffer
+		{
+			IF(start+size > Size)
+				THROW;
+			RETURN [T!]Buffer(start, size);
+		}
 	}
 
 	[T: TYPE] Dynamic
@@ -50,6 +83,9 @@ INCLUDE 'std/tags'
 		ASSIGN(p: T! *) [T!]Dynamic & := help::custom_assign(*THIS, p);
 
 		ASSIGN(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(*THIS, move);
+
+		# LOG_NOT() INLINE bool := !Ptr;
+		# CONVERT(bool) INLINE NOTYPE! := Ptr;
 
 		DESTRUCTOR
 		{
