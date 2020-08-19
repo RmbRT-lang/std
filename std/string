@@ -9,30 +9,47 @@ INCLUDE 'std/transfer'
 	::helper CString {}
 	cstring: helper::CString#;
 
-	[C: TYPE]
-	strbuf(str: C! \) [C!]Buffer!
-		:= [C!]Buffer(str, strlen(str));
 
-	[C: TYPE]
-	strlen(str: C! #\) Size
+	::str
 	{
-		i: Size := 0;
-		WHILE(str[i]) ++i;
-		RETURN i;
-	}
+		[C: TYPE]
+		buf(str: C! \) [C!]Buffer
+			:= [C!]Buffer(str, len(str));
 
-	[C: TYPE]
-	strcmp(
-		lhs: [C!]Buffer#&,
-		rhs: [C!]Buffer#&) SSize
-	{
-		minSz #::= lhs.Size > rhs.Size ? rhs.Size : lhs.Size;
+		[C: TYPE]
+		len(str: C! #\) Size
+		{
+			i: Size := 0;
+			WHILE(str[i]) ++i;
+			RETURN i;
+		}
 
-		FOR(i:Size := 0; i < minSz; i++)
-			IF(lhs.Data[i] != rhs.Data[i])
-				RETURN lhs.Data[i] - rhs.Data[i];
+		[C: TYPE]
+		cmp(
+			lhs: [C!]Buffer#&,
+			rhs: [C!]Buffer#&) SSize
+		{
+			minSz #::= lhs.Size > rhs.Size ? rhs.Size : lhs.Size;
 
-		RETURN (lhs.Size - rhs.Size);
+			FOR(i:Size := 0; i < minSz; i++)
+				IF(lhs.Data[i] != rhs.Data[i])
+					RETURN lhs.Data[i] - rhs.Data[i];
+
+			RETURN (lhs.Size - rhs.Size);
+		}
+
+		[C: TYPE]
+		starts_with(string: [C!]Buffer #&, find: [C!]Buffer #&) bool
+		{
+			IF(find.Size > string.Size)
+				RETURN FALSE;
+			RETURN memcmp(string.Data, find.Data, find.Size) == 0;
+		}
+
+		[C: TYPE]
+		starts_with(string: [C!]Buffer #&, find: C! #\) INLINE bool
+			:= starts_with(string, buf(find));
+		
 	}
 
 	[C: TYPE]
@@ -42,7 +59,7 @@ INCLUDE 'std/transfer'
 
 		CONSTRUCTOR() {}
 		CONSTRUCTOR(str: C #\, helper::CString):
-			Content(clone(str, strlen(str)+1))
+			Content(clone(str, str::len(str)+1))
 		{
 			// Remove the terminating 0-byte from the content.
 			Content.Size--;
@@ -52,7 +69,7 @@ INCLUDE 'std/transfer'
 		CONSTRUCTOR(data: [C!]Buffer #&, Transfer): Content(data);
 
 		CONSTRUCTOR(str: C #\):
-			Content(clone(str, strlen(str)));
+			Content(clone(str, str::len(str)));
 		CONSTRUCTOR(
 			cpy: [C]String #&):
 			Content(clone(cpy.Content));
@@ -88,7 +105,8 @@ INCLUDE 'std/transfer'
 			CONSTRUCTOR(new, std::transfer);
 		}
 
-		append(str: C #\) VOID := append(strbuf(str));
+		append(str: C #\) VOID := append(str::buf(str));
+		append(str: C) INLINE VOID := append(&str, 1);
 
 		# substring(start: Index, size: Size) [C!#]Buffer
 		{
@@ -106,8 +124,12 @@ INCLUDE 'std/transfer'
 			RETURN [C!]Buffer(Content.Data + start, size);
 		}
 
-		# cmp(rhs: [C!]String #&) SSize := strcmp(content(), rhs.content());
+		# cmp(rhs: [C!]String #&) SSize := str::cmp(content(), rhs.content());
+
+		# starts_with(str: C #\) INLINE ::= str::starts_with(Content, str);
+		# starts_with(str: [C]Buffer #&) INLINE ::= str::starts_with(Content, str);
 	}
 
 	TYPE Utf8 := [char]String;
+	TYPE Utf32 := [C32]String;
 }

@@ -32,9 +32,9 @@ INCLUDE 'std/string'
 		}
 
 		write_some(str: char #\) Size
-			:= write_some(str, strlen(str));
+			:= write_some(str, str::len(str));
 		write(str: char #\) Size
-			:= write(str, strlen(str));
+			:= write(str, str::len(str));
 
 		[T: TYPE]
 		write_some(buf: [T!]Buffer #&) INLINE Size
