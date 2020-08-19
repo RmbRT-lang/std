@@ -1,0 +1,65 @@
+(/rl/)
+
+INCLUDE 'std/error'
+INCLUDE 'std/io/stream'
+
+::std::math Overflow -> Error
+{
+	OVERRIDE print(o: io::OStream &) VOID
+	{
+		o.write("overflow/underflow");
+	}
+}
+
+::std::math ZeroDiv -> Error
+{
+	OVERRIDE print(o: io::OStream &) VOID
+	{
+		o.write("division by 0");
+	}
+}
+
+::std::math::safe
+{
+	[T:TYPE] add(lhs: T #&, rhs: T #&) T
+	{
+		ret: T;
+		IF(__builtin_add_overflow(lhs, rhs, &ret))
+			THROW Overflow();
+		RETURN ret;
+	}
+
+	[T:TYPE] sub(lhs: T #&, rhs: T #&) T
+	{
+		ret: T;
+		IF(__builtin_sub_overflow(lhs, rhs, &ret))
+			THROW Overflow();
+		RETURN ret;
+	}
+
+	[T:TYPE] mul(lhs: T #&, rhs: T #&) T
+	{
+		ret: T;
+		IF(__builtin_mul_overflow(lhs, rhs, &ret))
+			THROW Overflow();
+		RETURN ret;
+	}
+
+	[T:TYPE] div(lhs: T #&, rhs: T #&, quo: T&, rem: T &) VOID
+	{
+		ret: T;
+		IF(!rhs)
+			THROW ZeroDiv();
+
+		quo := lhs / rhs;
+		rem := lhs % rhs;
+	}
+
+	[T:TYPE] neg(lhs: T #&) T
+	{
+		ret: T;
+		IF(__builtin_sub_overflow(0, lhs, &ret))
+			THROW Overflow();
+		RETURN ret;
+	}
+}
