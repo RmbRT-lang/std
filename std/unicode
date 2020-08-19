@@ -1,0 +1,76 @@
+(/rl/)
+
+INCLUDE 'std/types'
+
+::std::code::utf8
+{
+	size(firstByte: C8) Size
+	{
+		IF(firstByte & 0x80 == 0)
+			RETURN 1;
+		IF(firstByte & 0xe0 == 0xc0)
+			RETURN 2;
+		IF(firstByte & 0xf0 == 0xe0)
+			RETURN 3;
+		IF(firstByte & 0xf8 == 0xf0)
+			RETURN 4;
+
+		THROW;
+	}
+
+	is_follow(byte: C8) INLINE
+		::= byte & 0xc0 == 0x80;
+
+	point(in: C8 #\) Char
+	{
+		size: Size;
+		RETURN point(&size);
+	}
+
+	point(
+		in: C8 #\,
+		size: Size \
+	) Char
+	{
+		*size := utf8::size(in[0]);
+		IF(*size == 1)
+			RETURN in[0];
+
+		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
+		STATIC bits: Size#[](5, 4, 3);
+
+		out: Char := <Char>(in[0] & masks[*size-2]) << bits[*size-2];
+
+		DO(i ::= 1)
+			IF(!is_follow(in[i]))
+				THROW;
+			ELSE
+				out := out + <Char> (in[i] & 0x3f);
+			FOR(i++ < *size -1; out := out << 6)
+
+		RETURN out;
+	}
+
+	encode(src: Char, dst: C8 \) Size
+	{
+		size: Size :=
+			(src < 0x00080) ? 1 :
+			(src < 0x00800) ? 2 :
+			(src < 0x10000) ? 3 :
+			4;
+
+		IF(size == 1)
+		{
+			dst[0] := <C8> (src);
+			RETURN 1;
+		}
+
+		STATIC start: C8#[](0x00, 0x1f, 0x0f, 0x07);
+		dst[0] := start[size] | (src >> (size-1)*6);
+
+		FOR(i := 1; i<size; i++)
+			dst[size-i] := 0x80 | ((src >> (6*i)) & 0x3f);
+
+		RETURN size;
+	}
+}
