@@ -3,6 +3,8 @@
 INCLUDE 'std/range'
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
+INCLUDE 'std/pass'
+INCLUDE 'std/types'
 
 ::std [T: TYPE] Vector
 {
@@ -10,7 +12,7 @@ PRIVATE:
 	Content: [T!]Buffer;
 PUBLIC:
 	CONSTRUCTOR();
-	CONSTRUCTOR(size: size_t):
+	CONSTRUCTOR(size: Size):
 		Content([T]alloc(size))
 	{
 		FOR(i ::= 0; i < Content.Size; i++)
@@ -23,6 +25,11 @@ PUBLIC:
 	{
 		move.Content := NULL;
 	}
+
+	CONSTRUCTOR(pass::Copy, content: [T#]Buffer #&):
+		Content(clone(content));
+	CONSTRUCTOR(pass::Move, content: [T#]Buffer #&):
+		Content(content);
 
 	ASSIGN(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(*THIS, move);
 
@@ -37,26 +44,48 @@ PUBLIC:
 
 	push_back(v: T #&) VOID
 	{
-		new ::= [T]alloc(Content.Size+1);
-		range::move_construct(new.Data, Content.Data, Content.Size);
-		IF(Content.Size)
-			delete(Content);
-		Content := new;
-		__rl::CONSTRUCTOR(Content.Data[Content.Size-1], v);
+		emplace_back(v);
 	}
 
 	push_back(v: T &&) VOID
+	{
+		emplace_back(__cpp_std::move(v));
+	}
+
+	[A:TYPE]
+	emplace_back(a: A!&&) VOID
 	{
 		new ::= [T]alloc(Content.Size+1);
 		range::move_construct(new.Data, Content.Data, Content.Size);
 		IF(Content.Size)
 			delete(Content);
 		Content := new;
-		__rl::CONSTRUCTOR(Content.Data[Content.Size-1], __cpp_std::move(v));
+		__rl::CONSTRUCTOR(
+			Content.Data[Content.Size-1],
+			__cpp_std::[A!]forward(a));
+	}
+
+	[A:TYPE,B:TYPE]
+	emplace_back(a: A!&&, b: B!&&) VOID
+	{
+		new ::= [T]alloc(Content.Size+1);
+		range::move_construct(new.Data, Content.Data, Content.Size);
+		IF(Content.Size)
+			delete(Content);
+		Content := new;
+		__rl::CONSTRUCTOR(
+			Content.Data[Content.Size-1],
+			__cpp_std::[A!]forward(a),
+			__cpp_std::[B!]forward(b));
 	}
 
 	at(i: Size) INLINE ::= Content.at(i);
 	# at(i: Size) INLINE ::= Content.at(i);
 	# size() INLINE Size := Content.Size;
 	# empty() INLINE bool := size() == 0;
+
+	# range(start: Index, length: Size) [T!#]Buffer
+		:= Content.range(start, length);
+	range(start: Index, length: Size) [T!]Buffer
+		:= Content.range(start, length);
 }
