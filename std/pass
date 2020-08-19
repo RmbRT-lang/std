@@ -1,0 +1,10 @@
+(/rl/)
+
+::std::pass
+{
+	Copy {}
+	copy: Copy#;
+
+	Move {}
+	move: Move;
+}
