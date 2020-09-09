@@ -24,7 +24,7 @@ INCLUDE 'std/string'
 			p ::= <char#\>(data);
 			FOR(left ::= size; left > 0;)
 			{
-				written ::= write_some(p, size);
+				written ::= write_some(p, left);
 				left := left - written;
 				p := p + written;
 			}
