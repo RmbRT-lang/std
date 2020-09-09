@@ -36,6 +36,11 @@ INCLUDE 'std/string'
 		write(str: char #\) Size
 			:= write(str, str::len(str));
 
+		write_some(ch: char) Size
+			:= write_some(&ch, 1);
+		write(ch: char) Size
+			:= write(&ch, 1);
+
 		[T: TYPE]
 		write_some(buf: [T!]Buffer #&) INLINE Size
 			:= write_some(buf.Data, buf.Size * SIZEOF(T));
@@ -56,5 +61,12 @@ INCLUDE 'std/string'
 			FINAL read(data: VOID \, size: Size) ::= THIS->impl()->read(data, size);
 		}
 		[T: TYPE] STATIC from(v: T#&) INLINE IStream::[T]Wrapper := v;
+
+		read() char
+		{
+			c: char;
+			read(&c, 1);
+			RETURN c;
+		}
 	}
 }
