@@ -1,0 +1,49 @@
+(/rl/)
+
+INCLUDE 'std/io/stream'
+
+::std::io::format
+{
+	[T:TYPE] hex(o: OStream &, n: T! #&) VOID
+	{
+		v: __cpp_std::[T]make_unsigned_t := n;
+
+		IF(n < <T>(0))
+		{
+			o.write('-');
+			IF(~n) // If -max, ignore value.
+				v := -n;
+		}
+
+		o.write("0x");
+		FOR(i ::= 2*SIZEOF(T); i--;)
+			o.write("0123456789abcdef"[(n>>(i<<1)) & 0xf]);
+	}
+
+	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
+	{
+		v: __cpp_std::[T]make_unsigned_t := n;
+		IF(n < <T>(0))
+		{
+			o.write('-');
+			IF(~n)
+				v := -n;
+		}
+
+		buffer: char[32];
+		buf ::= std::[char]Buffer(buffer, SIZEOF(#buffer));
+		i ::= SIZEOF(#buf)-1;
+		DO()
+		{
+			IF(i < 0)
+				THROW;
+
+			d ::= v % 10;
+			v := v / 10;
+
+			buf.at(i) := '0'+d;
+		} FOR(v; i--)
+
+		o.write(buf.range(i, buf.Size-i));
+	}
+}
