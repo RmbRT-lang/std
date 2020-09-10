@@ -44,13 +44,13 @@ INCLUDE 'std/math/limit'
 
 		# end() INLINE T! * := Data + Size;
 
-		# at(i: std::Size) T!#&
+		# SUBSCRIPT(i: std::Size) T!#&
 		{
 			IF(i >= Size)
 				THROW;
 			RETURN Data[i];
 		}
-		at(i: std::Size) T!&
+		SUBSCRIPT(i: std::Size) T!&
 		{
 			IF(i >= Size)
 				THROW;

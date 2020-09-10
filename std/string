@@ -49,7 +49,6 @@ INCLUDE 'std/transfer'
 		[C: TYPE]
 		starts_with(string: [C!]Buffer #&, find: C! #\) INLINE bool
 			:= starts_with(string, buf(find));
-		
 	}
 
 	[C: TYPE]
@@ -92,7 +91,7 @@ INCLUDE 'std/transfer'
 		# size() INLINE ::= Content.Size ? Content.Size: 0;
 		# content() INLINE [C!#]Buffer := Content;
 		content() INLINE ::= Content;
-		# at(i: Index) ::= Content.at(i);
+		# SUBSCRIPT(i: Index) ::= Content[i];
 
 		append(str: [C#]Buffer #&) VOID
 			:= append(str.Data, str.Size);

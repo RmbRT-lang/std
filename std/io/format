@@ -41,7 +41,7 @@ INCLUDE 'std/io/stream'
 			d ::= v % 10;
 			v := v / 10;
 
-			buf.at(i) := '0'+d;
+			buf[i] := '0'+d;
 		} FOR(v; i--)
 
 		o.write(buf.range(i, buf.Size-i));

@@ -79,8 +79,8 @@ PUBLIC:
 			__cpp_std::[B!]forward(b));
 	}
 
-	at(i: Size) INLINE ::= Content.at(i);
-	# at(i: Size) INLINE ::= Content.at(i);
+	SUBSCRIPT(i: Size) INLINE ::= Content[i];
+	# SUBSCRIPT(i: Size) INLINE ::= Content[i];
 	# size() INLINE Size := Content.Size;
 	# empty() INLINE bool := size() == 0;
 
