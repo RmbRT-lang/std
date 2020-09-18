@@ -45,14 +45,12 @@ INCLUDE 'std/math/limit'
 
 		# SUBSCRIPT(i: UM) T!#&
 		{
-			IF(i >= Size)
-				THROW;
+			range::check(Size, i);
 			RETURN Data[i];
 		}
 		SUBSCRIPT(i: UM) T!&
 		{
-			IF(i >= Size)
-				THROW;
+			range::check(Size, i);
 			RETURN Data[i];
 		}
 
@@ -60,8 +58,7 @@ INCLUDE 'std/math/limit'
 			start: UM,
 			size: UM) [T!]Buffer
 		{
-			IF(start+size > Size)
-				THROW;
+			range::check_subrange(start, size, Size);
 			RETURN [T!]Buffer(start, size);
 		}
 	}

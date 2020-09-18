@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/types'
+INCLUDE 'std/math/safe'
 
 ::std::range
 {
@@ -46,5 +47,22 @@ INCLUDE 'std/types'
 	{
 		FOR(i ::= 0; i<count; i++)
 			__rl::DESTRUCTOR(range[i]);
+	}
+
+	check(
+		range: UM,
+		index: UM) INLINE VOID
+	{
+		IF(index >= range)
+			THROW;
+	}
+
+	check_subrange(
+		sub_start: UM,
+		sub_size: UM,
+		size: UM) INLINE VOID
+	{
+		IF(math::safe::add(sub_start, sub_size) >= size)
+			THROW;
 	}
 }
