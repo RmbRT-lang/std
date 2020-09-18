@@ -17,9 +17,9 @@ INCLUDE 'std/transfer'
 			:= [C!]Buffer(str, len(str));
 
 		[C: TYPE]
-		len(str: C! #\) Size
+		len(str: C! #\) UM
 		{
-			i: Size := 0;
+			i: UM := 0;
 			WHILE(str[i]) ++i;
 			RETURN i;
 		}
@@ -27,11 +27,11 @@ INCLUDE 'std/transfer'
 		[C: TYPE]
 		cmp(
 			lhs: [C!]Buffer#&,
-			rhs: [C!]Buffer#&) SSize
+			rhs: [C!]Buffer#&) SM
 		{
 			minSz #::= lhs.Size > rhs.Size ? rhs.Size : lhs.Size;
 
-			FOR(i:Size := 0; i < minSz; i++)
+			FOR(i:UM := 0; i < minSz; i++)
 				IF(lhs.Data[i] != rhs.Data[i])
 					RETURN lhs.Data[i] - rhs.Data[i];
 
@@ -91,11 +91,11 @@ INCLUDE 'std/transfer'
 		# size() INLINE ::= Content.Size ? Content.Size: 0;
 		# content() INLINE [C!#]Buffer := Content;
 		content() INLINE ::= Content;
-		# SUBSCRIPT(i: Index) ::= Content[i];
+		# SUBSCRIPT(i: UM) ::= Content[i];
 
 		append(str: [C#]Buffer #&) VOID
 			:= append(str.Data, str.Size);
-		append(str: C #\, size: Size) VOID
+		append(str: C #\, size: UM) VOID
 		{
 			new ::= [C]alloc(Content.Size + size);
 			range::copy_construct(new.Data, Content.Data, Content.Size);
@@ -107,7 +107,7 @@ INCLUDE 'std/transfer'
 		append(str: C #\) VOID := append(str::buf(str));
 		append(str: C) INLINE VOID := append(&str, 1);
 
-		# substring(start: Index, size: Size) [C!#]Buffer
+		# substring(start: UM, size: UM) [C!#]Buffer
 		{
 			IF(start + size > Content.Size)
 				THROW;
@@ -115,7 +115,7 @@ INCLUDE 'std/transfer'
 			RETURN [C!#]Buffer(Content.Data + start, size);
 		}
 
-		substring(start: Index, size: Size) [C!]Buffer
+		substring(start: UM, size: UM) [C!]Buffer
 		{
 			IF(start + size > Content.Size)
 				THROW;
@@ -123,7 +123,7 @@ INCLUDE 'std/transfer'
 			RETURN [C!]Buffer(Content.Data + start, size);
 		}
 
-		# cmp(rhs: [C!]String #&) SSize := str::cmp(content(), rhs.content());
+		# cmp(rhs: [C!]String #&) SM := str::cmp(content(), rhs.content());
 
 		# starts_with(str: C #\) INLINE ::= str::starts_with(Content, str);
 		# starts_with(str: [C]Buffer #&) INLINE ::= str::starts_with(Content, str);

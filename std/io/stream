@@ -9,17 +9,17 @@ INCLUDE 'std/string'
 {
 	OStream -> [OStream]Interface
 	{
-		ABSTRACT write_some(VOID #\, Size) Size;
+		ABSTRACT write_some(VOID #\, UM) UM;
 
 		[T: TYPE] Wrapper -> [OStream]Interface::[T!]Wrapper
 		{
 			CONSTRUCTOR(v:T!&): [OStream]Interface::[T!]Wrapper(v);
 
-			FINAL write_some(data: VOID #\, size: Size) Size := THIS->impl()->write_some(data, size);
+			FINAL write_some(data: VOID #\, size: UM) UM := THIS->impl()->write_some(data, size);
 		}
 		[T: TYPE] STATIC from(v: T! \) INLINE OStream::[T! \]Wrapper := v;
 
-		write(data: VOID #\, size: Size) Size
+		write(data: VOID #\, size: UM) UM
 		{
 			p ::= <char#\>(data);
 			FOR(left ::= size; left > 0;)
@@ -31,34 +31,34 @@ INCLUDE 'std/string'
 			RETURN size;
 		}
 
-		write_some(str: char #\) Size
+		write_some(str: char #\) UM
 			:= write_some(str, str::len(str));
-		write(str: char #\) Size
+		write(str: char #\) UM
 			:= write(str, str::len(str));
 
-		write_some(ch: char) Size
+		write_some(ch: char) UM
 			:= write_some(&ch, 1);
-		write(ch: char) Size
+		write(ch: char) UM
 			:= write(&ch, 1);
 
 		[T: TYPE]
-		write_some(buf: [T!]Buffer #&) INLINE Size
+		write_some(buf: [T!]Buffer #&) INLINE UM
 			:= write_some(buf.Data, buf.Size * SIZEOF(T));
 
 		[T: TYPE]
-		write(buf: [T!]Buffer #&) INLINE Size
+		write(buf: [T!]Buffer #&) INLINE UM
 			:= write(buf.Data, buf.Size * SIZEOF(T));
 	}
 
 	IStream -> [IStream]Interface
 	{
-		ABSTRACT read(VOID \, Size) Size;
+		ABSTRACT read(VOID \, UM) UM;
 
 		[T: TYPE] Wrapper -> [IStream]Interface::[T]Wrapper
 		{
 			CONSTRUCTOR(v: T#&): [IStream]Interface::[T]Wrapper(v);
 
-			FINAL read(data: VOID \, size: Size) ::= THIS->impl()->read(data, size);
+			FINAL read(data: VOID \, size: UM) ::= THIS->impl()->read(data, size);
 		}
 		[T: TYPE] STATIC from(v: T#&) INLINE IStream::[T]Wrapper := v;
 

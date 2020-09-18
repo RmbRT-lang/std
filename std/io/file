@@ -18,9 +18,9 @@ INCLUDE 'std/io/stream'
 			IF(!F)
 				THROW;
 		}
-		write_some(d: VOID #\, s: Size) INLINE Size := libc::fwrite(d, 1, s, F);
-		write(d: VOID #\, s: Size) INLINE ::= io::OStream::from(THIS).write(d, s);
-		read(d: VOID \, s: Size) INLINE Size := libc::fread(d, 1, s, F);
+		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
+		write(d: VOID #\, s: UM) INLINE ::= io::OStream::from(THIS).write(d, s);
+		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE int := libc::fflush(F);
 		eof() INLINE bool := libc::feof(F);
 

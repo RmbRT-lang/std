@@ -7,7 +7,7 @@ INCLUDE 'std/types'
 	[T: TYPE] copy_assign(
 		dst: T! \,
 		src: T!# \,
-		count: Size) VOID
+		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
 			dst[i] := src[i];
@@ -15,7 +15,7 @@ INCLUDE 'std/types'
 
 	[T: TYPE] default_construct(
 		range: T! \,
-		count: Size) VOID
+		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
 			__rl::CONSTRUCTOR(range[i]);
@@ -25,7 +25,7 @@ INCLUDE 'std/types'
 	[T: TYPE] copy_construct(
 		dst: T! \,
 		src: T!# \,
-		count: Size) VOID
+		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
 			__rl::CONSTRUCTOR(dst[i], src[i]);
@@ -34,7 +34,7 @@ INCLUDE 'std/types'
 	[T: TYPE] move_construct(
 		dst: T! \,
 		src: T! \,
-		count: Size) VOID
+		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
 			__rl::CONSTRUCTOR(dst[i], ::__cpp_std::move(src[i]));
@@ -42,7 +42,7 @@ INCLUDE 'std/types'
 
 	[T: TYPE] destroy(
 		range: T! \,
-		count: Size) INLINE VOID
+		count: UM) INLINE VOID
 	{
 		FOR(i ::= 0; i<count; i++)
 			__rl::DESTRUCTOR(range[i]);

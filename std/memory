@@ -8,13 +8,12 @@ INCLUDE 'std/math/limit'
 
 ::std
 {
-
 	[T: TYPE] memcmp(
 		lhs: T! #\,
 		rhs: T! #\,
-		elements: Size) SSize
+		elements: UM) SM
 	{
-		FOR(i::= 0; i<elements; i++)
+		FOR(i ::= 0; i<elements; i++)
 			IF(lhs[i] != rhs[i])
 				RETURN lhs[i] - rhs[i];
 		RETURN 0;
@@ -22,7 +21,7 @@ INCLUDE 'std/math/limit'
 
 	[T: TYPE] memcmp(
 		lhs: [T!]Buffer #&,
-		rhs: [T!]Buffer #&) SSize
+		rhs: [T!]Buffer #&) SM
 	{
 		minSz ::= math::min(lhs.Size, rhs.Size);
 		IF(sign ::= memcmp(lhs.Data, rhs.Data, minSz))
@@ -35,22 +34,22 @@ INCLUDE 'std/math/limit'
 	[T: TYPE] Buffer
 	{
 		Data: T! *;
-		Size: std::Size;
+		Size: UM;
 
 		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
 		CONSTRUCTOR(): Data(NULL), Size(0);
-		CONSTRUCTOR(s: T! \, c: std::Size): Data(s), Size(c);
+		CONSTRUCTOR(s: T! \, c: UM): Data(s), Size(c);
 		CONSTRUCTOR(copy: [T]Buffer#&): Data(copy.Data), Size(copy.Size);
 
 		# end() INLINE T! * := Data + Size;
 
-		# SUBSCRIPT(i: std::Size) T!#&
+		# SUBSCRIPT(i: UM) T!#&
 		{
 			IF(i >= Size)
 				THROW;
 			RETURN Data[i];
 		}
-		SUBSCRIPT(i: std::Size) T!&
+		SUBSCRIPT(i: UM) T!&
 		{
 			IF(i >= Size)
 				THROW;
@@ -58,8 +57,8 @@ INCLUDE 'std/math/limit'
 		}
 
 		# range(
-			start: std::Index,
-			size: std::Size) [T!]Buffer
+			start: UM,
+			size: UM) [T!]Buffer
 		{
 			IF(start+size > Size)
 				THROW;
@@ -98,14 +97,14 @@ INCLUDE 'std/math/limit'
 	[T: TYPE] dup(value: T! #&) T! * := ::[T!]new(value);
 
 	[T: TYPE]
-	clone(data: T! #\, size: Size) [T]Buffer
+	clone(data: T! #\, size: UM) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
 		range::copy_construct(tmp.Data, data, size);
 		RETURN [T]Buffer(tmp.Data, tmp.Size);
 	}
 	[T: TYPE]
-	clone_move(data: T! #\, size: Size) [T]Buffer
+	clone_move(data: T! #\, size: UM) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
 		range::move_construct(tmp.Data, data, size);
@@ -116,22 +115,22 @@ INCLUDE 'std/math/limit'
 	clone(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
 
 
-	alloc(bytes: Size) VOID* := detail::libc::malloc(bytes);
+	alloc(bytes: UM) VOID* := detail::libc::malloc(bytes);
 	[T: TYPE] alloc() INLINE ::= <T \>(alloc(SIZEOF(T)));
-	[T: TYPE] alloc(count: Size) [T]Buffer
+	[T: TYPE] alloc(count: UM) [T]Buffer
 		:= [T]Buffer(
 			<T \>(detail::libc::malloc(count * SIZEOF(T))),
 			count);
 
 
-	calloc(bytes: Size) VOID* := detail::libc::calloc(bytes, 1);
+	calloc(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
 	[T: TYPE] calloc() T *
 	{
 		v ::= <T \>(alloc(SIZEOF(T)));
 		__rl::CONSTRUCTOR(v);
 		RETURN v;
 	}
-	[T: TYPE] calloc(count: Size) [T]Buffer
+	[T: TYPE] calloc(count: UM) [T]Buffer
 	{
 		v ::= [T]alloc(count);
 		range::default_construct(v, count);
@@ -160,7 +159,7 @@ INCLUDE 'std/math/limit'
 ::std::detail::libc
 {
 	EXTERN malloc(ulong) VOID *;
-	EXTERN calloc(Size, Size) VOID *;
+	EXTERN calloc(UM, UM) VOID *;
 	EXTERN free(VOID #\) VOID;
-	EXTERN realloc(VOID #\, Size) VOID;
+	EXTERN realloc(VOID #\, UM) VOID;
 }
