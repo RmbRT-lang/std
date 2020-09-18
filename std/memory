@@ -59,7 +59,7 @@ INCLUDE 'std/math/limit'
 			size: UM) [T!]Buffer
 		{
 			range::check_subrange(start, size, Size);
-			RETURN [T!]Buffer(start, size);
+			RETURN [T!]Buffer(Data + start, size);
 		}
 
 		# drop_start(start: UM) [T!]Buffer

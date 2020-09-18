@@ -62,7 +62,7 @@ INCLUDE 'std/math/safe'
 		sub_size: UM,
 		size: UM) INLINE VOID
 	{
-		IF(math::safe::add(sub_start, sub_size) >= size)
+		IF(math::safe::add(sub_start, sub_size) > size)
 			THROW;
 	}
 }
