@@ -61,6 +61,13 @@ INCLUDE 'std/math/limit'
 			range::check_subrange(start, size, Size);
 			RETURN [T!]Buffer(start, size);
 		}
+
+		# drop_start(start: UM) [T!]Buffer
+			:= range(start, Size - start);
+		# drop_end(count: UM) [T!]Buffer
+			:= range(0, Size - count);
+		# cut(size: UM) [T!]Buffer
+			:= range(0, size);
 	}
 
 	[T: TYPE] Dynamic
@@ -82,6 +89,7 @@ INCLUDE 'std/math/limit'
 
 		# LOG_NOT() INLINE bool := !Ptr;
 		# CONVERT(bool) INLINE NOTYPE! := Ptr;
+		# CONVERT(T! \) INLINE NOTYPE! := Ptr;
 
 		DESTRUCTOR
 		{
