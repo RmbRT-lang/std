@@ -130,6 +130,20 @@ INCLUDE 'std/memory'
 	}
 
 	insert_at(
+		position: Location #&,
+		v: T!&&) T! *
+	{
+		node ::= ::[Node]new(__cpp_std::move(v));
+		IF(position.Parent == NULL)
+			Root := node;
+		ELSE IF(!position.Side)
+			position.Parent->Left := node;
+		ELSE
+			position.Parent->Right := node;
+		RETURN &node->Value;
+	}
+
+	insert_at(
 		position: Location #&) T! *
 	{
 		node ::= ::[Node]new();
