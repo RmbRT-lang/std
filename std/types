@@ -1,20 +1,27 @@
 (/rl/)
 
-::std TYPE Size := ::size_t;
-::std TYPE SSize := ::__cpp_std::[Size]make_signed_t;
-::std TYPE Index := ::size_t;
+(// S1-8, U1-8
 
-::std TYPE Int8 := ::int8_t;
-::std TYPE UInt8 := ::uint8_t;
-::std TYPE Int16 := ::int16_t;
-::std TYPE UInt16 := ::uint16_t;
-::std TYPE Int32 := ::int32_t;
-::std TYPE UInt32 := ::uint32_t;
-::std TYPE Int64 := ::int64_t;
-::std TYPE UInt64 := ::uint64_t;
+	Signed and unsigned integers of byte size 1-8.
+/)
+
+::std TYPE S1 := ::int8_t;
+::std TYPE U1 := ::uint8_t;
+::std TYPE S2 := ::int16_t;
+::std TYPE U2 := ::uint16_t;
+::std TYPE S4 := ::int32_t;
+::std TYPE U4 := ::uint32_t;
+::std TYPE S8 := ::int64_t;
+::std TYPE U8 := ::uint64_t;
+
+(// C8-32, Char
+
+	C8-32 are 8-32 bit words that make up the elements of 8-32 bit strings. They should only be used in the context of strings, and never as a representation of a single character, to keep the semantics clean.
+
+	Char is used to represent a full unicode codepoint, i.e., a single character.
+/)
 
 ::std TYPE C8 := ::char;
-::std TYPE C16 := UInt16;
-::std TYPE C32 := UInt32;
-::std TYPE Char := UInt32;
-
+::std TYPE C16 := U2;
+::std TYPE C32 := U4;
+::std TYPE Char := U4;
