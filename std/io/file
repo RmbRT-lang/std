@@ -23,6 +23,7 @@ INCLUDE 'std/io/stream'
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE int := libc::fflush(F);
 		eof() INLINE bool := libc::feof(F);
+		line(d: char \, s: UM) INLINE char * := libc::fgets(d, s, F);
 
 		DESTRUCTOR { libc::fclose(F); }
 		CONSTRUCTOR(file: char #\, mode: char#\):
@@ -47,6 +48,7 @@ INCLUDE 'std/io/stream'
 	EXTERN ferror(FileHandle *) int;
 	EXTERN fflush(FileHandle \) int;
 	EXTERN fputs(char #\, FileHandle \) int;
+	EXTERN fgets(char\, int, FileHandle \) char *;
 
 	EXTERN stdin: FileHandle *;
 	EXTERN stdout: FileHandle *;
