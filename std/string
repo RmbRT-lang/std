@@ -108,20 +108,10 @@ INCLUDE 'std/transfer'
 		append(str: C) INLINE VOID := append(&str, 1);
 
 		# substring(start: UM, size: UM) [C!#]Buffer
-		{
-			IF(start + size > Content.Size)
-				THROW;
-
-			RETURN [C!#]Buffer(Content.Data + start, size);
-		}
+			:= Content.range(start, size);
 
 		substring(start: UM, size: UM) [C!]Buffer
-		{
-			IF(start + size > Content.Size)
-				THROW;
-
-			RETURN [C!]Buffer(Content.Data + start, size);
-		}
+			:= Content.range(start, size);
 
 		# cmp(rhs: [C!]String #&) SM := str::cmp(content(), rhs.content());
 
