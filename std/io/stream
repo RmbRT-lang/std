@@ -54,13 +54,13 @@ INCLUDE 'std/string'
 	{
 		ABSTRACT read(VOID \, UM) UM;
 
-		[T: TYPE] Wrapper -> [IStream]Interface::[T]Wrapper
+		[T: TYPE] Wrapper -> [IStream]Interface::[T!]Wrapper
 		{
-			CONSTRUCTOR(v: T#&): [IStream]Interface::[T]Wrapper(v);
+			CONSTRUCTOR(v: T!&): [IStream]Interface::[T!]Wrapper(v);
 
 			FINAL read(data: VOID \, size: UM) ::= THIS->impl()->read(data, size);
 		}
-		[T: TYPE] STATIC from(v: T#&) INLINE IStream::[T]Wrapper := v;
+		[T: TYPE] STATIC from(v: T! \) INLINE IStream::[T! \]Wrapper := v;
 
 		read() char
 		{
