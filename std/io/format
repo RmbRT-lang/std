@@ -17,7 +17,7 @@ INCLUDE 'std/io/stream'
 
 		o.write("0x");
 		FOR(i ::= 2*SIZEOF(T); i--;)
-			o.write("0123456789abcdef"[(n>>(i<<1)) & 0xf]);
+			o.write("0123456789abcdef"[(n>>(i<<2)) & 0xf]);
 	}
 
 	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
