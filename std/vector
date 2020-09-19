@@ -28,7 +28,7 @@ PUBLIC:
 
 	CONSTRUCTOR(pass::Copy, content: [T#]Buffer #&):
 		Content(clone(content));
-	CONSTRUCTOR(pass::Move, content: [T#]Buffer #&):
+	CONSTRUCTOR(pass::Move, content: [T!]Buffer #&):
 		Content(content);
 
 	ASSIGN(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(*THIS, move);
@@ -83,6 +83,9 @@ PUBLIC:
 	# SUBSCRIPT(i: UM) INLINE ::= Content[i];
 	# size() INLINE UM := Content.Size;
 	# empty() INLINE bool := size() == 0;
+
+	# content() INLINE [T!#]Buffer := Content;
+	content() INLINE ::= Content;
 
 	# range(start: UM, length: UM) [T!#]Buffer
 		:= Content.range(start, length);
