@@ -39,7 +39,7 @@ INCLUDE 'std/transfer'
 		}
 
 		[C: TYPE]
-		starts_with(string: [C!]Buffer #&, find: [C!]Buffer #&) bool
+		starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) bool
 		{
 			IF(find.Size > string.Size)
 				RETURN FALSE;
@@ -47,7 +47,7 @@ INCLUDE 'std/transfer'
 		}
 
 		[C: TYPE]
-		starts_with(string: [C!]Buffer #&, find: C! #\) INLINE bool
+		starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE bool
 			:= starts_with(string, buf(find));
 	}
 
@@ -115,8 +115,10 @@ INCLUDE 'std/transfer'
 
 		# cmp(rhs: [C!]String #&) SM := str::cmp(content(), rhs.content());
 
-		# starts_with(str: C #\) INLINE ::= str::starts_with(Content, str);
-		# starts_with(str: [C]Buffer #&) INLINE ::= str::starts_with(Content, str);
+		# starts_with(str: C #\) INLINE
+			::= str::starts_with(<[C#]Buffer>(Content), str);
+		# starts_with(str: [C#]Buffer #&) INLINE
+			::= str::starts_with(<[C#]Buffer>(Content), str);
 	}
 
 	TYPE Utf8 := [char]String;
