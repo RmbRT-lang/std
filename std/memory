@@ -39,7 +39,8 @@ INCLUDE 'std/math/limit'
 		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
 		CONSTRUCTOR(): Data(NULL), Size(0);
 		CONSTRUCTOR(s: T! \, c: UM): Data(s), Size(c);
-		CONSTRUCTOR(copy: [T]Buffer#&): Data(copy.Data), Size(copy.Size);
+
+		# CONVERT([T!#]Buffer!) INLINE NOTYPE! := [T!#]Buffer(Data, Size);
 
 		# end() INLINE T! * := Data + Size;
 
