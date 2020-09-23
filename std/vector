@@ -82,6 +82,7 @@ PUBLIC:
 	SUBSCRIPT(i: UM) INLINE ::= Content[i];
 	# SUBSCRIPT(i: UM) INLINE ::= Content[i];
 	# size() INLINE UM := Content.Size;
+	# data() INLINE T! #* := Content.Data;
 	# empty() INLINE bool := size() == 0;
 
 	# content() INLINE [T!#]Buffer := Content;
