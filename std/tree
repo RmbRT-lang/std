@@ -117,36 +117,49 @@ INCLUDE 'std/memory'
 
 	insert_at(
 		position: Location #&,
-		v: T!#&) T! *
-	{
-		node ::= ::[Node]new(v);
-		IF(position.Parent == NULL)
-			Root := node;
-		ELSE IF(!position.Side)
-			position.Parent->Left := node;
-		ELSE
-			position.Parent->Right := node;
-		RETURN &node->Value;
-	}
+		v: T!#&) INLINE T! *
+		:= emplace_at(position, v);
 
 	insert_at(
 		position: Location #&,
-		v: T!&&) T! *
-	{
-		node ::= ::[Node]new(__cpp_std::move(v));
-		IF(position.Parent == NULL)
-			Root := node;
-		ELSE IF(!position.Side)
-			position.Parent->Left := node;
-		ELSE
-			position.Parent->Right := node;
-		RETURN &node->Value;
-	}
+		v: T!&&) INLINE T! *
+		:= emplace_at(position, __cpp_std::move(v));
 
 	insert_at(
 		position: Location #&) T! *
 	{
 		node ::= ::[Node]new();
+		IF(position.Parent == NULL)
+			Root := node;
+		ELSE IF(!position.Side)
+			position.Parent->Left := node;
+		ELSE
+			position.Parent->Right := node;
+		RETURN &node->Value;
+	}
+
+	[A:TYPE]
+	emplace_at(
+		position: Location #&,
+		a0: A!&&) T! *
+	{
+		node ::= ::[Node]new(__cpp_std::[A!]forward(a0));
+		IF(position.Parent == NULL)
+			Root := node;
+		ELSE IF(!position.Side)
+			position.Parent->Left := node;
+		ELSE
+			position.Parent->Right := node;
+		RETURN &node->Value;
+	}
+
+	[A:TYPE, B:TYPE]
+	emplace_at(
+		position: Location #&,
+		a0: A!&&,
+		a1: B!&&) T! *
+	{
+		node ::= ::[Node]new(__cpp_std::[A!]forward(a0), __cpp_std::[B!]forward(a1));
 		IF(position.Parent == NULL)
 			Root := node;
 		ELSE IF(!position.Side)
@@ -162,6 +175,8 @@ INCLUDE 'std/memory'
 	CONSTRUCTOR();
 	CONSTRUCTOR(v: T#&): Value(v);
 	CONSTRUCTOR(v: T&&): Value(__cpp_std::move(v));
+	[A: TYPE, B:TYPE]
+	CONSTRUCTOR(a: A!&&, b: B!&&): Value(<A!>(a), <B!>(b));
 
 	Value: T;
 	Left: [Node]Dynamic;
