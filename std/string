@@ -17,8 +17,10 @@ INCLUDE 'std/transfer'
 			:= [C!]Buffer(str, len(str));
 
 		[C: TYPE]
-		len(str: C! #\) UM
+		len(str: C! #*) UM
 		{
+			IF(!str)
+				RETURN 0;
 			i: UM := 0;
 			WHILE(str[i]) ++i;
 			RETURN i;
