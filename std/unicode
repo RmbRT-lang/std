@@ -4,7 +4,7 @@ INCLUDE 'std/types'
 
 ::std::code::utf8
 {
-	size(firstByte: C8) Size
+	size(firstByte: C8) UM
 	{
 		IF(firstByte & 0x80 == 0)
 			RETURN 1;
@@ -23,13 +23,13 @@ INCLUDE 'std/types'
 
 	point(in: C8 #\) Char
 	{
-		size: Size;
-		RETURN point(&size);
+		size: UM;
+		RETURN point(in, &size);
 	}
 
 	point(
 		in: C8 #\,
-		size: Size \
+		size: UM \
 	) Char
 	{
 		*size := utf8::size(in[0]);
@@ -37,7 +37,7 @@ INCLUDE 'std/types'
 			RETURN in[0];
 
 		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
-		STATIC bits: Size#[](5, 4, 3);
+		STATIC bits: UM#[](5, 4, 3);
 
 		out: Char := <Char>(in[0] & masks[*size-2]) << bits[*size-2];
 
@@ -51,9 +51,9 @@ INCLUDE 'std/types'
 		RETURN out;
 	}
 
-	encode(src: Char, dst: C8 \) Size
+	encode(src: Char, dst: C8 \) UM
 	{
-		size: Size :=
+		size: UM :=
 			(src < 0x00080) ? 1 :
 			(src < 0x00800) ? 2 :
 			(src < 0x10000) ? 3 :
@@ -68,7 +68,7 @@ INCLUDE 'std/types'
 		STATIC start: C8#[](0x00, 0x1f, 0x0f, 0x07);
 		dst[0] := start[size] | (src >> (size-1)*6);
 
-		FOR(i := 1; i<size; i++)
+		FOR(i ::= 1; i<size; i++)
 			dst[size-i] := 0x80 | ((src >> (6*i)) & 0x3f);
 
 		RETURN size;
