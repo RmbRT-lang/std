@@ -1,23 +1,14 @@
 (/rl/)
 
-INCLUDE 'std/interface'
 INCLUDE 'std/types'
 INCLUDE 'std/memory'
 INCLUDE 'std/string'
 
 ::std::io
 {
-	OStream -> [OStream]Interface
+	CONCEPT OStream
 	{
-		ABSTRACT write_some(VOID #\, UM) UM;
-
-		[T: TYPE] Wrapper -> [OStream]Interface::[T!]Wrapper
-		{
-			CONSTRUCTOR(v:T!&): [OStream]Interface::[T!]Wrapper(v);
-
-			FINAL write_some(data: VOID #\, size: UM) UM := THIS->impl()->write_some(data, size);
-		}
-		[T: TYPE] STATIC from(v: T! \) INLINE OStream::[T! \]Wrapper := v;
+		write_some(data: VOID #\, size: UM) UM;
 
 		write(data: VOID #\, size: UM) UM
 		{
@@ -50,17 +41,9 @@ INCLUDE 'std/string'
 			:= write(buf.Data, buf.Size * SIZEOF(T));
 	}
 
-	IStream -> [IStream]Interface
+	CONCEPT IStream
 	{
-		ABSTRACT read(VOID \, UM) UM;
-
-		[T: TYPE] Wrapper -> [IStream]Interface::[T!]Wrapper
-		{
-			CONSTRUCTOR(v: T!&): [IStream]Interface::[T!]Wrapper(v);
-
-			FINAL read(data: VOID \, size: UM) ::= THIS->impl()->read(data, size);
-		}
-		[T: TYPE] STATIC from(v: T! \) INLINE IStream::[T! \]Wrapper := v;
+		read(data: VOID \, size: UM) UM;
 
 		read() char
 		{

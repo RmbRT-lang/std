@@ -19,7 +19,7 @@ INCLUDE 'std/io/stream'
 				THROW;
 		}
 		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
-		write(d: VOID #\, s: UM) INLINE ::= io::OStream::from(THIS).write(d, s);
+		write(d: VOID #\, s: UM) INLINE ::= io::OStream::FROM(THIS).write(d, s);
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE int := libc::fflush(F);
 		eof() INLINE bool := libc::feof(F);
