@@ -37,16 +37,17 @@ INCLUDE 'std/types'
 			RETURN in[0];
 
 		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
-		STATIC bits: UM#[](5, 4, 3);
 
-		out: Char := <Char>(in[0] & masks[*size-2]) << bits[*size-2];
+		out: Char := <Char>(in[0] & masks[*size-2]);
 
 		DO(i ::= 1)
 			IF(!is_follow(in[i]))
 				THROW;
 			ELSE
-				out := out + <Char> (in[i] & 0x3f);
-			FOR(i++ < *size -1; out := out << 6)
+			{
+				out <<= 6;
+				out |= <Char>(in[i] & 0x3f);
+			} WHILE(++i < *size)
 
 		RETURN out;
 	}
@@ -59,17 +60,17 @@ INCLUDE 'std/types'
 			(src < 0x10000) ? 3 :
 			4;
 
+		STATIC start: U1#[](0xc0, 0xe0, 0xf0);
+		end ::= dst+size;
+		FOR(i ::= 0; i < size; i++)
+			*--end := <C8>(src >> 6*i);
+
 		IF(size == 1)
-		{
-			dst[0] := <C8> (src);
 			RETURN 1;
-		}
 
-		STATIC start: C8#[](0x00, 0x1f, 0x0f, 0x07);
-		dst[0] := start[size] | (src >> (size-1)*6);
-
-		FOR(i ::= 1; i<size; i++)
-			dst[size-i] := 0x80 | ((src >> (6*i)) & 0x3f);
+		dst[0] |= start[size-2];
+		FOR(i ::= 1; i < size; i++)
+			dst[i] := 0x80 | (dst[i] &0x3f);
 
 		RETURN size;
 	}
