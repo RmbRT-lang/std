@@ -1,0 +1,40 @@
+(/rl/)
+
+INCLUDE 'std/error'
+INCLUDE 'std/memory'
+INCLUDE 'std/io/format'
+INCLUDE 'std/io/streamable'
+INCLUDE 'std/io/stream'
+
+::std::err IndexOutOfRange -> Error
+{
+	Start: UM;
+	Size: UM;
+	Index: UM;
+
+	CONSTRUCTOR(
+		start: UM,
+		size: UM,
+		index: UM):
+		Start(start),
+		Size(size),
+		Index(index);
+
+	CONSTRUCTOR(
+		size: UM,
+		index: UM):
+		Start(0),
+		Size(size),
+		Index(index);
+
+	# OVERRIDE print(o: io::OStream &) VOID
+	{
+		o.write("index ");
+		io::format::dec(o, Index);
+		o.write(" out of range: [");
+		io::format::dec(o, Start);
+		o.write(", ");
+		io::format::dec(o, Start+Size);
+		o.write(")");
+	}
+}

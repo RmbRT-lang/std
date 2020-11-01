@@ -4,6 +4,6 @@ INCLUDE 'std/io/stream'
 
 ::std Error
 {
-	ABSTRACT print(
+	# ABSTRACT print(
 		io::OStream &) VOID;
 }

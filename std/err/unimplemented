@@ -1,0 +1,23 @@
+(/rl/)
+
+INCLUDE 'std/error'
+INCLUDE 'std/memory'
+INCLUDE 'std/io/streamable'
+INCLUDE 'std/io/stream'
+
+::std::err Unimplemented -> Error
+{
+	What: [io::Streamable]Dynamic;
+
+	CONSTRUCTOR(what: io::Streamable \): What(what);
+	CONSTRUCTOR(what: char #\):
+		What(dup(io::Streamable::FROM(
+			io::detail::[char#]BufStreamable(str::buf(what)))));
+
+	# OVERRIDE print(
+		o: io::OStream &) VOID
+	{
+		o.write("unimplemented: ");
+		What->stream(o);
+	}
+}

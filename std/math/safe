@@ -5,7 +5,7 @@ INCLUDE 'std/io/stream'
 
 ::std::math Overflow -> Error
 {
-	OVERRIDE print(o: io::OStream &) VOID
+	# OVERRIDE print(o: io::OStream &) VOID
 	{
 		o.write("overflow/underflow");
 	}
@@ -13,7 +13,7 @@ INCLUDE 'std/io/stream'
 
 ::std::math ZeroDiv -> Error
 {
-	OVERRIDE print(o: io::OStream &) VOID
+	# OVERRIDE print(o: io::OStream &) VOID
 	{
 		o.write("division by 0");
 	}
