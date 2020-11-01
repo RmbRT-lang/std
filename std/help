@@ -40,6 +40,6 @@
 ) INLINE T! &
 {
 	lhs.DESTRUCTOR();
-	lhs.CONSTRUCTOR(<V!&&>(rhs));
+	lhs.CONSTRUCTOR(__cpp_std::[V!]forward(rhs));
 	RETURN lhs;
 }
