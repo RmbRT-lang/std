@@ -2,6 +2,7 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/math/safe'
+INCLUDE 'std/err/indexoutofrange'
 
 ::std::range
 {
@@ -54,7 +55,7 @@ INCLUDE 'std/math/safe'
 		index: UM) INLINE VOID
 	{
 		IF(index >= range)
-			THROW;
+			THROW err::IndexOutOfRange(range, index);
 	}
 
 	check_subrange(
@@ -63,6 +64,6 @@ INCLUDE 'std/math/safe'
 		size: UM) INLINE VOID
 	{
 		IF(math::safe::add(sub_start, sub_size) > size)
-			THROW;
+			THROW err::IndexOutOfRange(size, sub_start + sub_size);
 	}
 }
