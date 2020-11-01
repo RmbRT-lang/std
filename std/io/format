@@ -32,7 +32,7 @@ INCLUDE 'std/io/stream'
 
 		buffer: char[32];
 		buf ::= std::[char]Buffer(buffer, SIZEOF(#buffer));
-		i ::= SIZEOF(#buf)-1;
+		i ::= buf.Size-1;
 		DO()
 		{
 			IF(i < 0)
@@ -44,6 +44,6 @@ INCLUDE 'std/io/stream'
 			buf[i] := '0'+d;
 		} FOR(v; i--)
 
-		o.write(buf.range(i, buf.Size-i));
+		o.write(buf.drop_start(i));
 	}
 }
