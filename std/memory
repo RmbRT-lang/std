@@ -38,7 +38,10 @@ INCLUDE 'std/math/limit'
 
 		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
 		CONSTRUCTOR(): Data(NULL), Size(0);
-		CONSTRUCTOR(s: T! \, c: UM): Data(s), Size(c);
+		CONSTRUCTOR(s: T! \, c: UM): Data(s), Size(c)
+		{
+			ASSERT(!Size || Data);
+		}
 
 		# CONVERT([T!#]Buffer!) INLINE NOTYPE! := [T!#]Buffer(Data, Size);
 
@@ -73,12 +76,10 @@ INCLUDE 'std/math/limit'
 
 	[T: TYPE] Dynamic
 	{
-		NoCopy;
-
 		Ptr: T! *;
 		CONSTRUCTOR(): Ptr(NULL);
 		CONSTRUCTOR(p: T! *): Ptr(p);
-		CONSTRUCTOR(move: [T!]Dynamic &&):
+		CONSTRUCTOR(move: [T!]Dynamic! &&):
 			Ptr(move.Ptr)
 		{
 			move.Ptr := NULL;
@@ -91,6 +92,14 @@ INCLUDE 'std/math/limit'
 		# LOG_NOT() INLINE bool := !Ptr;
 		# CONVERT(bool) INLINE NOTYPE! := Ptr;
 		# CONVERT(T! \) INLINE NOTYPE! := Ptr;
+		# PTRACCESS() INLINE T! \ := Ptr;
+
+		release() T! *
+		{
+			p ::= Ptr;
+			Ptr := NULL;
+			RETURN p;
+		}
 
 		DESTRUCTOR
 		{
@@ -99,8 +108,10 @@ INCLUDE 'std/math/limit'
 		}
 	}
 
-	[T: TYPE] dup(value: T! &&) T! * := ::[T!]new(__cpp_std::move(value));
-	[T: TYPE] dup(value: T! #&) T! * := ::[T!]new(value);
+	[T: TYPE] dup(value: T! #&) T * := ::[T]new(value);
+	[T: TYPE] dup(value: T! &&) T * := ::[T]new(__cpp_std::move(value));
+	[T: TYPE] dup_mv(value: T! &) T * := ::[T]new(__cpp_std::move(value));
+	[T: TYPE] dup_mv(value: T! &&) T * := ::[T]new(__cpp_std::move(value));
 
 	[T: TYPE]
 	clone(data: T! #\, size: UM) [T]Buffer
