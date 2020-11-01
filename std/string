@@ -40,6 +40,9 @@ INCLUDE 'std/transfer'
 			RETURN (lhs.Size - rhs.Size);
 		}
 
+		[C:TYPE]
+		cmp(lhs: C!#\, rhs: C!#\) INLINE SM := cmp(buf(lhs), buf(rhs));
+
 		[C: TYPE]
 		starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) bool
 		{
@@ -51,6 +54,9 @@ INCLUDE 'std/transfer'
 		[C: TYPE]
 		starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE bool
 			:= starts_with(string, buf(find));
+		[C: TYPE]
+		starts_with(string: C!#\, find: C!#\) INLINE bool
+			:= starts_with(buf(string), buf(find));
 	}
 
 	[C: TYPE]
@@ -59,12 +65,27 @@ INCLUDE 'std/transfer'
 		PRIVATE Content: [C!]Buffer;
 
 		CONSTRUCTOR() {}
+		(// Creates a 0-terminated copy of a C string. /)
 		CONSTRUCTOR(str: C #\, helper::CString):
 			Content(clone(str, str::len(str)+1))
 		{
 			// Remove the terminating 0-byte from the content.
 			Content.Size--;
 		}
+
+		(// Creates a 0-terminated copy of a buffer. /)
+		CONSTRUCTOR(str: [C#]Buffer #&, helper::CString):
+			Content([C!]alloc(str.Size+1))
+		{
+			range::copy_construct(Content.Data, str.Data, str.Size);
+			__rl::CONSTRUCTOR(Content.Data[Content.Size-1], 0);
+			// Remove terminating 0-byte from the content.
+			Content.Size--;
+		}
+
+		(// Creates a 0-terminated copy of a string. /)
+		CONSTRUCTOR(str: [C!]String #&, helper::CString):
+			String(str.Content, std::cstring);
 
 		CONSTRUCTOR(data: [C#]Buffer #&): Content(clone(data));
 		CONSTRUCTOR(data: [C!]Buffer #&, Transfer): Content(data);
@@ -84,6 +105,7 @@ INCLUDE 'std/transfer'
 		{
 			IF(Content.Data)
 				free(Content);
+			Content := NULL;
 		}
 
 		ASSIGN(rhs: [C!]String#&) [C!]String& := help::copy_assign(*THIS, rhs);
