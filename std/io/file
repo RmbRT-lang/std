@@ -2,6 +2,7 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/io/stream'
+INCLUDE 'std/tags'
 
 ::std::io
 {
@@ -12,6 +13,7 @@ INCLUDE 'std/io/stream'
 	File
 	{
 		PRIVATE F: libc::FileHandle \;
+		NoCopy;
 
 		CONSTRUCTOR(h: libc::FileHandle \): F(h)
 		{
