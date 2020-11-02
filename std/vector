@@ -61,7 +61,7 @@ PUBLIC:
 		new ::= [T]alloc(Content.Size-1);
 		range::move_construct(new.Data, Content.Data, at);
 		range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
-		IF(Content.Size)
+		IF(Content)
 			delete(Content);
 		Content := new;
 	}
@@ -72,7 +72,7 @@ PUBLIC:
 		new ::= [T]alloc(Content.Size+1);
 		range::move_construct(new.Data, Content.Data, at);
 		range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
-		IF(Content.Size)
+		IF(Content)
 			delete(Content);
 		Content := new;
 	}

@@ -44,6 +44,7 @@ INCLUDE 'std/math/limit'
 		}
 
 		# CONVERT([T!#]Buffer!) INLINE NOTYPE! := [T!#]Buffer(Data, Size);
+		# CONVERT(bool!) INLINE NOTYPE! := Data != NULL;
 
 		# end() INLINE T! * := Data + Size;
 
