@@ -4,4 +4,7 @@
 {
 	Transfer{}
 	transfer: Transfer#;
+
+	Create { }
+	create: Create#;
 }
