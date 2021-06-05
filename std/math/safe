@@ -21,27 +21,46 @@ INCLUDE 'std/io/stream'
 
 ::std::math::safe
 {
+	[T:TYPE] add(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
+	{
+		ret: T;
+		carry := __builtin_add_overflow(lhs, rhs, &ret);
+		RETURN ret;
+	}
+
 	[T:TYPE] add(lhs: T! #&, rhs: T! #&) INLINE T
 	{
 		ret: T;
 		IF(__builtin_add_overflow(lhs, rhs, &ret))
-			THROW Overflow();
+			THROW <Overflow>();
 		RETURN ret;
 	}
 
+	[T:TYPE] sub(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
+	{
+		ret: T;
+		carry := __builtin_sub_overflow(lhs, rhs, &ret);
+		RETURN ret;
+	}
 	[T:TYPE] sub(lhs: T! #&, rhs: T! #&) INLINE T
 	{
 		ret: T;
 		IF(__builtin_sub_overflow(lhs, rhs, &ret))
-			THROW Overflow();
+			THROW <Overflow>();
 		RETURN ret;
 	}
 
+	[T:TYPE] mul(lhs: T! #&, rhs: T! #&, carry: BOOL&) INLINE T
+	{
+		ret: T;
+		carry := __builtin_mul_overflow(lhs, rhs, &ret);
+		RETURN ret;
+	}
 	[T:TYPE] mul(lhs: T! #&, rhs: T! #&) INLINE T
 	{
 		ret: T;
 		IF(__builtin_mul_overflow(lhs, rhs, &ret))
-			THROW Overflow();
+			THROW <Overflow>();
 		RETURN ret;
 	}
 
@@ -49,17 +68,58 @@ INCLUDE 'std/io/stream'
 	{
 		ret: T;
 		IF(!rhs)
-			THROW ZeroDiv();
+			THROW <ZeroDiv>();
 
 		quo := lhs / rhs;
 		rem := lhs % rhs;
+	}
+	[T:TYPE] div(lhs: T! #&, rhs: T! #&) T
+	{
+		IF(!rhs)
+			THROW <ZeroDiv>();
+
+		RETURN lhs / rhs;
+	}
+	[T:TYPE] mod(lhs: T! #&, rhs: T! #&) T
+	{
+		IF(!rhs)
+			THROW <ZeroDiv>();
+
+		RETURN lhs % rhs;
 	}
 
 	[T:TYPE] neg(lhs: T! #&) T
 	{
 		ret: T;
 		IF(__builtin_sub_overflow(0, lhs, &ret))
-			THROW Overflow();
+			THROW <Overflow>();
 		RETURN ret;
+	}
+
+	[T:TYPE]
+	Int
+	{
+		PRIVATE V: T;
+
+		{};
+		{v: T #&}: V(v);
+		{v: T &&}: V(v);
+
+		# -THIS [T]Int := neg(V);
+		# +THIS [T]Int #& := THIS;
+
+		# THIS+(rhs: T#&) [T]Int := add(V, rhs);
+		# THIS-(rhs: T#&) [T]Int := sub(V, rhs);
+		# THIS*(rhs: T#&) [T]Int := mul(V, rhs);
+		# THIS/(rhs: T#&) [T]Int := div(V, rhs);
+		# THIS%(rhs: T#&) [T]Int := mod(V, rhs);
+
+		THIS+=(rhs: T#&) [T]Int& := THIS := THIS + rhs;
+		THIS-=(rhs: T#&) [T]Int& := THIS := THIS - rhs;
+		THIS*=(rhs: T#&) [T]Int& := THIS := THIS * rhs;
+		THIS/=(rhs: T#&) [T]Int& := THIS := THIS / rhs;
+		THIS%=(rhs: T#&) [T]Int& := THIS := THIS % rhs;
+
+		# <T #&> INLINE := V;
 	}
 }

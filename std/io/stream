@@ -12,7 +12,7 @@ INCLUDE 'std/string'
 
 		write(data: VOID #\, size: UM) UM
 		{
-			p ::= <char#\>(data);
+			p ::= <CHAR#\>(data);
 			FOR(left ::= size; left > 0;)
 			{
 				written ::= write_some(p, left);
@@ -22,14 +22,14 @@ INCLUDE 'std/string'
 			RETURN size;
 		}
 
-		write_some(str: char #\) UM
+		write_some(str: CHAR #\) UM
 			:= write_some(str, str::len(str));
-		write(str: char #\) UM
+		write(str: CHAR #\) UM
 			:= write(str, str::len(str));
 
-		write_some(ch: char) UM
+		write_some(ch: CHAR) UM
 			:= write_some(&ch, 1);
-		write(ch: char) UM
+		write(ch: CHAR) UM
 			:= write(&ch, 1);
 
 		[T: TYPE]
@@ -39,15 +39,20 @@ INCLUDE 'std/string'
 		[T: TYPE]
 		write(buf: [T!]Buffer #&) INLINE UM
 			:= write(buf.Data, buf.Size * SIZEOF(T));
+
+		PRIVATE write_all() INLINE ::= 0;
+		[A0: TYPE; A...: TYPE]
+		write_all(a0: A0!&&, a: A!&&...) UM
+			:= write(<A0!&&>(a0)) + write_all(<A!&&>(a)...);
 	}
 
 	CONCEPT IStream
 	{
 		read(data: VOID \, size: UM) UM;
 
-		read() char
+		read() CHAR
 		{
-			c: char;
+			c: CHAR;
 			read(&c, 1);
 			RETURN c;
 		}

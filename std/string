@@ -2,14 +2,9 @@
 
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
-INCLUDE 'std/options'
 
 ::std
 {
-	::helper CString {}
-	cstring: helper::CString#;
-
-
 	::str
 	{
 		[C: TYPE]
@@ -44,7 +39,7 @@ INCLUDE 'std/options'
 		cmp(lhs: C!#\, rhs: C!#\) INLINE SM := cmp(buf(lhs), buf(rhs));
 
 		[C: TYPE]
-		starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) bool
+		starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) BOOL
 		{
 			IF(find.Size > string.Size)
 				RETURN FALSE;
@@ -52,10 +47,10 @@ INCLUDE 'std/options'
 		}
 
 		[C: TYPE]
-		starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE bool
+		starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE BOOL
 			:= starts_with(string, buf(find));
 		[C: TYPE]
-		starts_with(string: C!#\, find: C!#\) INLINE bool
+		starts_with(string: C!#\, find: C!#\) INLINE BOOL
 			:= starts_with(buf(string), buf(find));
 	}
 
@@ -64,9 +59,9 @@ INCLUDE 'std/options'
 	{
 		PRIVATE Content: [C!]Buffer;
 
-		CONSTRUCTOR() {}
+		{} {}
 		(// Creates a 0-terminated copy of a C string. /)
-		CONSTRUCTOR(str: C #\, helper::CString):
+		{str: C #\, :cstring}:
 			Content(clone(str, str::len(str)+1))
 		{
 			// Remove the terminating 0-byte from the content.
@@ -74,29 +69,27 @@ INCLUDE 'std/options'
 		}
 
 		(// Creates a 0-terminated copy of a buffer. /)
-		CONSTRUCTOR(str: [C#]Buffer #&, helper::CString):
+		{str: [C#]Buffer #&, :cstring}:
 			Content([C!]alloc(str.Size+1))
 		{
 			range::copy_construct(Content.Data, str.Data, str.Size);
-			__rl::CONSTRUCTOR(Content.Data[Content.Size-1], 0);
+			Content.Data[Content.Size-1].{0};
 			// Remove terminating 0-byte from the content.
 			Content.Size--;
 		}
 
 		(// Creates a 0-terminated copy of a string. /)
-		CONSTRUCTOR(str: [C!]String #&, helper::CString):
-			String(str.Content, std::cstring);
+		{str: [C!]String #&, :cstring}:
+			String(str.Content, :cstring);
 
-		CONSTRUCTOR(data: [C#]Buffer #&): Content(clone(data));
-		CONSTRUCTOR(data: [C!]Buffer #&, Transfer): Content(data);
+		{data: [C#]Buffer #&}: Content(clone(data));
+		{data: [C!]Buffer #&, :transfer}: Content(data);
 
-		CONSTRUCTOR(str: C #\):
+		{str: C #\}:
 			Content(clone(str, str::len(str)));
-		CONSTRUCTOR(
-			cpy: [C]String #&):
+		{cpy: [C]String #&}:
 			Content(clone(cpy.Content));
-		CONSTRUCTOR(
-			mv: [C]String &&):
+		{mv: [C]String &&}:
 			Content(mv.Content)
 		{
 			mv.Content := NULL;
@@ -108,14 +101,14 @@ INCLUDE 'std/options'
 			Content := NULL;
 		}
 
-		ASSIGN(rhs: [C!]String#&) [C!]String& := help::copy_assign(*THIS, rhs);
-		ASSIGN(rhs: [C!]String&&) [C!]String& := help::move_assign(*THIS, rhs);
+		THIS:=(rhs: [C!]String#&) [C!]String& := help::copy_assign(THIS, rhs);
+		THIS:=(rhs: [C!]String&&) [C!]String& := help::move_assign(THIS, rhs);
 
 		# data() INLINE ::= Content.Data;
-		# size() INLINE ::= Content.Size ? Content.Size: 0;
+		# ##THIS INLINE ::= Content.Size ? Content.Size: 0;
 		# content() INLINE [C!#]Buffer := Content;
 		content() INLINE ::= Content;
-		# SUBSCRIPT(i: UM) ::= Content[i];
+		# THIS[i: UM]#& ::= Content[i];
 
 		append(str: [C#]Buffer #&) VOID
 			:= append(str.Data, str.Size);
@@ -125,7 +118,7 @@ INCLUDE 'std/options'
 			range::copy_construct(new.Data, Content.Data, Content.Size);
 			range::copy_construct(new.Data+Content.Size, str, size);
 			DESTRUCTOR();
-			CONSTRUCTOR(new, std::transfer);
+			THIS.{new, :transfer};
 		}
 
 		append(str: C #\) VOID := append(str::buf(str));
@@ -145,6 +138,6 @@ INCLUDE 'std/options'
 			::= str::starts_with(<[C#]Buffer>(Content), str);
 	}
 
-	TYPE Utf8 := [char]String;
+	TYPE Utf8 := [CHAR]String;
 	TYPE Utf32 := [C32]String;
 }

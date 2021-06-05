@@ -1,0 +1,13 @@
+(/rl/)
+
+INCLUDE 'std/string'
+INCLUDE 'std/io/stream'
+
+::std StreamBuffer -> std::Utf8, std::io::OStream
+{
+	FINAL write_some(data: VOID #\, size: UM) UM
+	{
+		append([CHAR#]Buffer(<CHAR #\>(data), size));
+		RETURN size;
+	}
+}

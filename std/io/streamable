@@ -1,0 +1,23 @@
+(/rl/)
+
+INCLUDE 'std/io/stream'
+INCLUDE 'std/memory'
+
+::std::io CONCEPT Streamable
+{
+	# stream(into: OStream &) VOID;
+
+	# stream(into: OStream &&) VOID { stream(into); }
+}
+
+::std::io::detail [T: TYPE]BufStreamable
+{
+	PRIVATE Buf: [T!]Buffer;
+
+	{buf: [T!]Buffer}: Buf(buf);
+
+	# stream(into: OStream &) VOID
+	{
+		into.write(Buf);
+	}
+}

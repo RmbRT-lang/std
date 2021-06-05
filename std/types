@@ -14,14 +14,14 @@
 ::std TYPE S8 := ::int64_t;
 ::std TYPE U8 := ::uint64_t;
 
-(// C8-32, Char
+(// C8-32, SYM
 
 	C8-32 are 8-32 bit words that make up the elements of 8-32 bit strings. They should only be used in the context of strings, and never as a representation of a single character, to keep the semantics clean.
 
-	Char is used to represent a full unicode codepoint, i.e., a single character.
+	SYM is used to represent a full unicode codepoint, i.e., a single character.
 /)
 
-::std TYPE C8 := ::char;
+::std TYPE C8 := CHAR;
 ::std TYPE C16 := U2;
 ::std TYPE C32 := U4;
-::std TYPE Char := U4;
+::std TYPE SYM := U4;

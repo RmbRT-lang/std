@@ -3,36 +3,55 @@
 INCLUDE 'std/range'
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
-INCLUDE 'std/pass'
 INCLUDE 'std/types'
+INCLUDE 'std/math/limit'
+INCLUDE 'std/iterator'
 
 ::std [T: TYPE] Vector
 {
 PRIVATE:
 	Content: [T!]Buffer;
 PUBLIC:
-	CONSTRUCTOR();
-	CONSTRUCTOR(size: UM):
+	{};
+	{size: UM}:
 		Content([T]alloc(size))
 	{
 		FOR(i ::= 0; i < Content.Size; i++)
-			__rl::CONSTRUCTOR(Content.Data[i]);
+			Content.Data[i].{};
 	}
-	CONSTRUCTOR(copy: [T!]Vector#&):
+	{copy: [T!]Vector#&}:
 		Content(clone(copy.Content));
-	CONSTRUCTOR(move: [T!]Vector&&):
+	{move: [T!]Vector&&}:
 		Content(move.Content)
 	{
 		move.Content := NULL;
 	}
 
-	CONSTRUCTOR(pass::Copy, content: [T#]Buffer #&):
+	{:copy, content: [T#]Buffer #&}:
 		Content(clone(content));
-	CONSTRUCTOR(pass::Move, content: [T!]Buffer #&):
-		Content(content);
+	{:move, content: [T!]Buffer &&}:
+		Content(content)
+	{
+		content := NULL;
+	}
 
-	ASSIGN(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(*THIS, move);
-	ASSIGN(copy: [T!]Vector#&) [T!]Vector & := std::help::copy_assign(*THIS, copy);
+	[A...:TYPE]
+	{:emplace, a: A!&&...}:
+		Content(NULL)
+	{
+		_emplace_back(<A!&&>(a)...);
+	}
+
+	[A:TYPE; A_...:TYPE]
+	PRIVATE _emplace_back(a: A!&&, a_: A_!&&...) INLINE VOID
+	{
+		THIS += <A!&&>(a);
+		_emplace_back(<A_!&&>(a_)...);
+	}
+	PRIVATE _emplace_back() INLINE VOID {}
+
+	THIS:=(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(THIS, move);
+	THIS:=(copy: [T!]Vector#&) [T!]Vector & := std::help::copy_assign(THIS, copy);
 
 	DESTRUCTOR
 	{
@@ -43,20 +62,9 @@ PUBLIC:
 			free(Content);
 	}
 
-	push_back(v: T #&) VOID
-	{
-		emplace_back(v);
-	}
-
-	push_back(v: T &&) VOID
-	{
-		emplace_back(__cpp_std::move(v));
-	}
-
-
 	erase(at: UM) VOID
 	{
-		ASSERT(at < size());
+		ASSERT(at < ##THIS);
 
 		new ::= [T]alloc(Content.Size-1);
 		range::move_construct(new.Data, Content.Data, at);
@@ -68,8 +76,9 @@ PUBLIC:
 
 	PRIVATE grow(at: UM) VOID
 	{
-		ASSERT(at <= size());
+		ASSERT(at <= ##THIS);
 		new ::= [T]alloc(Content.Size+1);
+		ASSERT(new.Data != NULL);
 		range::move_construct(new.Data, Content.Data, at);
 		range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
 		IF(Content)
@@ -77,107 +86,46 @@ PUBLIC:
 		Content := new;
 	}
 
-	emplace(at: UM) VOID
+	[A...:TYPE]
+	emplace(at: UM, a: A!&&...) INLINE VOID
 	{
-		ASSERT(at <= size());
+		ASSERT(at <= ##THIS);
 
 		grow(at);
-		__rl::CONSTRUCTOR(
-			Content.Data[at]);
-	}
-	emplace_back() VOID
-	{
-		emplace(size());
+		Content.Data[at].{<A!&&>(a)...};
 	}
 
 	[A:TYPE]
-	emplace(at: UM, a: A!&&) VOID
+	THIS+=(a: A!&&) VOID
 	{
-		ASSERT(at <= size());
-
-		grow(at);
-		__rl::CONSTRUCTOR(
-			Content.Data[at],
-			__cpp_std::[A!]forward(a));
+		emplace(##THIS, <A!&&>(a));
 	}
+
 	[A:TYPE]
-	emplace_back(a: A!&&) VOID
-	{
-		emplace(size(), __cpp_std::[A!]forward(a));
-	}
+	THIS+=(at: {{:at, UM}, A!&&}) VOID
+	{ emplace(at.(1), <A!&&>(at.(2))); }
 
-	[A:TYPE, B:TYPE]
-	emplace(at: UM, a: A!&&, b: B!&&) VOID
-	{
-		ASSERT(at <= size());
+	[A:TYPE]
+	THIS+=(at: {{:at, :back}, A!&&}) VOID
+	{ emplace(##THIS, <A!&&>(at.(2))); }
 
-		grow(at);
-		__rl::CONSTRUCTOR(
-			Content.Data[at],
-			__cpp_std::[A!]forward(a),
-			__cpp_std::[B!]forward(b));
-	}
-	[A:TYPE, B:TYPE]
-	emplace_back(a: A!&&, b: B!&&) VOID
-	{
-		emplace(size(), __cpp_std::[A!]forward(a), __cpp_std::[B!]forward(b));
-	}
+	[A:TYPE]
+	THIS+=(at: {{:at, :front}, A!&&}) VOID
+	{ emplace(0, <A!&&>(at.(2))); }
 
-	[A:TYPE, B:TYPE, C:TYPE]
-	emplace(at: UM, a: A!&&, b: B!&&, c: C!&&) VOID
-	{
-		ASSERT(at <= size());
+	THIS[i: UM] INLINE T!& := Content[i];
+	# THIS[i: UM] INLINE T!#& := Content[i];
 
-		grow(at);
-		__rl::CONSTRUCTOR(
-			Content.Data[at],
-			__cpp_std::[A!]forward(a),
-			__cpp_std::[B!]forward(b),
-			__cpp_std::[C!]forward(c));
-	}
+	# <BOOL> := Content.Size;
 
-	[A:TYPE, B:TYPE, C:TYPE]
-	emplace_back(a: A!&&, b: B!&&, c: C!&&) VOID
-	{
-		emplace(
-			size(),
-			__cpp_std::[A!]forward(a),
-			__cpp_std::[B!]forward(b),
-			__cpp_std::[C!]forward(c));
-	}
-
-	[A:TYPE, B:TYPE, C:TYPE, D:TYPE]
-	emplace(at: UM, a: A!&&, b: B!&&, c: C!&&, d: D!&&) VOID
-	{
-		ASSERT(at <= size());
-
-		grow(at);
-		__rl::CONSTRUCTOR(
-			Content.Data[at],
-			__cpp_std::[A!]forward(a),
-			__cpp_std::[B!]forward(b),
-			__cpp_std::[C!]forward(c),
-			__cpp_std::[D!]forward(d));
-	}
-
-	[A:TYPE, B:TYPE, C:TYPE, D:TYPE]
-	emplace_back(a: A!&&, b: B!&&, c: C!&&, d: D!&&) VOID
-	{
-		emplace(
-			size(),
-			__cpp_std::[A!]forward(a),
-			__cpp_std::[B!]forward(b),
-			__cpp_std::[C!]forward(c),
-			__cpp_std::[D!]forward(d));
-	}
-
-	SUBSCRIPT(i: UM) INLINE ::= Content[i];
-	# SUBSCRIPT(i: UM) INLINE ::= Content[i];
-	# size() INLINE UM := Content.Size;
+	# ##THIS INLINE UM := Content.Size;
 	# data() INLINE T! #* := Content.Data;
-	# empty() INLINE bool := size() == 0;
+	# empty() INLINE BOOL := ##THIS == 0;
 	# back() INLINE T!#& := Content[Content.Size-1];
 	back() INLINE T!& := Content[Content.Size-1];
+
+	# front() INLINE T!#& := Content[0];
+	front() INLINE T!& := Content[0];
 
 	# content() INLINE [T!#]Buffer := Content;
 	content() INLINE ::= Content;
@@ -186,4 +134,26 @@ PUBLIC:
 		:= Content.range(start, length);
 	range(start: UM, length: UM) [T!]Buffer
 		:= Content.range(start, length);
+
+	start() INLINE [T!]Vector-Iterator := (&THIS, 0);
+	# start() INLINE [T!]Vector#-Iterator := (&THIS, 0);
+	end() INLINE [T!]Vector-Iterator := (&THIS, ##THIS-1);
+	# end() INLINE [T!]Vector#-Iterator := (&THIS, ##THIS-1);
+
+	[TCmp:TYPE]
+	Cmp
+	{
+		STATIC cmp(a: [T!]Vector#&, b:[T!]Vector#&) SM
+		{
+			len # ::= math::min(##a, ##b);
+			FOR(i ::= 0; i < len; i++)
+			{
+				sign ::= TCmp::cmp(a, b);
+				IF(sign) RETURN sign;
+			}
+			IF(##a == ##b)
+				RETURN 0;
+			RETURN ##a > ##b ? 1 : -1;
+		}
+	}
 }

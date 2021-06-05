@@ -5,6 +5,7 @@ INCLUDE 'std/range'
 INCLUDE 'std/help'
 INCLUDE 'std/tags'
 INCLUDE 'std/math/limit'
+INCLUDE 'std/iterator'
 
 ::std
 {
@@ -30,32 +31,38 @@ INCLUDE 'std/math/limit'
 			RETURN lhs.Size - rhs.Size;
 	}
 
+	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID
+	{
+		d ::= <U1 \>(dst);
+		s ::= <U1 #\>(src);
+		WHILE(size--)
+			*d++ := *s++;
+	}
+
 	(// A buffer keeps track of allocated memory but does not own it. /)
 	[T: TYPE] Buffer
 	{
 		Data: T! *;
 		Size: UM;
 
-		CONSTRUCTOR(NULL_t): Data(NULL), Size(0);
-		CONSTRUCTOR(): Data(NULL), Size(0);
-		CONSTRUCTOR(s: T! \, c: UM): Data(s), Size(c)
+		{NULL_t}: Data(NULL), Size(0);
+		{}: Data(NULL), Size(0);
+		{s: T! \, c: UM}: Data(s), Size(c)
 		{
 			ASSERT(!Size || Data);
 		}
 
-		# CONVERT([T!#]Buffer!) INLINE NOTYPE! := [T!#]Buffer(Data, Size);
-		# CONVERT(bool!) INLINE NOTYPE! := Data != NULL;
+		# <[T!#]Buffer> INLINE := (Data, Size);
+		# <BOOL> INLINE := Data != NULL;
 
-		# end() INLINE T! * := Data + Size;
-
-		# SUBSCRIPT(i: UM) T!#&
+		# THIS[i: UM] T!#&
 		{
-			range::check(Size, i);
+			std::range::check(Size, i);
 			RETURN Data[i];
 		}
-		SUBSCRIPT(i: UM) T!&
+		THIS[i: UM] T!&
 		{
-			range::check(Size, i);
+			std::range::check(Size, i);
 			RETURN Data[i];
 		}
 
@@ -63,8 +70,8 @@ INCLUDE 'std/math/limit'
 			start: UM,
 			size: UM) [T!]Buffer
 		{
-			range::check_subrange(start, size, Size);
-			RETURN [T!]Buffer(Data + start, size);
+			std::range::check_subrange(start, size, Size);
+			RETURN (Data + start, size);
 		}
 
 		# drop_start(start: UM) [T!]Buffer
@@ -73,27 +80,34 @@ INCLUDE 'std/math/limit'
 			:= range(0, Size - count);
 		# cut(size: UM) [T!]Buffer
 			:= range(0, size);
+
+		# ##THIS INLINE UM := Size;
+
+		start() INLINE [T!]Buffer-Iterator := (&THIS, 0);
+		# start() INLINE [T!]Buffer#-Iterator := (&THIS, 0);
+		end() INLINE [T!]Buffer-Iterator := (&THIS, Size-1);
+		# end() INLINE [T!]Buffer#-Iterator := (&THIS, Size-1);
 	}
 
 	[T: TYPE] Dynamic
 	{
 		Ptr: T! *;
-		CONSTRUCTOR(): Ptr(NULL);
-		CONSTRUCTOR(p: T! *): Ptr(p);
-		CONSTRUCTOR(move: [T!]Dynamic! &&):
+		{}: Ptr(NULL);
+		{NULL_t}: Ptr(NULL);
+		{:gc, p: T! *}: Ptr(p);
+		{move: [T!]Dynamic! &&}:
 			Ptr(move.Ptr)
 		{
 			move.Ptr := NULL;
 		}
 
-		ASSIGN(p: T! *) [T!]Dynamic & := help::custom_assign(*THIS, p);
+		THIS:=(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(THIS, move);
+		THIS:=(NULL_t) & ::= help::custom_assign(THIS, NULL);
 
-		ASSIGN(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(*THIS, move);
-
-		# LOG_NOT() INLINE bool := !Ptr;
-		# CONVERT(bool) INLINE NOTYPE! := Ptr;
-		# CONVERT(T! \) INLINE NOTYPE! := Ptr;
-		# PTRACCESS() INLINE T! \ := Ptr;
+		# !THIS INLINE BOOL := !Ptr;
+		# <BOOL> INLINE := Ptr;
+		# <T! \> INLINE := Ptr;
+		# *THIS INLINE T! & := *Ptr;
 
 		release() T! *
 		{
@@ -105,28 +119,26 @@ INCLUDE 'std/math/limit'
 		DESTRUCTOR
 		{
 			IF(Ptr)
-				::delete(Ptr);
+				delete(Ptr);
 		}
 	}
 
-	[T: TYPE] dup(value: T! #&) T * := ::[T]new(value);
-	[T: TYPE] dup(value: T! &&) T * := ::[T]new(__cpp_std::move(value));
-	[T: TYPE] dup_mv(value: T! &) T * := ::[T]new(__cpp_std::move(value));
-	[T: TYPE] dup_mv(value: T! &&) T * := ::[T]new(__cpp_std::move(value));
+	[T: TYPE] dup(value: T! #&) T \ := [T]new(value);
+	[T: TYPE] dup(value: T! &&) T \ := [T]new(&&value);
 
 	[T: TYPE]
 	clone(data: T! #\, size: UM) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
 		range::copy_construct(tmp.Data, data, size);
-		RETURN [T]Buffer(tmp.Data, tmp.Size);
+		RETURN (tmp.Data, tmp.Size);
 	}
 	[T: TYPE]
 	clone_move(data: T! #\, size: UM) [T]Buffer
 	{
 		tmp ::= [T]alloc(size);
 		range::move_construct(tmp.Data, data, size);
-		RETURN [T]Buffer(tmp.Data, tmp.Size);
+		RETURN (tmp.Data, tmp.Size);
 	}
 
 	[T: TYPE]
@@ -134,18 +146,33 @@ INCLUDE 'std/math/limit'
 
 
 	alloc(bytes: UM) VOID* := detail::libc::malloc(bytes);
-	[T: TYPE] alloc() INLINE ::= <T \>(alloc(SIZEOF(T)));
+	[T: TYPE] alloc() INLINE T \
+	{
+		ptr ::= alloc(SIZEOF(T));
+		ASSERT(ptr != NULL);
+		RETURN <T \>(ptr);
+	}
+
 	[T: TYPE] alloc(count: UM) [T]Buffer
-		:= [T]Buffer(
-			<T \>(detail::libc::malloc(count * SIZEOF(T))),
-			count);
+	{
+		b: [T]Buffer(<T \>(detail::libc::malloc(count * SIZEOF(T))), count);
+		ASSERT(!count || b.Data);
+		RETURN b;
+	}
+
+	[T: TYPE; Args...: TYPE] new(args: Args!&&...) T! *
+	{
+		ptr: [T]Dynamic := :gc([T]alloc());
+		(*ptr).{<Args!&&>(args)...};
+		RETURN ptr.release();
+	}
 
 
 	calloc(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
 	[T: TYPE] calloc() T *
 	{
 		v ::= <T \>(alloc(SIZEOF(T)));
-		__rl::CONSTRUCTOR(v);
+		v->{};
 		RETURN v;
 	}
 	[T: TYPE] calloc(count: UM) [T]Buffer
@@ -164,6 +191,12 @@ INCLUDE 'std/math/limit'
 		free(v);
 	}
 
+	[T: TYPE] delete(ptr: T! \) INLINE VOID
+	{
+		ptr->~;
+		free(ptr);
+	}
+
 
 	free(mem: VOID#\) VOID  := detail::libc::free(mem);
 
@@ -176,7 +209,7 @@ INCLUDE 'std/math/limit'
 
 ::std::detail::libc
 {
-	EXTERN malloc(ulong) VOID *;
+	EXTERN malloc(UM) VOID *;
 	EXTERN calloc(UM, UM) VOID *;
 	EXTERN free(VOID #\) VOID;
 	EXTERN realloc(VOID #\, UM) VOID;

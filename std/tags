@@ -2,14 +2,14 @@
 
 ::std NoCopy
 {
-	CONSTRUCTOR();
-	CONSTRUCTOR(NoCopy &&);
-	ASSIGN(NoCopy &&) NoCopy & := *THIS;
+	{};
+	{NoCopy &&};
+	THIS:=(NoCopy &&) NoCopy & := THIS;
 }
 
 ::std NoMove
 {
-	CONSTRUCTOR();
-	CONSTRUCTOR(NoMove #&);
-	ASSIGN(NoMove #&) NoMove & := *THIS;
+	{};
+	{NoMove #&};
+	THIS:=(NoMove #&) NoMove & := THIS;
 }

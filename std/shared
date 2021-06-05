@@ -1,0 +1,73 @@
+(/rl/)
+
+INCLUDE 'std/help'
+INCLUDE 'std/memory'
+
+::std [T: TYPE] Shared
+{
+	PRIVATE Alloc
+	{
+		P: T! *;
+		Refs: UM;
+		{p: T! *, refs: UM}:
+			P(p), Refs(refs);
+
+		(// Returns the address of the wrapped object. /)
+		# ptr() INLINE T! * := P ? P : <T! *>(<UM>(&THIS) + SIZEOF(#THIS));
+
+		ref() INLINE VOID { ++Refs; }
+
+		deref() VOID 
+		{
+			IF(!Refs)
+				THROW;
+
+			IF(!--Refs)
+			{
+				ptr()->~;
+				IF(P)
+					std::free(P);
+				std::free(&THIS);
+			}
+		}
+	}
+
+	PRIVATE P: Alloc *;
+
+	{}: P(NULL);
+	{NULL_t}: P(NULL);
+	{p: T! *, :transfer}: P([Alloc]new(p, 1, FALSE));
+	{mv: [T!]Shared &&}: P(mv.P) { mv.{}; }
+	{cpy: [T!]Shared#&}: P(cpy.P) { IF(P) P->ref(); }
+	PRIVATE {alloc: [T!]Shared::Alloc *}: P(alloc);
+
+	{:create}:P(alloc_impl()) { get()->{}; }
+
+	[A...:TYPE]
+	{:create, a: A!&&...}: P(alloc_impl())
+	{ get()->{<A!&&>(a)...}; }
+
+	DESTRUCTOR { IF(P) P->deref(); }
+
+	# <T! *> INLINE := P ? P->ptr() : NULL;
+	# <BOOL> INLINE := P != NULL;
+
+	THIS:=(cpy: [T!]Shared #&) ::= help::copy_assign(THIS, cpy);
+	THIS:=(mv: [T!]Shared &&) ::= help::move_assign(THIS, mv);
+
+	# get() T! * { ASSERT(P != NULL); RETURN P->ptr(); }
+
+	# *THIS T! &
+	{
+		ASSERT(P != NULL);
+		RETURN *P->ptr();
+	}
+
+	PRIVATE STATIC alloc_impl() Alloc \
+	{
+		ret ::= <Alloc \>(std::alloc(SIZEOF(Alloc) + SIZEOF(T!)));
+		ret->{NULL, 1};
+		RETURN ret;
+	}
+	STATIC alloc() [T!]Shared := alloc_impl();
+}

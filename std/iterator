@@ -1,0 +1,41 @@
+(/rl/)
+
+::std [V: TYPE]
+Iterator
+{
+	PRIVATE Elems: V! \;
+	PRIVATE Current: UM;
+
+	{elems: V! \, start: UM}:
+		Elems(elems),
+		Current(start);
+
+	# get() & ::= (*Elems)[Current];
+
+	next() VOID
+	{
+		ASSERT(Current < ##*Elems);
+		++Current;
+	}
+
+	++THIS INLINE [V!]Iterator& { next(); RETURN THIS; }
+	THIS++ INLINE [V!]Iterator { v ::= THIS; next(); RETURN v; }
+	--THIS INLINE [V!]Iterator& { prev(); RETURN THIS; }
+	THIS-- INLINE [V!]Iterator { v ::= THIS; prev(); RETURN v; }
+
+	# *THIS INLINE & ::= get();
+
+	# THIS+(offset: UM) [V!]Iterator
+	{
+		ASSERT(Current+offset < ##*Elems);
+		RETURN (Elems, Current + offset);
+	}
+
+	prev() VOID
+	{
+		ASSERT(~Current);
+		--Current;
+	}
+
+	# <BOOL> INLINE := Current < ##*Elems;
+}

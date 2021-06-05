@@ -1,8 +1,8 @@
 INCLUDE "../std/set"
 
 
-intCmp { STATIC cmp(a: int, b: int) ::= a-b; }
-TYPE IntVectorSet := std::[int, intCmp]VectorSet;
+intCmp { STATIC cmp(a: INT, b: INT) ::= a-b; }
+TYPE IntVectorSet := std::[INT, intCmp]VectorSet;
 
 ::std
 {
@@ -48,14 +48,14 @@ TYPE IntVectorSet := std::[int, intCmp]VectorSet;
 		ASSERT(!set.find(4) && !set.find(4, &l));
 	}
 
-	TEST "VectorSet::range"
+	TEST "VectorSet::Iterator"
 	{
 		set: IntVectorSet;
 		set.insert(1);
 		set.insert(0);
 		set.insert(3);
 
-		i ::= set.range();
+		i ::= set.start();
 		ASSERT(i && i.get() == 0);
 		i.next();
 		ASSERT(i && i.get() == 1);

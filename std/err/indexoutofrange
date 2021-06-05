@@ -12,17 +12,12 @@ INCLUDE 'std/io/stream'
 	Size: UM;
 	Index: UM;
 
-	CONSTRUCTOR(
-		start: UM,
-		size: UM,
-		index: UM):
+	{start: UM, size: UM, index: UM}:
 		Start(start),
 		Size(size),
 		Index(index);
 
-	CONSTRUCTOR(
-		size: UM,
-		index: UM):
+	{size: UM, index: UM}:
 		Start(0),
 		Size(size),
 		Index(index);

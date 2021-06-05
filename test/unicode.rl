@@ -32,9 +32,9 @@ INCLUDE "../std/memory"
 		ASSERT(test::encode(0x00B4, "´"));
 		ASSERT(test::encode(0x20AC, "€"));
 	}
-	::test encode(c: Char, str: char#\) bool
+	::test encode(c: SYM, str: CHAR#\) BOOL
 	{
-		buf: char[4];
+		buf: CHAR[4];
 		len ::= utf8::encode(c, buf);
 		RETURN size(buf[0]) == len
 			&& memcmp(buf, str, len) == 0;

@@ -1,0 +1,79 @@
+(/rl/)
+
+INCLUDE 'std/set'
+
+::std [K:TYPE; V:TYPE; Cmp:TYPE] Map
+{
+	PRIVATE TupleCmp
+	{
+		[T:TYPE]
+		STATIC cmp(a: T!&&, b: {K!,V!}#&) ::= Cmp::cmp(<T!&&>(a), b.(0));
+	}
+
+	PRIVATE Set: std::[{K!,V!}, TupleCmp]VectorSet;
+
+	TYPE Location := [{K!,V!}, TupleCmp]VectorSet::Location;
+
+	[T:TYPE]
+	find(k: T! #&, loc: Location \) V! *
+	{
+		IF(it ::= Set.find(k, loc))
+			RETURN &it->(1);
+		ELSE
+			RETURN NULL;
+	}
+
+
+	[T:TYPE]
+	# find(k: T! #&, loc: Location \) V! #*
+	{
+		IF(it ::= Set.find(k, loc))
+			RETURN &it->(1);
+		ELSE
+			RETURN NULL;
+	}
+
+	[T:TYPE]
+	find(k: T! #&) V! *
+	{
+		dummy: Location;
+		RETURN find(k, &dummy);
+	}
+
+	[T:TYPE]
+	# find(k: T! #&) V! *
+	{
+		dummy: Location;
+		RETURN find(k, &dummy);
+	}
+
+	insert(k: K!, v: V!) BOOL
+	{
+		loc: Location;
+		IF(find(k, &loc))
+			RETURN FALSE;
+		Set.emplace_at(loc, (&&k, &&v));
+		RETURN TRUE;
+	}
+
+	[T:TYPE]
+	remove(k: T! #&) INLINE BOOL := Set.remove(k);
+	[T:TYPE]
+	remove(k: T! #&, deleted: V! \) BOOL
+	{
+		loc: Location;
+		IF(it ::= find(k, &loc))
+		{
+			*deleted := &&*it;
+			Set.remove_at(loc);
+			RETURN TRUE;
+		}
+		RETURN FALSE;
+	}
+
+	start() INLINE ::= Set.start();
+	# start() INLINE ::= Set.start();
+	end() INLINE ::= Set.end();
+	# end() INLINE ::= Set.end();
+	# empty() INLINE BOOL := Set.empty();
+}

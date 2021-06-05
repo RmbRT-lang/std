@@ -20,7 +20,7 @@ INCLUDE 'std/err/indexoutofrange'
 		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
-			__rl::CONSTRUCTOR(range[i]);
+			range[i].{};
 	}
 
 
@@ -30,7 +30,7 @@ INCLUDE 'std/err/indexoutofrange'
 		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
-			__rl::CONSTRUCTOR(dst[i], src[i]);
+			dst[i].{src[i]};
 	}
 
 	[T: TYPE] move_construct(
@@ -39,7 +39,7 @@ INCLUDE 'std/err/indexoutofrange'
 		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
-			__rl::CONSTRUCTOR(dst[i], ::__cpp_std::move(src[i]));
+			dst[i].{::__cpp_std::move(src[i])};
 	}
 
 	[T: TYPE] destroy(

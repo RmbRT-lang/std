@@ -15,45 +15,45 @@ INCLUDE 'std/tags'
 		PRIVATE F: libc::FileHandle \;
 		NoCopy;
 
-		CONSTRUCTOR(h: libc::FileHandle \): F(h)
+		{h: libc::FileHandle \}: F(h)
 		{
 			IF(!F)
 				THROW;
 		}
 		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
-		write(d: VOID #\, s: UM) INLINE ::= io::OStream::FROM(THIS).write(d, s);
+		write(d: VOID #\, s: UM) INLINE ::= <<<io::OStream>>>(&THIS).write(d, s);
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
-		flush() INLINE int := libc::fflush(F);
-		eof() INLINE bool := libc::feof(F);
-		line(d: char \, s: UM) INLINE char * := libc::fgets(d, s, F);
+		flush() INLINE INT := libc::fflush(F);
+		eof() INLINE BOOL := libc::feof(F);
+		line(d: CHAR \, s: UM) INLINE CHAR * := libc::fgets(d, s, F);
 
 		DESTRUCTOR { libc::fclose(F); }
-		CONSTRUCTOR(file: char #\, mode: char#\):
+		{file: CHAR #\, mode: CHAR#\}:
 			F(libc::fopen(file, mode))
 		{
 			IF(!F)
 				THROW;
 		}
 
-		print(str: char #\) ::= libc::fputs(str, F);
+		print(str: CHAR #\) ::= libc::fputs(str, F);
 	}
 }
 
 ::std::io::libc
 {
 	FileHandle {}
-	EXTERN fopen(char#\,char#\) FileHandle *;
+	EXTERN fopen(CHAR#\,CHAR#\) FileHandle *;
 	EXTERN fclose(FileHandle *) VOID;
 	EXTERN fwrite(VOID#\, size_t, size_t, FileHandle *) size_t;
 	EXTERN fread(VOID\, size_t, size_t, FileHandle *) size_t;
-	EXTERN feof(FileHandle *) int;
-	EXTERN ferror(FileHandle *) int;
-	EXTERN fflush(FileHandle \) int;
-	EXTERN fputs(char #\, FileHandle \) int;
-	EXTERN fgets(char\, int, FileHandle \) char *;
+	EXTERN feof(FileHandle *) INT;
+	EXTERN ferror(FileHandle *) INT;
+	EXTERN fflush(FileHandle \) INT;
+	EXTERN fputs(CHAR #\, FileHandle \) INT;
+	EXTERN fgets(CHAR\, INT, FileHandle \) CHAR *;
 
 	EXTERN stdin: FileHandle *;
 	EXTERN stdout: FileHandle *;
 	EXTERN stderr: FileHandle *;
-	EXTERN errno: int;
+	EXTERN errno: INT;
 }

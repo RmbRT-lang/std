@@ -6,7 +6,7 @@ INCLUDE 'std/error'
 {
 	FileName: std::Utf8;
 
-	CONSTRUCTOR(name: std::Utf8): FileName(__cpp_std::move(name));
+	{name: std::Utf8}: FileName(__cpp_std::move(name));
 
 	# FINAL print(o: std::io::OStream &) VOID
 	{

@@ -6,56 +6,35 @@ INCLUDE 'std/vector'
 ::std [T: TYPE] CONCEPT Set
 {
 	(// Queries whether a value is in the set. /)
-	# has(key: T! #&) bool;
+	# has(key: T! #&) BOOL;
 
 	(// Inserts a value into the set.
 	@return
 		Whether the value was not in the set yet. /)
-	insert(v: T! #&) bool;
+	insert(v: T! #&) BOOL;
 
 	(// Inserts a value into the set.
 	@return
 		Whether the value was not in the set yet. /)
-	insert(v: T! &&) bool;
+	insert(v: T! &&) BOOL;
 
 	(// Removes a value from the set.
 	@return
 		Whether the value was in the set. /)
-	remove(v: T! #&) bool;
+	remove(v: T! #&) BOOL;
 }
 
-::std [T: TYPE, Cmp: TYPE] VectorSet
+::std [T: TYPE; Cmp: TYPE] VectorSet
 {
 	PRIVATE Elems: [T!]Vector;
 
 	TYPE Location := UM;
 
-	Iterator
-	{
-		PRIVATE Elems: [T!]Vector #\;
-		PRIVATE Current: UM;
-
-		CONSTRUCTOR(
-			elems: [T!]Vector #\,
-			start: UM):
-				Elems(elems),
-				Current(start);
-
-		# get() T! #& := (*Elems)[Current];
-
-		next() VOID
-		{
-			IF(*THIS)
-				++Current;
-		}
-
-		# CONVERT(bool) INLINE NOTYPE!
-			:= Current < Elems->size();
-	}
-
-	# range() INLINE [T!, Cmp!]VectorSet::Iterator
-		:= [T!, Cmp!]VectorSet::Iterator(&Elems, 0);
-	# empty() INLINE bool := Elems.empty();
+	start() INLINE ::= Elems.start();
+	# start() INLINE ::= Elems.start();
+	end() INLINE ::= Elems.end();
+	# end() INLINE ::= Elems.end();
+	# empty() INLINE BOOL := Elems.empty();
 
 	[V: TYPE]
 	# find(
@@ -73,7 +52,7 @@ INCLUDE 'std/vector'
 	) T! # *
 	{
 		l: UM := 0;
-		r: UM := Elems.size();
+		r: UM := ##Elems;
 
 		i: UM := 0;
 		WHILE(l < r)
@@ -111,7 +90,7 @@ INCLUDE 'std/vector'
 	) T! *
 	{
 		l: UM := 0;
-		r: UM := Elems.size();
+		r: UM := ##Elems;
 
 		i: UM := 0;
 		WHILE(l < r)
@@ -143,7 +122,7 @@ INCLUDE 'std/vector'
 		v: T!&&) INLINE T! &
 		:= emplace_at(position, __cpp_std::move(v));
 
-	insert(v: T#&) bool
+	insert(v: T#&) BOOL
 	{
 		loc: Location;
 		IF(find(v, &loc))
@@ -152,7 +131,7 @@ INCLUDE 'std/vector'
 		RETURN TRUE;
 	}
 
-	insert(v: T&&) bool
+	insert(v: T&&) BOOL
 	{
 		loc: Location;
 		IF(find(v, &loc))
@@ -168,7 +147,7 @@ INCLUDE 'std/vector'
 	}
 
 	[V: TYPE]
-	remove(v: V! #&) bool
+	remove(v: V! #&) BOOL
 	{
 		loc: Location;
 		IF(find(v, &loc))
@@ -179,26 +158,26 @@ INCLUDE 'std/vector'
 		RETURN FALSE;
 	}
 
-
-	[A:TYPE]
-	emplace_at(
-		position: Location #&,
-		a0: A!&&) T! &
+	[V: TYPE]
+	remove(v: V! #&, deleted: T! \) BOOL
 	{
-		Elems.emplace(position, __cpp_std::[A!]forward(a0));
-		RETURN Elems[position];
+		loc: Location;
+		IF(it ::= find(v, &loc))
+		{
+			*deleted := &&*it;
+			remove_at(loc);
+			RETURN TRUE;
+		}
+		RETURN FALSE;
 	}
 
-	[A:TYPE, B:TYPE]
+
+	[A...:TYPE]
 	emplace_at(
 		position: Location #&,
-		a0: A!&&,
-		a1: B!&&) T! &
+		a: A!&&...) T! &
 	{
-		Elems.emplace(
-			position,
-			__cpp_std::[A!]forward(a0),
-			__cpp_std::[B!]forward(a1));
+		Elems.emplace(position, <A!&&>(a)...);
 		RETURN Elems[position];
 	}
 }

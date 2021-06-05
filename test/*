@@ -1,6 +1,0 @@
-(/rl/)
-
-INCLUDE "string.rl"
-INCLUDE "set.rl"
-INCLUDE "unicode.rl"
-INCLUDE "memory.rl"

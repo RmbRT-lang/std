@@ -9,10 +9,10 @@ INCLUDE 'std/io/stream'
 {
 	What: [io::Streamable]Dynamic;
 
-	CONSTRUCTOR(what: io::Streamable \): What(what);
-	CONSTRUCTOR(what: char #\):
-		What(dup(io::Streamable::FROM(
-			io::detail::[char#]BufStreamable(str::buf(what)))));
+	{what: io::Streamable \}: What(:gc, what);
+	{what: CHAR #\}:
+		What(:gc, dup(<<<io::Streamable>>>(
+			io::detail::[CHAR#]BufStreamable(str::buf(what)))));
 
 	# OVERRIDE print(
 		o: io::OStream &) VOID

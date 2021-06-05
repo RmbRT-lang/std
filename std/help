@@ -9,7 +9,7 @@
 	IF(&lhs != &rhs)
 	{
 		lhs.DESTRUCTOR();
-		lhs.CONSTRUCTOR(__cpp_std::move(rhs));
+		lhs.{__cpp_std::move(rhs)};
 	}
 
 	RETURN lhs;
@@ -28,18 +28,18 @@
 	IF(&lhs != &rhs)
 	{
 		lhs.DESTRUCTOR();
-		lhs.CONSTRUCTOR(rhs);
+		lhs.{rhs};
 	}
 
 	RETURN lhs;
 }
 
-::std::help [T: TYPE, V: TYPE] custom_assign(
+::std::help [T: TYPE; V: TYPE] custom_assign(
 	lhs: T! &,
 	rhs: V! &&
 ) INLINE T! &
 {
 	lhs.DESTRUCTOR();
-	lhs.CONSTRUCTOR(__cpp_std::[V!]forward(rhs));
+	lhs.{__cpp_std::[V!]forward(rhs)};
 	RETURN lhs;
 }

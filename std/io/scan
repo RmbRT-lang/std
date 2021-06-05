@@ -5,7 +5,7 @@ INCLUDE 'std/math/safe'
 
 ::std::io::scan
 {
-	[T:TYPE] dec(s: [char#]Buffer #&, v: T! &) bool
+	[T:TYPE] dec(s: [CHAR#]Buffer #&, v: T! &) BOOL
 	{
 		v := 0;
 		FOR(i ::= 0; i < s.Size; i++)
@@ -20,7 +20,7 @@ INCLUDE 'std/math/safe'
 		RETURN TRUE;
 	}
 
-	[T:TYPE] hex(s: [char#]Buffer, v: T! &) bool
+	[T:TYPE] hex(s: [CHAR#]Buffer, v: T! &) BOOL
 	{
 		v := 0;
 

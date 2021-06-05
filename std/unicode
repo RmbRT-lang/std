@@ -21,7 +21,7 @@ INCLUDE 'std/types'
 	is_follow(byte: C8) INLINE
 		::= byte & 0xc0 == 0x80;
 
-	point(in: C8 #\) Char
+	point(in: C8 #\) SYM
 	{
 		size: UM;
 		RETURN point(in, &size);
@@ -30,7 +30,7 @@ INCLUDE 'std/types'
 	point(
 		in: C8 #\,
 		size: UM \
-	) Char
+	) SYM
 	{
 		*size := utf8::size(in[0]);
 		IF(*size == 1)
@@ -38,7 +38,7 @@ INCLUDE 'std/types'
 
 		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
 
-		out: Char := <Char>(in[0] & masks[*size-2]);
+		out: SYM := <SYM>(in[0] & masks[*size-2]);
 
 		DO(i ::= 1)
 			IF(!is_follow(in[i]))
@@ -46,13 +46,13 @@ INCLUDE 'std/types'
 			ELSE
 			{
 				out <<= 6;
-				out |= <Char>(in[i] & 0x3f);
+				out |= <SYM>(in[i] & 0x3f);
 			} WHILE(++i < *size)
 
 		RETURN out;
 	}
 
-	encode(src: Char, dst: C8 \) UM
+	encode(src: SYM, dst: C8 \) UM
 	{
 		size: UM :=
 			(src < 0x00080) ? 1 :
