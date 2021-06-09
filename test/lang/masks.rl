@@ -1,6 +1,6 @@
 ::lang
 {
-	CONCEPT Testable { # test() BOOL; }
+	MASK Testable { # test() BOOL; }
 
 	Fail { # test() BOOL := FALSE; }
 	Success { # test() BOOL := TRUE; }

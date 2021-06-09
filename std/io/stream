@@ -6,7 +6,7 @@ INCLUDE 'std/string'
 
 ::std::io
 {
-	CONCEPT OStream
+	MASK OStream
 	{
 		write_some(data: VOID #\, size: UM) UM;
 
@@ -46,7 +46,7 @@ INCLUDE 'std/string'
 			:= write(<A0!&&>(a0)) + write_all(<A!&&>(a)...);
 	}
 
-	CONCEPT IStream
+	MASK IStream
 	{
 		read(data: VOID \, size: UM) UM;
 

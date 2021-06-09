@@ -3,7 +3,7 @@
 INCLUDE 'std/io/stream'
 INCLUDE 'std/memory'
 
-::std::io CONCEPT Streamable
+::std::io MASK Streamable
 {
 	# stream(into: OStream &) VOID;
 

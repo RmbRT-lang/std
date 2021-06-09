@@ -3,7 +3,7 @@
 INCLUDE 'std/memory'
 INCLUDE 'std/vector'
 
-::std [T: TYPE] CONCEPT Set
+::std [T: TYPE] MASK Set
 {
 	(// Queries whether a value is in the set. /)
 	# has(key: T! #&) BOOL;
