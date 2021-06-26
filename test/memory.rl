@@ -9,15 +9,33 @@ INCLUDE "../std/memory"
 		ASSERT(memcmp("€", buf, 3) == 0);
 	}
 
-	NewException{
-		{calls: INT \}: DtorCalled(calls) { THROW; }
-		DESTRUCTOR { ++*DtorCalled; }
+
+	DtorTracker {
+		{calls: INT\}: DtorCalled(calls);
+		DESTRUCTOR{++*DtorCalled;}
 		DtorCalled: INT \;
 	}
+
+	NewException
+	{
+		Member: DtorTracker;
+		MainDtorCalled: BOOL \;
+
+		{main: BOOL \, member: INT \}:
+			Member(member),
+			MainDtorCalled(main)
+		{ THROW; }
+
+		DESTRUCTOR{*MainDtorCalled := TRUE;}
+	}
+
 	TEST "new with exception only calls dtor once" {
+		mainDtor ::= FALSE;
 		calls: INT (0);
-		TRY [NewException]new(&calls);
+
+		TRY [NewException]new(&mainDtor, &calls);
 		CATCH() {;}
 		ASSERT(calls == 1);
+		ASSERT(!mainDtor);
 	}
 }

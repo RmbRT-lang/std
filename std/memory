@@ -162,9 +162,16 @@ INCLUDE 'std/iterator'
 
 	[T: TYPE; Args...: TYPE] new(args: Args!&&...) T! *
 	{
-		ptr: [T]Dynamic := :gc([T]alloc());
-		(*ptr).{<Args!&&>(args)...};
-		RETURN ptr.release();
+		p ::= [T]alloc();
+		TRY
+		{
+			p->{<Args!&&>(args)...};
+			x ::= p;
+			p := NULL;
+			RETURN x;
+		}
+		FINALLY IF(p)
+			free(p);
 	}
 
 
