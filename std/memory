@@ -204,7 +204,7 @@ INCLUDE 'std/iterator'
 	{ detail::libc::free(v.Data); }
 
 	[T: TYPE] free(v: T! #\) INLINE VOID
-	{ detail::libc::free(v); }
+	{ detail::libc::free(&&&*v); }
 }
 
 ::std::detail::libc
