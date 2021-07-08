@@ -2,6 +2,7 @@
 
 INCLUDE 'std/error'
 INCLUDE 'std/io/stream'
+INCLUDE 'std/math/unsigned'
 
 ::std::math Overflow -> Error
 {
@@ -23,80 +24,43 @@ INCLUDE 'std/io/stream'
 {
 	[T:TYPE] add(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
 	{
-		ret: T;
-		carry := __builtin_add_overflow(lhs, rhs, &ret);
+		ret: T := unsigned(lhs) + unsigned(rhs);
+		carry := unsigned(ret) < lhs;
 		RETURN ret;
 	}
 
 	[T:TYPE] add(lhs: T! #&, rhs: T! #&) INLINE T
 	{
-		ret: T;
-		IF(__builtin_add_overflow(lhs, rhs, &ret))
+		carry: BOOL;
+		ret ::= add(lhs, rhs, carry);
+		IF(carry)
 			THROW <Overflow>();
 		RETURN ret;
 	}
 
-	[T:TYPE] sub(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
+	[T: TYPE] mul(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
 	{
-		ret: T;
-		carry := __builtin_sub_overflow(lhs, rhs, &ret);
-		RETURN ret;
+		carry := rhs && unsigned(lhs) > unsigned(~<T>(0)) / unsigned(rhs);
+		RETURN unsigned(lhs) * unsigned(rhs);
 	}
-	[T:TYPE] sub(lhs: T! #&, rhs: T! #&) INLINE T
+
+	[T: TYPE] mul(lhs: T! #&, rhs: T! #&) INLINE T
 	{
-		ret: T;
-		IF(__builtin_sub_overflow(lhs, rhs, &ret))
+		carry: BOOL;
+		ret ::= mul(lhs, rhs, carry);
+		IF(carry)
 			THROW <Overflow>();
 		RETURN ret;
 	}
 
-	[T:TYPE] mul(lhs: T! #&, rhs: T! #&, carry: BOOL&) INLINE T
+	[T: TYPE] neg(x: T! #&) INLINE T
 	{
-		ret: T;
-		carry := __builtin_mul_overflow(lhs, rhs, &ret);
-		RETURN ret;
-	}
-	[T:TYPE] mul(lhs: T! #&, rhs: T! #&) INLINE T
-	{
-		ret: T;
-		IF(__builtin_mul_overflow(lhs, rhs, &ret))
+		IF(unsigned(x) << 1 == 0)
 			THROW <Overflow>();
-		RETURN ret;
+		RETURN -x;
 	}
 
-	[T:TYPE] div(lhs: T! #&, rhs: T! #&, quo: T!&, rem: T! &) VOID
-	{
-		ret: T;
-		IF(!rhs)
-			THROW <ZeroDiv>();
-
-		quo := lhs / rhs;
-		rem := lhs % rhs;
-	}
-	[T:TYPE] div(lhs: T! #&, rhs: T! #&) T
-	{
-		IF(!rhs)
-			THROW <ZeroDiv>();
-
-		RETURN lhs / rhs;
-	}
-	[T:TYPE] mod(lhs: T! #&, rhs: T! #&) T
-	{
-		IF(!rhs)
-			THROW <ZeroDiv>();
-
-		RETURN lhs % rhs;
-	}
-
-	[T:TYPE] neg(lhs: T! #&) T
-	{
-		ret: T;
-		IF(__builtin_sub_overflow(0, lhs, &ret))
-			THROW <Overflow>();
-		RETURN ret;
-	}
-
-	[T:TYPE]
+	(/[T:TYPE]
 	Int
 	{
 		PRIVATE V: T;
@@ -121,5 +85,5 @@ INCLUDE 'std/io/stream'
 		THIS%=(rhs: T#&) [T]Int& := THIS := THIS % rhs;
 
 		# <T #&> INLINE := V;
-	}
+	}/)
 }

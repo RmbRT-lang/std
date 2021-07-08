@@ -117,11 +117,11 @@ INCLUDE 'std/help'
 			new ::= [C]alloc(Content.Size + size);
 			range::copy_construct(new.Data, Content.Data, Content.Size);
 			range::copy_construct(new.Data+Content.Size, str, size);
-			DESTRUCTOR();
+			THIS.~;
 			THIS.{new, :transfer};
 		}
 
-		append(str: C #\) VOID := append(str::buf(str));
+		append(str: C #\) VOID := append(std::str::buf(str));
 		append(str: C) INLINE VOID := append(&str, 1);
 
 		# substring(start: UM, size: UM) [C!#]Buffer
@@ -133,9 +133,9 @@ INCLUDE 'std/help'
 		# cmp(rhs: [C!]String #&) SM := str::cmp(content(), rhs.content());
 
 		# starts_with(str: C #\) INLINE
-			::= str::starts_with(<[C#]Buffer>(Content), str);
+			::= std::str::starts_with(<[C#]Buffer>(Content), str);
 		# starts_with(str: [C#]Buffer #&) INLINE
-			::= str::starts_with(<[C#]Buffer>(Content), str);
+			::= std::str::starts_with(<[C#]Buffer>(Content), str);
 	}
 
 	TYPE Utf8 := [CHAR]String;

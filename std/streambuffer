@@ -7,7 +7,7 @@ INCLUDE 'std/io/stream'
 {
 	FINAL write_some(data: VOID #\, size: UM) UM
 	{
-		append([CHAR#]Buffer(<CHAR #\>(data), size));
+		Utf8::append([CHAR#]Buffer(<CHAR #\>(data), size));
 		RETURN size;
 	}
 }

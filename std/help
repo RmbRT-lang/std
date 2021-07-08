@@ -8,8 +8,8 @@
 {
 	IF(&lhs != &rhs)
 	{
-		lhs.DESTRUCTOR();
-		lhs.{__cpp_std::move(rhs)};
+		lhs.~;
+		lhs.{&&rhs};
 	}
 
 	RETURN lhs;
@@ -17,7 +17,7 @@
 ::std::help [T: TYPE] move_assign(
 	lhs: T! &,
 	rhs: T! &
-) INLINE T! & := move_assign(lhs, __cpp_std::move(rhs));
+) INLINE T! & := move_assign(lhs, &&rhs);
 
 (// Implements copy assignment using destructor and copy constructor. /)
 ::std::help [T: TYPE] copy_assign(
@@ -27,7 +27,7 @@
 {
 	IF(&lhs != &rhs)
 	{
-		lhs.DESTRUCTOR();
+		lhs.~;
 		lhs.{rhs};
 	}
 
@@ -39,7 +39,7 @@
 	rhs: V! &&
 ) INLINE T! &
 {
-	lhs.DESTRUCTOR();
-	lhs.{__cpp_std::[V!]forward(rhs)};
+	lhs.~;
+	lhs.{<V!&&>(rhs)};
 	RETURN lhs;
 }

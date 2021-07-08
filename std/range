@@ -15,6 +15,15 @@ INCLUDE 'std/err/indexoutofrange'
 			dst[i] := src[i];
 	}
 
+	[T: TYPE] move_assign(
+		dst: T! \,
+		src: T! \,
+		count: UM) VOID
+	{
+		FOR(i ::= 0; i < count; i++)
+			dst[i] := &&src[i];
+	}
+
 	[T: TYPE] default_construct(
 		range: T! \,
 		count: UM) VOID
@@ -39,7 +48,7 @@ INCLUDE 'std/err/indexoutofrange'
 		count: UM) VOID
 	{
 		FOR(i ::= 0; i<count; i++)
-			dst[i].{::__cpp_std::move(src[i])};
+			dst[i].{&&src[i]};
 	}
 
 	[T: TYPE] destroy(
@@ -47,7 +56,7 @@ INCLUDE 'std/err/indexoutofrange'
 		count: UM) INLINE VOID
 	{
 		FOR(i ::= 0; i<count; i++)
-			__rl::DESTRUCTOR(range[i]);
+			range[i].~;
 	}
 
 	check(

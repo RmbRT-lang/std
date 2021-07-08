@@ -36,6 +36,8 @@ INCLUDE 'std/vector'
 	# end() INLINE ::= Elems.end();
 	# empty() INLINE BOOL := Elems.empty();
 
+	# ##THIS UM := ##Elems;
+
 	[V: TYPE]
 	# find(
 		v: V! #&
@@ -120,7 +122,7 @@ INCLUDE 'std/vector'
 	insert_at(
 		position: Location #&,
 		v: T!&&) INLINE T! &
-		:= emplace_at(position, __cpp_std::move(v));
+		:= emplace_at(position, &&v);
 
 	insert(v: T#&) BOOL
 	{
@@ -136,7 +138,7 @@ INCLUDE 'std/vector'
 		loc: Location;
 		IF(find(v, &loc))
 			RETURN FALSE;
-		insert_at(loc, __cpp_std::move(v));
+		insert_at(loc, &&v);
 		RETURN TRUE;
 	}
 

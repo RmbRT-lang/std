@@ -44,8 +44,8 @@ INCLUDE 'std/tags'
 	FileHandle {}
 	EXTERN fopen(CHAR#\,CHAR#\) FileHandle *;
 	EXTERN fclose(FileHandle *) VOID;
-	EXTERN fwrite(VOID#\, size_t, size_t, FileHandle *) size_t;
-	EXTERN fread(VOID\, size_t, size_t, FileHandle *) size_t;
+	EXTERN fwrite(VOID#\, UM, UM, FileHandle *) UM;
+	EXTERN fread(VOID\, UM, UM, FileHandle *) UM;
 	EXTERN feof(FileHandle *) INT;
 	EXTERN ferror(FileHandle *) INT;
 	EXTERN fflush(FileHandle \) INT;

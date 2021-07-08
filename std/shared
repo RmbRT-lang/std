@@ -35,7 +35,7 @@ INCLUDE 'std/memory'
 	PRIVATE P: Alloc *;
 
 	{}: P(NULL);
-	{NULL_t}: P(NULL);
+	{NULL}: P(NULL);
 	{p: T! *, :transfer}: P([Alloc]new(p, 1, FALSE));
 	{mv: [T!]Shared &&}: P(mv.P) { mv.{}; }
 	{cpy: [T!]Shared#&}: P(cpy.P) { IF(P) P->ref(); }

@@ -1,0 +1,13 @@
+(/rl/)
+
+::std::math
+{
+	unsigned(x: S1) INLINE U1 := x;
+	unsigned(x: S2) INLINE U2 := x;
+	unsigned(x: S4) INLINE U4 := x;
+	unsigned(x: S8) INLINE U8 := x;
+	unsigned(x: U1) INLINE U1 := x;
+	unsigned(x: U2) INLINE U2 := x;
+	unsigned(x: U4) INLINE U4 := x;
+	unsigned(x: U8) INLINE U8 := x;
+}

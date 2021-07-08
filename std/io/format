@@ -1,12 +1,13 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
+INCLUDE 'std/math/unsigned'
 
 ::std::io::format
 {
 	[T:TYPE] hex(o: OStream &, n: T! #&) VOID
 	{
-		v: __cpp_std::[T]make_unsigned_t := n;
+		v ::= math::unsigned(n);
 
 		IF(n < <T>(0))
 		{
@@ -22,7 +23,7 @@ INCLUDE 'std/io/stream'
 
 	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
 	{
-		v: __cpp_std::[T]make_unsigned_t := n;
+		v ::= math::unsigned(n);
 		IF(n < <T>(0))
 		{
 			o.write('-');

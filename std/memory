@@ -45,7 +45,7 @@ INCLUDE 'std/iterator'
 		Data: T! *;
 		Size: UM;
 
-		{NULL_t}: Data(NULL), Size(0);
+		{NULL}: Data(NULL), Size(0);
 		{}: Data(NULL), Size(0);
 		{s: T! \, c: UM}: Data(s), Size(c)
 		{
@@ -93,16 +93,12 @@ INCLUDE 'std/iterator'
 	{
 		Ptr: T! *;
 		{}: Ptr(NULL);
-		{NULL_t}: Ptr(NULL);
+		{NULL}: Ptr(NULL);
 		{:gc, p: T! *}: Ptr(p);
-		{move: [T!]Dynamic! &&}:
-			Ptr(move.Ptr)
-		{
-			move.Ptr := NULL;
-		}
+		{m: [T!]Dynamic! &&}: Ptr(m.release());
 
 		THIS:=(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(THIS, move);
-		THIS:=(NULL_t) & ::= help::custom_assign(THIS, NULL);
+		THIS:=(NULL) & ::= help::custom_assign(THIS, NULL);
 
 		# !THIS INLINE BOOL := !Ptr;
 		# <BOOL> INLINE := Ptr;

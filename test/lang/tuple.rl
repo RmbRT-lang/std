@@ -53,16 +53,16 @@
 		{};
 		{x: INT, y: INT}: X(x), Y(y);
 
-		# <{float, float}> := (X, Y);
+		# <{SINGLE, SINGLE}> := (X, Y);
 	}
 
 	PointF
 	{
-		X: float;
-		Y: float;
+		X: SINGLE;
+		Y: SINGLE;
 		
 		{};
-		{x: float, y: float}: X(x), Y(y);
+		{x: SINGLE, y: SINGLE}: X(x), Y(y);
 
 		# <{INT, INT}> := (X, Y);
 	}
@@ -73,7 +73,7 @@
 		f: PointF;
 
 		i := <{INT, INT}>(f);
-		f := <{float, float}>(i);
+		f := <{SINGLE, SINGLE}>(i);
 		x: INT;
 		y: INT;
 		(x,y) := <{INT, INT}>(f);
