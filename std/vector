@@ -55,11 +55,8 @@ PUBLIC:
 
 	DESTRUCTOR
 	{
-		FOR(i ::= 0; i < Content.Size; i++)
-			__rl::DESTRUCTOR(Content.Data[i]);
-
-		IF(Content.Data)
-			free(Content);
+		IF(Content)
+			delete(Content);
 	}
 
 	erase(at: UM) VOID
@@ -67,23 +64,12 @@ PUBLIC:
 		ASSERT(at < ##THIS);
 
 		new ::= [T]alloc(Content.Size-1);
-		range::move_construct(new.Data, Content.Data, at);
-		range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
-		IF(Content)
+		std::range::move_construct(new.Data, Content.Data, at);
+		std::range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
+		TRY IF(Content)
 			delete(Content);
-		Content := new;
-	}
-
-	PRIVATE grow(at: UM) VOID
-	{
-		ASSERT(at <= ##THIS);
-		new ::= [T]alloc(Content.Size+1);
-		ASSERT(new.Data != NULL);
-		range::move_construct(new.Data, Content.Data, at);
-		range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
-		IF(Content)
-			delete(Content);
-		Content := new;
+		FINALLY
+			Content := new;
 	}
 
 	[A...:TYPE]
@@ -91,8 +77,17 @@ PUBLIC:
 	{
 		ASSERT(at <= ##THIS);
 
-		grow(at);
-		Content.Data[at].{<A!&&>(a)...};
+		new ::= [T]alloc(Content.Size+1);
+		ASSERT(new.Data != NULL);
+		std::range::move_construct(new.Data, Content.Data, at);
+		std::range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
+
+		new.Data[at].{<A!&&>(a)...};
+
+		TRY IF(Content)
+			delete(Content);
+		FINALLY
+			Content := new;
 	}
 
 	[A:TYPE]
