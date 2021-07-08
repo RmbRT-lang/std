@@ -38,4 +38,20 @@ INCLUDE "../std/memory"
 		ASSERT(calls == 1);
 		ASSERT(!mainDtor);
 	}
+
+
+	NewBase1 VIRTUAL { INT; }
+	NewBase2 VIRTUAL { INT; }
+	NewDerived1 VIRTUAL -> NewBase1 { INT; }
+	NewDerived -> NewBase2, NewDerived1 { INT; }
+
+	TEST "new and delete with polymorphism"
+	{
+		ptr ::= [NewDerived]new();
+		ASSERT(ptr != NULL);
+		ASSERT(<<NewBase1 *>>(ptr) > <VOID*>(ptr));
+		ASSERT(&&&*<<NewBase1 *>>(ptr) == <VOID*>(ptr));
+
+		delete(<<NewBase1 \>>(ptr));
+	}
 }
