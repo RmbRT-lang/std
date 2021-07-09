@@ -48,6 +48,14 @@ INCLUDE 'std/vector'
 	}
 
 	[V: TYPE]
+	# find(v: {:location, V! #&}) { T! #*, Location }
+	{
+		loc: Location;
+		ret ::= find(v.(1), &loc);
+		RETURN (ret, loc);
+	}
+
+	[V: TYPE]
 	# find(
 		v: V! #&,
 		location: Location \
@@ -83,6 +91,14 @@ INCLUDE 'std/vector'
 	{
 		dummy: Location;
 		RETURN find(v, &dummy);
+	}
+
+	[V: TYPE]
+	find(v: {:location, V! #&}) {T! *, Location}
+	{
+		loc: Location;
+		ret ::= find(v.(1), &loc);
+		RETURN (ret, loc);
 	}
 
 	[V: TYPE]
