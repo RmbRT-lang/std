@@ -14,6 +14,26 @@ INCLUDE 'std/set'
 
 	TYPE Location := [{K!,V!}, TupleCmp]VectorSet::Location;
 
+	[T: TYPE]
+	find(k: {:location, T! #&}) {V! *, Location}
+	{
+		x ::= Set.find(k);
+		IF(x.(0))
+			RETURN (&x.(0)->(1), x.(1));
+		ELSE
+			RETURN (NULL, x.(1));
+	}
+
+	[T: TYPE]
+	# find(k: {:location, T! #&}) {V! #*, Location}
+	{
+		x ::= Set.find(k);
+		IF(x.(0))
+			RETURN (&x.(0)->(1), x.(1));
+		ELSE
+			RETURN (NULL, x.(1));
+	}
+
 	[T:TYPE]
 	find(k: T! #&, loc: Location \) V! *
 	{
@@ -22,7 +42,6 @@ INCLUDE 'std/set'
 		ELSE
 			RETURN NULL;
 	}
-
 
 	[T:TYPE]
 	# find(k: T! #&, loc: Location \) V! #*
