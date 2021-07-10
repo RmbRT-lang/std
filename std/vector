@@ -152,3 +152,5 @@ PUBLIC:
 		}
 	}
 }
+
+::std [T:TYPE] TYPE DynVector := T! - Dynamic - Vector;
