@@ -96,6 +96,9 @@ INCLUDE 'std/iterator'
 		{NULL}: Ptr(NULL);
 		{:gc, p: T! *}: Ptr(p);
 		{m: [T!]Dynamic! &&}: Ptr(m.release());
+		[Args...: TYPE]
+		{:create, args: Args!&&...}:
+			Ptr([T!]new(<Args!&&>(args)...));
 
 		THIS:=(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(THIS, move);
 		THIS:=(NULL) & ::= help::custom_assign(THIS, NULL);

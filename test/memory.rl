@@ -54,4 +54,11 @@ INCLUDE "../std/memory"
 
 		delete(<<NewBase1 \>>(ptr));
 	}
+
+	TEST "dynamic :create() ctor"
+	{
+		x: INT-Dynamic := :create(5);
+		ASSERT(x);
+		ASSERT(*x == 5);
+	}
 }
