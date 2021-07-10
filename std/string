@@ -62,7 +62,7 @@ INCLUDE 'std/help'
 		{} {}
 		(// Creates a 0-terminated copy of a C string. /)
 		{str: C #\, :cstring}:
-			Content(clone(str, str::len(str)+1))
+			Content(clone(str, std::str::len(str)+1))
 		{
 			// Remove the terminating 0-byte from the content.
 			Content.Size--;
@@ -79,14 +79,14 @@ INCLUDE 'std/help'
 		}
 
 		(// Creates a 0-terminated copy of a string. /)
-		{str: [C!]String #&, :cstring}:
-			String(str.Content, :cstring);
+		{str: [C!]String #&, :cstring}
+		->	String(str.Content, :cstring);
 
 		{data: [C#]Buffer #&}: Content(clone(data));
 		{data: [C!]Buffer #&, :transfer}: Content(data);
 
 		{str: C #\}:
-			Content(clone(str, str::len(str)));
+			Content(clone(str, std::str::len(str)));
 		{cpy: [C]String #&}:
 			Content(clone(cpy.Content));
 		{mv: [C]String &&}:
