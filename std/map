@@ -10,7 +10,7 @@ INCLUDE 'std/set'
 		STATIC cmp(a: T!&&, b: {K!,V!}#&) ::= Cmp::cmp(<T!&&>(a), b.(0));
 	}
 
-	PRIVATE Set: std::[{K!,V!}, TupleCmp]VectorSet;
+	PRIVATE Set: [{K!,V!}, TupleCmp]VectorSet;
 
 	TYPE Location := [{K!,V!}, TupleCmp]VectorSet::Location;
 

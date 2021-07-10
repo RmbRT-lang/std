@@ -57,12 +57,12 @@ INCLUDE 'std/iterator'
 
 		# THIS[i: UM] T!#&
 		{
-			std::range::check(Size, i);
+			range::check(Size, i);
 			RETURN Data[i];
 		}
 		THIS[i: UM] T!&
 		{
-			std::range::check(Size, i);
+			range::check(Size, i);
 			RETURN Data[i];
 		}
 
@@ -70,7 +70,7 @@ INCLUDE 'std/iterator'
 			start: UM,
 			size: UM) [T!]Buffer
 		{
-			std::range::check_subrange(start, size, Size);
+			range::check_subrange(start, size, Size);
 			RETURN (Data + start, size);
 		}
 

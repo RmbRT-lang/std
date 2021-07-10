@@ -50,8 +50,8 @@ PUBLIC:
 	}
 	PRIVATE _emplace_back() INLINE VOID {}
 
-	THIS:=(move: [T!]Vector&&) [T!]Vector & := std::help::move_assign(THIS, move);
-	THIS:=(copy: [T!]Vector#&) [T!]Vector & := std::help::copy_assign(THIS, copy);
+	THIS:=(move: [T!]Vector&&) [T!]Vector & := help::move_assign(THIS, move);
+	THIS:=(copy: [T!]Vector#&) [T!]Vector & := help::copy_assign(THIS, copy);
 
 	DESTRUCTOR
 	{
@@ -64,8 +64,8 @@ PUBLIC:
 		ASSERT(at < ##THIS);
 
 		new ::= [T]alloc(Content.Size-1);
-		std::range::move_construct(new.Data, Content.Data, at);
-		std::range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
+		range::move_construct(new.Data, Content.Data, at);
+		range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
 		TRY IF(Content)
 			delete(Content);
 		FINALLY
@@ -79,8 +79,8 @@ PUBLIC:
 
 		new ::= [T]alloc(Content.Size+1);
 		ASSERT(new.Data != NULL);
-		std::range::move_construct(new.Data, Content.Data, at);
-		std::range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
+		range::move_construct(new.Data, Content.Data, at);
+		range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
 
 		new.Data[at].{<A!&&>(a)...};
 

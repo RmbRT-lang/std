@@ -23,9 +23,9 @@ INCLUDE 'std/string'
 		}
 
 		write_some(str: CHAR #\) UM
-			:= write_some(str, std::str::len(str));
+			:= write_some(str, str::len(str));
 		write(str: CHAR #\) UM
-			:= write(str, std::str::len(str));
+			:= write(str, str::len(str));
 
 		write_some(ch: CHAR) UM
 			:= write_some(&ch, 1);

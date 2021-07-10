@@ -3,7 +3,7 @@
 INCLUDE 'std/string'
 INCLUDE 'std/io/stream'
 
-::std StreamBuffer -> std::Utf8, std::io::OStream
+::std StreamBuffer -> Utf8, io::OStream
 {
 	FINAL write_some(data: VOID #\, size: UM) UM
 	{

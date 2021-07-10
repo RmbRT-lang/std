@@ -32,7 +32,7 @@ INCLUDE 'std/math/unsigned'
 		}
 
 		buffer: CHAR[32];
-		buf ::= std::[CHAR]Buffer(buffer, SIZEOF(#buffer));
+		buf ::= [CHAR]Buffer(buffer, SIZEOF(#buffer));
 		i ::= buf.Size-1;
 		DO()
 		{
