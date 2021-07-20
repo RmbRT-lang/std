@@ -5,7 +5,8 @@ INCLUDE 'std/math/unsigned'
 
 ::std::io::format
 {
-	[T:TYPE] hex(o: OStream &, n: T! #&) VOID
+	[T:TYPE] hex(o: OStream &, n: T! #&) INLINE VOID := hex(o, n, TRUE);
+	[T:TYPE] hex(o: OStream &, n: T! #&, prefix: BOOL) VOID
 	{
 		v ::= math::unsigned(n);
 
@@ -16,7 +17,8 @@ INCLUDE 'std/math/unsigned'
 				v := -n;
 		}
 
-		o.write("0x");
+		IF(prefix)
+			o.write("0x");
 		FOR(i ::= 2*SIZEOF(T); i--;)
 			o.write("0123456789abcdef"[(n>>(i<<2)) & 0xf]);
 	}
