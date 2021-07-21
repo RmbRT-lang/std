@@ -66,12 +66,13 @@ INCLUDE 'std/set'
 		RETURN find(k, &dummy);
 	}
 
-	insert(k: K!, v: V!) BOOL
+	[Key: TYPE; Value: TYPE]
+	insert(k: Key!&&, v: Value!&&) BOOL
 	{
 		loc: Location;
 		IF(find(k, &loc))
 			RETURN FALSE;
-		Set.emplace_at(loc, (&&k, &&v));
+		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
 		RETURN TRUE;
 	}
 
@@ -95,4 +96,8 @@ INCLUDE 'std/set'
 	end() INLINE ::= Set.end();
 	# end() INLINE ::= Set.end();
 	# empty() INLINE BOOL := Set.empty();
+
+	# ## THIS INLINE ::= ##Set;
 }
+
+::std [K:TYPE; V:TYPE] TYPE NatMap := [K!; V!; detail::NaturalCmp]Map;

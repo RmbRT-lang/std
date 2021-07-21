@@ -36,7 +36,7 @@ INCLUDE 'std/vector'
 	# end() INLINE ::= Elems.end();
 	# empty() INLINE BOOL := Elems.empty();
 
-	# ##THIS UM := ##Elems;
+	# ##THIS INLINE UM := ##Elems;
 
 	[V: TYPE]
 	# find(
@@ -199,3 +199,13 @@ INCLUDE 'std/vector'
 		RETURN Elems[position];
 	}
 }
+::std::detail NaturalCmp
+{
+	[A:TYPE; B:TYPE]
+	STATIC cmp(a: A!#&, b: B!#&) SM
+		:= a == b
+			? 0
+			: a < b ? -1 : 1;
+}
+
+::std [T:TYPE] TYPE NatVectorSet := [T!; detail::NaturalCmp]VectorSet;

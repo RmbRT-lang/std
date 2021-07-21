@@ -1,8 +1,6 @@
 INCLUDE "../std/set"
 
-
-intCmp { STATIC cmp(a: INT, b: INT) ::= a-b; }
-TYPE IntVectorSet := std::[INT, intCmp]VectorSet;
+TYPE IntVectorSet := std::[INT]NatVectorSet;
 
 ::std
 {
