@@ -1,0 +1,64 @@
+(/rl/)
+INCLUDE 'std/map'
+
+::std [K:TYPE; V:TYPE] HashMap
+{
+	PRIVATE Map: std::[Hash, V, Hash]Map;
+
+	TYPE Location := std::[Hash, V, Hash]Map::Location;
+
+	find(k: {:location, K! #&}) INLINE {V! *, Location}
+		:= find(:location(hash(k)));
+	# find(k: {:location, K! #&}) INLINE {V! #*, Location}
+		:= find(:location(hash(k)));
+
+	find(k: K! #&, loc: Location \) INLINE V! *
+		:= find(hash(k), loc);
+	# find(k: K! #&, loc: Location \) INLINE V! #*
+		:= find(hash(k), loc);
+
+	find(k: K! #&) INLINE V! *
+		:= find(hash(k));
+	# find(k: K! #&) INLINE V! #*
+		:= find(hash(k));
+
+
+	find(k: {:location, Hash #&}) INLINE {V! *, Location}
+		:= Map.find(k);
+	# find(k: {:location, Hash #&}) INLINE {V! #*, Location}
+		:= Map.find(k);
+
+	find(k: Hash #&, loc: Location \) INLINE V! *
+		:= Map.find(k, loc);
+	# find(k: Hash #&, loc: Location \) INLINE V! #*
+		:= Map.find(k, loc);
+
+	find(k: Hash #&) INLINE V! *
+		:= Map.find(k);
+	# find(k: Hash #&) INLINE V! #*
+		:= Map.find(k);
+
+	[Value: TYPE]
+	insert(k: K! #&, v: Value!&&) BOOL
+		:= Map.insert(hash(k), <Value!&&>(v));
+
+	[Value: TYPE]
+	insert(k: Hash #&, v: Value!&&) BOOL
+		:= Map.insert(k, <Value!&&>(v));
+
+	remove(k: K! #&) INLINE BOOL
+		:= remove(hash(k));
+	remove(k: K! #&, deleted: V! \) BOOL
+		:= remove(hash(k), deleted);
+
+	remove(k: Hash #&) INLINE BOOL
+		:= Map.remove(k);
+	remove(k: Hash #&, deleted: V! \) INLINE BOOL
+		:= Map.remove(k, deleted);
+
+	start() INLINE ::= Map.start();
+	# start() INLINE ::= Map.start();
+	end() INLINE ::= Map.end();
+	# end() INLINE ::= Map.end();
+	# empty() INLINE BOOL := Map.empty();
+}
