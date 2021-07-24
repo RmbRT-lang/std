@@ -60,7 +60,7 @@ INCLUDE 'std/set'
 	}
 
 	[T:TYPE]
-	# find(k: T! #&) V! *
+	# find(k: T! #&) V! #*
 	{
 		dummy: Location;
 		RETURN find(k, &dummy);
