@@ -1,0 +1,194 @@
+(/rl/)
+
+INCLUDE 'std/memory'
+INCLUDE 'std/vector'
+INCLUDE 'std/string'
+INCLUDE 'std/io/format'
+INCLUDE 'std/io/stream'
+
+::std
+{
+	Hash
+	{
+		TYPE Word := U8;
+		TYPE WordAsSigned := S8;
+		Words: Word[2];
+
+		{}
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				Words[i] := 0;
+		}
+
+		{:noinit};
+
+		{:seed}
+		{
+			Words[0] := 0x239f0707ec07cf21;
+			IF(##Words > 1) Words[1] := 0x40784b4fb373e78f;
+			IF(##Words > 2) Words[2] := 0x4c0409cf334c870e;
+			IF(##Words > 3) Words[3] := 0x404af6c9501b28ce;
+			IF(##Words > 4) Words[4] := 0x50aee47b8102ddca;
+			IF(##Words > 5) Words[5] := 0x1ee048f480885612;
+			IF(##Words > 6) Words[6] := 0xd88abd832cf1a7b1;
+			IF(##Words > 7) Words[7] := 0xb6dbd7705837458a;
+		}
+
+		# THIS==(rhs: Hash#&) BOOL
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				IF(Words[i] != rhs.Words[i])
+					RETURN FALSE;
+			RETURN TRUE;
+		}
+		# THIS!=(rhs: Hash#&) INLINE BOOL := !(THIS == rhs);
+
+		# cmp(rhs: Hash#&) WordAsSigned
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				IF(unequal ::= Words[i] - rhs.Words[i])
+					RETURN unequal;
+			RETURN 0;
+		}
+
+		STATIC cmp(lhs: Hash#&, rhs: Hash #&) INLINE WordAsSigned
+			:= lhs.cmp(rhs);
+
+		# stream(into: io::OStream &) VOID
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				io::format::hex(into, Words[i], !i);
+		}
+
+		# stream(into: io::OStream &, :noprefix) VOID
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				io::format::hex(into, Words[i], FALSE);
+		}
+	}
+
+	[T: TYPE]
+	hash(v: T! &&) INLINE Hash! := <Hasher!>()(v)();
+
+	MASK CustomHashable { # hash(Hasher &) VOID; }
+
+	Hasher
+	{
+		PRIVATE Accum: Hash;
+		PRIVATE WordAcc: Hash::Word;
+		PRIVATE WordAccSize: U1;
+		PRIVATE Current: U1;
+		PRIVATE Digested: BOOL;
+
+		{}: Accum(:seed), Current(0), WordAcc(0), WordAccSize(0), Digested(FALSE);
+
+		THIS() Hash #&
+		{
+			IF(!Digested)
+			{
+				Digested := TRUE;
+				IF(WordAccSize)
+				{
+					applyWord(WordAcc, (WordAccSize+7) >> 3);
+					WordAccSize := 0;
+				}
+				THIS(Current);
+			}
+			RETURN Accum;
+		}
+
+		THIS(v: BOOL) INLINE Hasher& := accum(v ? 1:0, 8);
+		THIS(v: U1) INLINE Hasher & := accum(v, 8);
+		THIS(v: S1) INLINE Hasher & := THIS(<U1>(v));
+		THIS(v: U2) INLINE Hasher& := accum(v, 16);
+		THIS(v: S2) INLINE Hasher& := THIS(<U2>(v));
+		THIS(v: U4) INLINE Hasher& := accum(v, 32);
+		THIS(v: S4) INLINE Hasher& := THIS(<U4>(v));
+		THIS(v: U8) INLINE Hasher& := accum(v, 64);
+		THIS(v: S8) INLINE Hasher& := THIS(<U8>(v));
+		THIS(v: CHAR) INLINE Hasher& := THIS(<U1>(v));
+		THIS(v: CHAR #*) INLINE Hasher& := THIS(str::buf(v));
+
+		[T:TYPE]
+		THIS(v: T!-std::Vector#&) Hasher& := THIS(v.content());
+
+		[T:TYPE]
+		THIS(v: T! #*) Hasher&
+		{
+			IF(v)
+				THIS(*v);
+			RETURN THIS;
+		}
+
+		[T: TYPE]
+		THIS(v: T! #&) Hasher &
+		{
+			IF(h ::= <<CustomHashable #*>>(&v))
+				h->hash(THIS);
+			ELSE
+				THIS VISIT(v);
+			RETURN THIS;
+		}
+
+		[T:TYPE; N:NUMBER]
+		THIS(v: T!#[N]) Hasher &
+		{
+			FOR(i ::= 0; i < N; i++)
+				THIS(v[i]);
+			RETURN THIS(<U8>(N));
+		}
+
+		[T:TYPE]
+		THIS(v: T!-std::Buffer#&) Hasher&
+		{
+			FOR(i ::= 0; i < ##v; i++)
+				THIS(v[i]);
+			RETURN THIS(<U8>(##v));
+		}
+
+		[T:TYPE]
+		THIS(CHAR#\, v: T!&&) Hasher & := THIS(<T!&&>(v));
+
+		PRIVATE accum(v: Hash::Word, bits: U1) Hasher &
+		{
+			WordAcc |= <Hash::Word>(v) << WordAccSize;
+			WordAccSize += bits;
+			IF(WordAccSize >= 8 * SIZEOF(Hash::Word))
+			{
+				applyWord(WordAcc, (SIZEOF(Hash::Word)));
+				WordAccSize -= 8 * SIZEOF(Hash::Word);
+				IF(WordAccSize)
+					WordAcc := v >> (bits - WordAccSize);
+				ELSE
+					WordAcc := 0;
+			}
+			RETURN THIS;
+		}
+
+		PRIVATE applyWord(v: Hash::Word, size: U1) Hasher&
+		{
+			STATIC WordBits # ::= SIZEOF(Hash::Word) * 8;
+			STATIC WordMask # ::= WordBits-1;
+			shl # ::= v & (SIZEOF(Hash::Word) * 8 - 1);
+			shr # ::= SIZEOF(Hash::Word) * 8 - shl;
+			currentTwist #::= Current ^ (Current >> (Current &7));
+			target: U1 := <U1>(Current) & <U1>(##Accum.Words-1);
+			prev: U1 := <U1>(Current-1) & <U1>(##Accum.Words-1);
+			FOR(i ::= 0; i < ##Accum.Words; i++)
+			{
+				next: U1 # := <U1>(Current+i+1) & <U1>(##Accum.Words-1);
+				vSwitch # ::= -<Hash::WordAsSigned>((currentTwist ^ v) &1);
+
+				Accum.Words[target] ^= (v ^ <Hash::Word>(vSwitch))
+					^ (Accum.Words[next] << shl)
+					^ ~(Accum.Words[prev] >> shr);
+				v += Accum.Words[target];
+
+				prev := target;
+				target := next;
+			}
+			Current += size;
+			RETURN THIS;
+		}
+	}
+}
