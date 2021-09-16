@@ -107,6 +107,7 @@ INCLUDE 'std/iterator'
 		# <BOOL> INLINE := Ptr;
 		# <T! \> INLINE := Ptr;
 		# *THIS INLINE T! & := *Ptr;
+		# THIS! INLINE T! * := Ptr;
 
 		release() T! *
 		{

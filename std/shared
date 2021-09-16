@@ -49,7 +49,8 @@ INCLUDE 'std/memory'
 
 	DESTRUCTOR { IF(P) P->deref(); }
 
-	# <T! *> INLINE := P ? P->ptr() : NULL;
+	# <T! *> INLINE := THIS!;
+	# THIS! INLINE T! * := P ? P->ptr() : NULL;
 	# <BOOL> INLINE := P != NULL;
 
 	THIS:=(cpy: [T!]Shared #&) ::= help::copy_assign(THIS, cpy);

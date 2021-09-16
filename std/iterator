@@ -11,6 +11,7 @@ Iterator
 		Current(start);
 
 	# get() & ::= (*Elems)[Current];
+	# THIS! & ::= (*Elems)[Current];
 
 	next() VOID
 	{
