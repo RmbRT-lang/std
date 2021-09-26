@@ -51,6 +51,15 @@ INCLUDE 'std/err/indexoutofrange'
 			dst[i].{&&src[i]};
 	}
 
+	[T: TYPE] move_construct_r(
+		dst: T! \,
+		src: T! \,
+		count: UM) VOID
+	{
+		WHILE(count--)
+			dst[count].{&&src[count]};
+	}
+
 	[T: TYPE] destroy(
 		range: T! \,
 		count: UM) INLINE VOID
