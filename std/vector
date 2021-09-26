@@ -11,33 +11,40 @@ INCLUDE 'std/iterator'
 {
 PRIVATE:
 	Content: [T!]Buffer;
+	Capacity: UM;
 PUBLIC:
-	{};
+	{}: Capacity(0);
 	{size: UM}:
-		Content([T]alloc(size))
+		Content([T]alloc(size)),
+		Capacity(size)
 	{
-		FOR(i ::= 0; i < Content.Size; i++)
-			Content.Data[i].{};
+		range::default_construct(Content.Data, ##Content);
 	}
 	{copy: [T!]Vector#&}:
-		Content(clone(copy.Content));
+		Content(clone(copy.Content)),
+		Capacity(##copy);
 	{move: [T!]Vector&&}:
-		Content(move.Content)
+		Content(move.Content),
+		Capacity(move.Capacity)
 	{
 		move.Content := NULL;
+		move.Capacity := 0;
 	}
 
 	{:copy, content: [T#]Buffer #&}:
-		Content(clone(content));
+		Content(clone(content)),
+		Capacity(##content);
 	{:move, content: [T!]Buffer &&}:
-		Content(content)
+		Content(content),
+		Capacity(##content)
 	{
 		content := NULL;
 	}
 
 	[A...:TYPE]
 	{:emplace, a: A!&&...}:
-		Content(NULL)
+		Content(NULL),
+		Capacity(0)
 	{
 		_emplace_back(<A!&&>(a)...);
 	}
@@ -63,31 +70,93 @@ PUBLIC:
 	{
 		ASSERT(at < ##THIS);
 
-		new ::= [T]alloc(Content.Size-1);
+		Content.Data[at].~;
+		--Content.Size;
+		range::move_construct(Content.Data+at, Content.Data+at+1, ##Content-at);
+	}
+
+	(/
+		Reserve the requested amount of space, and leave an uninitialised hole
+		in the contents at the requested location. If the hole is within the
+		contents, increases the container size to accomodate the hole.
+	/)
+	PRIVATE reserve_with_hole_at(cap: UM, at: UM) BOOL
+	{
+		ASSERT(at <= ##Content);
+
+		// Is the container already large enough?
+		IF(Capacity >= cap)
+			// Grow hole if required.
+			IF(at < ##Content)
+			{
+				// Shift contents right.
+				range::move_construct_r(
+					Content.Data+at+1,
+					Content.Data+at,
+					##Content-at);
+
+				Content.Data[at].~; // Destroy hole.
+				++Content.Size; // Adjust size.
+
+				RETURN TRUE;
+			} ELSE
+				RETURN FALSE;
+
+		// Reserve enough space.
+		hasHole ::= at != ##Content;
+		new ::= [T]alloc(cap).cut(##Content + hasHole);
 		range::move_construct(new.Data, Content.Data, at);
-		range::move_construct(new.Data+at, Content.Data+at+1, new.Size-at);
-		TRY IF(Content)
+		range::move_construct(new.Data+at+1, Content.Data+at, ##Content-at);
+
+		IF(Content.Data)
 			delete(Content);
-		FINALLY
-			Content := new;
+		Content := new;
+		Capacity := cap;
+		RETURN hasHole;
+	}
+
+	(// Reserve space for the requested capacity, without shrinking. /)
+	reserve(cap: UM) VOID
+	{
+		reserve_with_hole_at(cap, ##Content);
+	}
+
+	resize(size: UM) VOID
+	{
+		reserve(size);
+		IF(##Content > size)
+			range::destroy(Content.drop_start(size));
+		ELSE
+			range::default_construct(
+				Content.Data + ##Content,
+				size - ##Content);
+		Content.Size := size;
+	}
+
+	(/
+		Reserve space for at least one more entry than is currently held.
+		Increases ##Content. Leaves an uninitialised hole at the requested
+		location.
+	/)
+	PRIVATE grow_reserve_with_hole_at(at: UM) VOID
+	{
+		cap: UM;
+		IF(!Capacity)
+			cap := 1;
+		ELSE IF(Capacity > ##Content)
+			cap := Capacity;
+		ELSE
+			cap := (Capacity+1 + (Capacity >> 4)) | 3;
+
+		// Increase content if appending.
+		Content.Size += !reserve_with_hole_at(cap, at);
 	}
 
 	[A...:TYPE]
 	emplace(at: UM, a: A!&&...) INLINE VOID
 	{
-		ASSERT(at <= ##THIS);
-
-		new ::= [T]alloc(Content.Size+1);
-		ASSERT(new.Data != NULL);
-		range::move_construct(new.Data, Content.Data, at);
-		range::move_construct(new.Data+at+1, Content.Data+at, Content.Size-at);
-
-		new.Data[at].{<A!&&>(a)...};
-
-		TRY IF(Content)
-			delete(Content);
-		FINALLY
-			Content := new;
+		grow_reserve_with_hole_at(at);
+		Content.Data[at].{<A!&&>(a)...};
 	}
 
 	[A:TYPE]
@@ -124,6 +193,9 @@ PUBLIC:
 
 	# content() INLINE [T!#]Buffer := Content;
 	content() INLINE ::= Content;
+
+	THIS! ::= Content;
+	# THIS! ::= Content;
 
 	# range(start: UM, length: UM) [T!#]Buffer
 		:= Content.range(start, length);
