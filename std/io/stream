@@ -49,6 +49,9 @@ INCLUDE 'std/string'
 	MASK IStream
 	{
 		read(data: VOID \, size: UM) UM;
+		[T: TYPE]
+		read(data: T! - Buffer #&) INLINE UM
+			:= read(data.Data, data.Size);
 
 		read() CHAR
 		{
