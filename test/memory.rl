@@ -1,4 +1,5 @@
 INCLUDE "../std/memory"
+INCLUDE "../std/ringbuffer"
 
 ::std
 {

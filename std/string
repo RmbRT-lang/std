@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/memory'
+INCLUDE 'std/ringbuffer'
 INCLUDE 'std/help'
 
 ::std
