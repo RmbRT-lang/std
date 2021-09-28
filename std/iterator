@@ -10,8 +10,9 @@ Iterator
 		Elems(elems),
 		Current(start);
 
-	# get() & ::= (*Elems)[Current];
-	# THIS! & ::= (*Elems)[Current];
+	# get() INLINE & ::= (*Elems)[Current];
+	# THIS! INLINE & ::= (*Elems)[Current];
+	# ok() INLINE [V!]OkIterator := (Elems, Current);
 
 	next() VOID
 	{
@@ -37,6 +38,40 @@ Iterator
 		ASSERT(~Current);
 		--Current;
 	}
+
+	# <BOOL> INLINE := Current < ##*Elems;
+}
+
+::std [V: TYPE]
+OkIterator
+{
+	PRIVATE Elems: V! \;
+	PRIVATE Current: UM;
+
+	{elems: V! \, start: UM}:
+		Elems(elems),
+		Current(start);
+
+	# <[V!]Iterator> INLINE := (Elems, Current);
+
+	# get() & ::= (*Elems)[:ok(Current)];
+	# THIS! & ::= (*Elems)[:ok(Current)];
+
+	next() INLINE VOID
+	{ ++Current; }
+
+	++THIS INLINE [V!]OkIterator& { next(); RETURN THIS; }
+	THIS++ INLINE [V!]OkIterator { v ::= THIS; next(); RETURN v; }
+	--THIS INLINE [V!]OkIterator& { prev(); RETURN THIS; }
+	THIS-- INLINE [V!]OkIterator { v ::= THIS; prev(); RETURN v; }
+
+	# *THIS INLINE & ::= get();
+
+	# THIS+(offset: UM) INLINE [V!]OkIterator
+		:= (Elems, Current + offset);
+
+	prev() INLINE VOID
+	{ --Current; }
 
 	# <BOOL> INLINE := Current < ##*Elems;
 }

@@ -57,6 +57,7 @@ INCLUDE 'std/memory'
 	THIS:=(mv: [T!]Shared &&) ::= help::move_assign(THIS, mv);
 
 	# get() T! * { ASSERT(P != NULL); RETURN P->ptr(); }
+	# get(:ok) T! * := P->ptr();
 
 	# *THIS T! &
 	{

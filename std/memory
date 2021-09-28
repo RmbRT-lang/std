@@ -55,17 +55,22 @@ INCLUDE 'std/iterator'
 		# <[T!#]Buffer> INLINE := (Data, Size);
 		# <BOOL> INLINE := Data != NULL;
 
+
+		# THIS[i: {:ok, UM}] INLINE T!#& := Data[i.(1)];
 		# THIS[i: UM] T!#&
 		{
 			range::check(Size, i);
 			RETURN Data[i];
 		}
+		THIS[i: {:ok, UM}] INLINE T!& := Data[i.(1)];
 		THIS[i: UM] T!&
 		{
 			range::check(Size, i);
 			RETURN Data[i];
 		}
 
+		# range(start: UM, size: UM, :ok) INLINE [T!]Buffer
+			:= (Data + start, size);
 		# range(
 			start: UM,
 			size: UM) [T!]Buffer
@@ -74,18 +79,33 @@ INCLUDE 'std/iterator'
 			RETURN (Data + start, size);
 		}
 
+		# drop_start(start: {:ok, UM}) [T!]Buffer
+			:= range(start.(1), Size-start.(1), :ok);
 		# drop_start(start: UM) [T!]Buffer
 			:= range(start, Size - start);
 		# drop_end(count: UM) [T!]Buffer
 			:= range(0, Size - count);
+		# drop_end(count: {:ok, UM}) [T!]Buffer
+			:= range(0, Size-count.(1), :ok);
 		# cut(size: UM) [T!]Buffer
 			:= range(0, size);
+		# cut(size: {:ok, UM}) [T!]Buffer
+			:= range(0, size.(1), :ok);
 
 		# ##THIS INLINE UM := Size;
 
+		front() INLINE T!& := THIS[0];
+		front(:ok) INLINE T!& := THIS[:ok(0)];
 		start() INLINE [T!]Buffer-Iterator := (&THIS, 0);
+		# front() INLINE T!#& := THIS[0];
+		# front(:ok) INLINE T!#& := THIS[:ok(0)];
 		# start() INLINE [T!]Buffer#-Iterator := (&THIS, 0);
+
+		back() INLINE T!& := THIS[Size-1];
+		back(:ok) INLINE T!& := THIS[:ok(Size-1)];
 		end() INLINE [T!]Buffer-Iterator := (&THIS, Size-1);
+		# back() INLINE T!#& := THIS[Size-1];
+		# back(:ok) INLINE T!#& := THIS[:ok(Size-1)];
 		# end() INLINE [T!]Buffer#-Iterator := (&THIS, Size-1);
 	}
 

@@ -110,7 +110,7 @@ INCLUDE 'std/io/stream'
 		THIS(v: CHAR #*) INLINE Hasher& := THIS(str::buf(v));
 
 		[T:TYPE]
-		THIS(v: T!-std::Vector#&) Hasher& := THIS(v.content());
+		THIS(v: T!-std::Vector#&) Hasher& := THIS(v!);
 
 		[T:TYPE]
 		THIS(v: T! #*) Hasher&

@@ -11,7 +11,7 @@ INCLUDE 'std/error'
 	# FINAL print(o: std::io::OStream &) VOID
 	{
 		o.write("File not found: '");
-		o.write(FileName.content());
+		o.write(FileName!);
 		o.write("'.");
 	}
 }

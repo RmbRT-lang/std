@@ -46,6 +46,7 @@ PUBLIC:
 		Content(NULL),
 		Capacity(0)
 	{
+		reserve(SIZEOF...(A!));
 		_emplace_back(<A!&&>(a)...);
 	}
 
@@ -70,9 +71,9 @@ PUBLIC:
 	{
 		ASSERT(at < ##THIS);
 
-		Content.Data[at].~;
+		THIS![:ok(at)].~;
 		--Content.Size;
-		range::move_construct(Content.Data+at, Content.Data+at+1, ##Content-at);
+		range::move_construct(&THIS[:ok(at)], &THIS[:ok(at+1)], ##THIS-at);
 	}
 
 	(/
@@ -128,7 +129,7 @@ PUBLIC:
 			range::destroy(Content.drop_start(size));
 		ELSE
 			range::default_construct(
-				Content.Data + ##Content,
+				&THIS[:ok(##THIS)],
 				size - ##Content);
 		Content.Size := size;
 	}
@@ -143,7 +144,7 @@ PUBLIC:
 		cap: UM;
 		IF(!Capacity)
 			cap := 1;
-		ELSE IF(Capacity > ##Content)
+		ELSE IF(Capacity > ##THIS)
 			cap := Capacity;
 		ELSE
 			cap := (Capacity+1 + (Capacity >> 4)) | 3;
@@ -178,29 +179,18 @@ PUBLIC:
 	{ emplace(0, <A!&&>(at.(2))); }
 
 	THIS[i: UM] INLINE T!& := Content[i];
+	THIS[i: {:ok, UM}] INLINE T!& := Content[i];
 	# THIS[i: UM] INLINE T!#& := Content[i];
+	# THIS[i: {:ok, UM}] INLINE T!#& := Content[i];
 
 	# <BOOL> := Content.Size;
 
 	# ##THIS INLINE UM := Content.Size;
 	# data() INLINE T! #* := Content.Data;
 	# empty() INLINE BOOL := ##THIS == 0;
-	# back() INLINE T!#& := Content[Content.Size-1];
-	back() INLINE T!& := Content[Content.Size-1];
 
-	# front() INLINE T!#& := Content[0];
-	front() INLINE T!& := Content[0];
-
-	# content() INLINE [T!#]Buffer := Content;
-	content() INLINE ::= Content;
-
-	THIS! ::= Content;
-	# THIS! ::= Content;
-
-	# range(start: UM, length: UM) [T!#]Buffer
-		:= Content.range(start, length);
-	range(start: UM, length: UM) [T!]Buffer
-		:= Content.range(start, length);
+	THIS! #& ::= Content;
+	# THIS! #& ::= Content;
 
 	start() INLINE [T!]Vector-Iterator := (&THIS, 0);
 	# start() INLINE [T!]Vector#-Iterator := (&THIS, 0);

@@ -4,141 +4,141 @@ INCLUDE 'std/memory'
 INCLUDE 'std/ringbuffer'
 INCLUDE 'std/help'
 
-::std
+::std::str
 {
-	::str
+	[C: TYPE]
+	buf(str: C! \) [C!]Buffer := (str, len(str));
+
+	[C: TYPE]
+	len(str: C! #*) UM
 	{
-		[C: TYPE]
-		buf(str: C! \) [C!]Buffer
-			:= [C!]Buffer(str, len(str));
-
-		[C: TYPE]
-		len(str: C! #*) UM
-		{
-			IF(!str)
-				RETURN 0;
-			i: UM := 0;
-			WHILE(str[i]) ++i;
-			RETURN i;
-		}
-
-		[C: TYPE]
-		cmp(
-			lhs: [C!]Buffer#&,
-			rhs: [C!]Buffer#&) SM
-		{
-			minSz #::= lhs.Size > rhs.Size ? rhs.Size : lhs.Size;
-
-			FOR(i:UM := 0; i < minSz; i++)
-				IF(lhs.Data[i] != rhs.Data[i])
-					RETURN lhs.Data[i] - rhs.Data[i];
-
-			RETURN (lhs.Size - rhs.Size);
-		}
-
-		[C:TYPE]
-		cmp(lhs: C!#\, rhs: C!#\) INLINE SM := cmp(buf(lhs), buf(rhs));
-
-		[C: TYPE]
-		starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) BOOL
-		{
-			IF(find.Size > string.Size)
-				RETURN FALSE;
-			RETURN memcmp(string.Data, find.Data, find.Size) == 0;
-		}
-
-		[C: TYPE]
-		starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE BOOL
-			:= starts_with(string, buf(find));
-		[C: TYPE]
-		starts_with(string: C!#\, find: C!#\) INLINE BOOL
-			:= starts_with(buf(string), buf(find));
+		IF(!str)
+			RETURN 0;
+		i: UM := 0;
+		WHILE(str[i]) ++i;
+		RETURN i;
 	}
 
 	[C: TYPE]
-	String
+	cmp(
+		lhs: [C!]Buffer#&,
+		rhs: [C!]Buffer#&) SM
 	{
-		PRIVATE Content: [C!]Buffer;
+		minSz #::= ##lhs > ##rhs ? ##rhs : ##lhs;
 
-		{} {}
-		(// Creates a 0-terminated copy of a C string. /)
-		{str: C #\, :cstring}:
-			Content(clone(str, str::len(str)+1))
-		{
-			// Remove the terminating 0-byte from the content.
-			Content.Size--;
-		}
+		FOR(i:UM := 0; i < minSz; i++)
+			IF(lhs[:ok(i)] != rhs[:ok(i)])
+				RETURN lhs[:ok(i)] - rhs[:ok(i)];
 
-		(// Creates a 0-terminated copy of a buffer. /)
-		{str: [C#]Buffer #&, :cstring}:
-			Content([C!]alloc(str.Size+1))
-		{
-			range::copy_construct(Content.Data, str.Data, str.Size);
-			Content.Data[Content.Size-1].{0};
-			// Remove terminating 0-byte from the content.
-			Content.Size--;
-		}
-
-		(// Creates a 0-terminated copy of a string. /)
-		{str: [C!]String #&, :cstring}
-		->	String(str.Content, :cstring);
-
-		{data: [C#]Buffer #&}: Content(clone(data));
-		{data: [C!]Buffer #&, :transfer}: Content(data);
-
-		{str: C #\}:
-			Content(clone(str, str::len(str)));
-		{cpy: [C]String #&}:
-			Content(clone(cpy.Content));
-		{mv: [C]String &&}:
-			Content(mv.Content)
-		{
-			mv.Content := NULL;
-		}
-		DESTRUCTOR
-		{
-			IF(Content.Data)
-				free(Content);
-			Content := NULL;
-		}
-
-		THIS:=(rhs: [C!]String#&) [C!]String& := help::copy_assign(THIS, rhs);
-		THIS:=(rhs: [C!]String&&) [C!]String& := help::move_assign(THIS, rhs);
-
-		# data() INLINE ::= Content.Data;
-		# ##THIS INLINE ::= Content.Size ? Content.Size: 0;
-		# content() INLINE [C!#]Buffer := Content;
-		content() INLINE ::= Content;
-		# THIS[i: UM]#& ::= Content[i];
-
-		append(str: [C#]Buffer #&) VOID
-			:= append(str.Data, str.Size);
-		append(str: C #\, size: UM) VOID
-		{
-			new ::= [C]alloc(Content.Size + size);
-			range::copy_construct(new.Data, Content.Data, Content.Size);
-			range::copy_construct(new.Data+Content.Size, str, size);
-			THIS.~;
-			THIS.{new, :transfer};
-		}
-
-		append(str: C #\) VOID := append(str::buf(str));
-		append(str: C) INLINE VOID := append(&str, 1);
-
-		# substring(start: UM, size: UM) [C!#]Buffer
-			:= Content.range(start, size);
-
-		substring(start: UM, size: UM) [C!]Buffer
-			:= Content.range(start, size);
-
-		# cmp(rhs: [C!]String #&) SM := str::cmp(content(), rhs.content());
-
-		# starts_with(str: C #\) INLINE
-			::= str::starts_with(<[C#]Buffer>(Content), str);
-		# starts_with(str: [C#]Buffer #&) INLINE
-			::= str::starts_with(<[C#]Buffer>(Content), str);
+		RETURN ##lhs - ##rhs;
 	}
 
+	[C: TYPE]
+	cmp(lhs: [C!#]Buffer#&, rhs: [C!]Buffer#&) INLINE
+		::= cmp(lhs, <[C!#]Buffer>(rhs));
+	[C: TYPE]
+	cmp(lhs: [C!]Buffer#&, rhs: [C!#]Buffer#&) INLINE
+		::= cmp(<[C!#]Buffer>(lhs), rhs);
+
+	[C:TYPE]
+	cmp(lhs: C!#\, rhs: C!#\) INLINE SM := cmp(buf(lhs), buf(rhs));
+
+	[C: TYPE]
+	starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) BOOL
+	{
+		IF(find.Size > string.Size)
+			RETURN FALSE;
+		RETURN memcmp(string.Data, find.Data, find.Size) == 0;
+	}
+
+	[C: TYPE]
+	starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE BOOL
+		:= starts_with(string, buf(find));
+	[C: TYPE]
+	starts_with(string: C!#\, find: C!#\) INLINE BOOL
+		:= starts_with(buf(string), buf(find));
+}
+
+::std [C: TYPE]
+String
+{
+	PRIVATE Content: [C!]Buffer;
+
+	{} {}
+	(// Creates a 0-terminated copy of a C string. /)
+	{str: C #\, :cstring}:
+		Content(clone(str, str::len(str)+1))
+	{
+		// Remove the terminating 0-byte from the content.
+		Content.Size--;
+	}
+
+	(// Creates a 0-terminated copy of a buffer. /)
+	{str: [C#]Buffer #&, :cstring}:
+		Content([C!]alloc(str.Size+1))
+	{
+		range::copy_construct(Content.Data, str.Data, str.Size);
+		Content.Data[Content.Size-1].{0};
+		// Remove terminating 0-byte from the content.
+		Content.Size--;
+	}
+
+	(// Creates a 0-terminated copy of a string. /)
+	{str: [C!]String #&, :cstring}
+	->	String(str.Content, :cstring);
+
+	{data: [C#]Buffer #&}: Content(clone(data));
+	{data: [C!]Buffer #&, :transfer}: Content(data);
+
+	{str: C #\}:
+		Content(clone(str, str::len(str)));
+	{cpy: [C]String #&}:
+		Content(clone(cpy.Content));
+	{mv: [C]String &&}:
+		Content(mv.Content)
+	{
+		mv.Content := NULL;
+	}
+	DESTRUCTOR
+	{
+		IF(Content)
+			free(Content);
+		Content := NULL;
+	}
+
+	THIS:=(rhs: [C!]String#&) [C!]String& := help::copy_assign(THIS, rhs);
+	THIS:=(rhs: [C!]String&&) [C!]String& := help::move_assign(THIS, rhs);
+
+	# data() INLINE ::= Content.Data;
+	# ##THIS INLINE ::= ##Content;
+	# THIS[i: UM] INLINE #& ::= Content[i];
+	# THIS[i: {:ok, UM}] INLINE #& ::= Content[i];
+	# THIS! INLINE #& ::= Content;
+
+	append(str: [C#]Buffer #&) VOID
+		:= append(str.Data, str.Size);
+	append(str: C #\, size: UM) VOID
+	{
+		new ::= [C]alloc(Content.Size + size);
+		range::copy_construct(new.Data, Content.Data, Content.Size);
+		range::copy_construct(new.Data+Content.Size, str, size);
+		THIS.~;
+		THIS.{new, :transfer};
+	}
+
+	append(str: C #\) VOID := append(str::buf(str));
+	append(str: C) INLINE VOID := append(&str, 1);
+
+	# cmp(rhs: [C!]String #&) SM := str::cmp(THIS!, rhs!);
+
+	# starts_with(str: C #\) INLINE
+		::= str::starts_with(<[C#]Buffer>(Content), str);
+	# starts_with(str: [C#]Buffer #&) INLINE
+		::= str::starts_with(<[C#]Buffer>(Content), str);
+}
+
+::std
+{
 	TYPE Utf8 := [CHAR]String;
 	TYPE Utf32 := [C32]String;
 }

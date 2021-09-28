@@ -17,7 +17,7 @@ INCLUDE "../std/string"
 			IF(##expect != ##Data)
 				RETURN FALSE;
 			FOR(i ::= 0; i < ##Data; i++)
-				IF(0 != str::cmp(str::buf(expect[i]), Data[i].content()))
+				IF(0 != str::cmp(str::buf(expect[:ok(i)]), Data[:ok(i)]!))
 					RETURN FALSE;
 			RETURN TRUE;
 		}
