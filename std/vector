@@ -189,8 +189,8 @@ PUBLIC:
 	# data() INLINE T! #* := Content.Data;
 	# empty() INLINE BOOL := ##THIS == 0;
 
-	THIS! #& ::= Content;
-	# THIS! #& ::= Content;
+	THIS! INLINE ::= Content;
+	# THIS! INLINE #& ::= Content;
 
 	start() INLINE [T!]Vector-Iterator := (&THIS, 0);
 	# start() INLINE [T!]Vector#-Iterator := (&THIS, 0);
