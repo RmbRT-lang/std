@@ -86,6 +86,10 @@ PUBLIC:
 		ASSERT(at <= ##Content);
 		ASSERT(at <= cap);
 
+		// Make sure there is space for the hole.
+		IF(at < ##Content && cap == ##Content)
+			++cap;
+
 		// Is the container already large enough?
 		IF(Capacity >= cap)
 			// Grow hole if required.
@@ -99,7 +103,7 @@ PUBLIC:
 					range::move_assign_r(
 						Content.Data+at+1,
 						Content.Data+at,
-						##Content-at);
+						##Content-(at+1));
 					failed := FALSE;
 				} FINALLY IF(failed)
 				{
