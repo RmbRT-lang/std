@@ -28,8 +28,11 @@ INCLUDE 'std/err/indexoutofrange'
 		range: T! \,
 		count: UM) VOID
 	{
-		FOR(i ::= 0; i<count; i++)
+		i: UM;
+		TRY FOR(i := 0; i<count; i++)
 			range[i].{};
+		FINALLY IF(i != count)
+			destroy(range, i);
 	}
 
 
@@ -38,8 +41,11 @@ INCLUDE 'std/err/indexoutofrange'
 		src: T!# \,
 		count: UM) VOID
 	{
-		FOR(i ::= 0; i<count; i++)
+		i: UM;
+		TRY FOR(i := 0; i<count; i++)
 			dst[i].{src[i]};
+		FINALLY IF(i != count)
+			destroy(dst, i);
 	}
 
 	[T: TYPE] move_construct(
@@ -47,17 +53,27 @@ INCLUDE 'std/err/indexoutofrange'
 		src: T! \,
 		count: UM) VOID
 	{
-		FOR(i ::= 0; i<count; i++)
+		i: UM;
+		TRY FOR(i := 0; i<count; i++)
 			dst[i].{&&src[i]};
+		FINALLY IF(i != count)
+		{
+			move_assign(src, dst, i);
+			destroy(dst, i);
+		}
 	}
 
-	[T: TYPE] move_construct_r(
+	[T: TYPE] move_assign_r(
 		dst: T! \,
 		src: T! \,
 		count: UM) VOID
 	{
-		WHILE(count--)
-			dst[count].{&&src[count]};
+		i: UM;
+		TRY FOR(i := count; i--;)
+			dst[i] := &&src[i];
+		FINALLY IF(~i != 0)
+			FOR(j ::= count; --j != i;)
+				src[j] := &&dst[j];
 	}
 
 	[T: TYPE] destroy(

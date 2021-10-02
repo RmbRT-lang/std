@@ -84,19 +84,30 @@ PUBLIC:
 	PRIVATE reserve_with_hole_at(cap: UM, at: UM) BOOL
 	{
 		ASSERT(at <= ##Content);
+		ASSERT(at <= cap);
 
 		// Is the container already large enough?
 		IF(Capacity >= cap)
 			// Grow hole if required.
 			IF(at < ##Content)
 			{
+				Content[:ok(##Content)].{&&Content.back(:ok)};
+				failed ::= TRUE;
 				// Shift contents right.
-				range::move_construct_r(
-					Content.Data+at+1,
-					Content.Data+at,
-					##Content-at);
+				TRY
+				{
+					range::move_assign_r(
+						Content.Data+at+1,
+						Content.Data+at,
+						##Content-at);
+					failed := FALSE;
+				} FINALLY IF(failed)
+				{
+					Content.back(:ok) := &&Content[:ok(##Content)];
+					Content[:ok(##Content)].~;
+				}
 
-				Content.Data[at].~; // Destroy hole.
+				Content[:ok(at)].~; // Destroy hole.
 				++Content.Size; // Adjust size.
 
 				RETURN TRUE;
@@ -157,7 +168,21 @@ PUBLIC:
 	emplace(at: UM, a: A!&&...) INLINE VOID
 	{
 		grow_reserve_with_hole_at(at);
-		Content.Data[at].{<A!&&>(a)...};
+		failed ::= TRUE;
+		TRY
+		{
+			THIS[:ok(at)].{<A!&&>(a)...};
+			failed := FALSE;
+		} FINALLY IF(failed)
+		{
+			IF(at != ##THIS-1)
+			{
+				THIS[:ok(at)].{&&THIS[:ok(at+1)]};
+				range::move_assign(&THIS[:ok(at+1)], &THIS[:ok(at+2)], ##THIS-(at+2));
+				THIS!.back(:ok).~;
+			}
+			Content.Size--;
+		}
 	}
 
 	[A:TYPE]
