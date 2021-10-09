@@ -158,6 +158,29 @@ INCLUDE 'std/vector'
 		RETURN TRUE;
 	}
 
+	PRIVATE Emplacer {
+		TYPE THISType := [T!; Cmp!]VectorSet;
+
+		[Head:TYPE; Tail:TYPE]
+		{set: THISType&, t: {Head!, Tail!} &&} INLINE
+		{ <Emplacer>(set, :ok, <Head!>(t.(0)), <Tail!>(t.(1))); }
+		[V:TYPE]
+		{set: THISType&, v: V!&&}
+		{ set.insert(<V!&&>(v)); }
+		[V:TYPE]
+		{set: THISType&, :ok, at: {:at, UM&}&&, v: V!&&} INLINE
+		{ set.insert_at(at.(1), <V!&&>(v)); }
+		[A:TYPE; B:TYPE]
+		{set: THISType&, :ok, a: A!&&, b: B!&&} INLINE
+		{ set.insert((<A!&&>(a), <B!&&>(b))); }
+	}
+
+	[A:TYPE]
+	THIS+=(v: A!&&) INLINE VOID
+	{
+		<Emplacer>(THIS, <A!&&>(v));
+	}
+
 	remove_at(
 		position: Location #&) VOID
 	{

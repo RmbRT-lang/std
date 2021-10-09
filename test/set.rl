@@ -8,7 +8,7 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 	{
 		set: IntVectorSet;
 		ASSERT(set.empty());
-		set.insert(5);
+		set += 5;
 		ASSERT(!set.empty());
 		set.remove(5);
 		ASSERT(set.empty());
@@ -24,11 +24,11 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 	TEST "VectorSet::remove"
 	{
 		set: IntVectorSet;
-		set.insert(5);
+		set += 5;
 		ASSERT(set.remove(5) && !set.remove(5));
-		set.insert(5);
-		set.insert(6);
-		set.insert(7);
+		set += 5;
+		set += 6;
+		set += 7;
 		ASSERT(set.remove(6) && !set.remove(6));
 		ASSERT(set.remove(7) && !set.remove(7));
 		ASSERT(set.remove(5) && !set.remove(5));
@@ -39,7 +39,7 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 		set: IntVectorSet;
 		l: IntVectorSet::Location;
 		ASSERT(!set.find(5) && !set.find(5, &l));
-		set.insert(7);
+		set += 7;
 		ASSERT(set.find(7) && set.find(7, &l));
 		set.remove(7);
 		ASSERT(!set.find(7) && !set.find(7, &l));
