@@ -189,23 +189,24 @@ PUBLIC:
 		}
 	}
 
-	[A:TYPE]
-	THIS+=(a: A!&&) VOID
-	{
-		emplace(##THIS, <A!&&>(a));
+	PRIVATE Emplacer {
+		[Head:TYPE; Tail:TYPE]
+		{vec: T!-Vector&, t: {Head!, Tail!} &&} INLINE
+		{ <Emplacer>(vec, :ok, t.(0), t.(1)); }
+		[V:TYPE]
+		{vec: T!-Vector&, v: V!&&}
+		{ vec.emplace(##vec, <V!&&>(v)); }
+		[V:TYPE]
+		{vec: T!-Vector&, :ok, at: {:at, UM&}&&, v: V!&&} INLINE
+		{ vec.emplace(at.(1), <V!&&>(v)); }
+		[A:TYPE; B:TYPE]
+		{vec: T!-Vector&, :ok, a: A!&&, b: B!&&} INLINE
+		{ vec.emplace(##vec, (<A!&&>(a), <B!&&>(b))); }
 	}
 
 	[A:TYPE]
-	THIS+=(at: {{:at, UM}, A!&&}) VOID
-	{ emplace(at.(1), <A!&&>(at.(2))); }
-
-	[A:TYPE]
-	THIS+=(at: {{:at, :back}, A!&&}) VOID
-	{ emplace(##THIS, <A!&&>(at.(2))); }
-
-	[A:TYPE]
-	THIS+=(at: {{:at, :front}, A!&&}) VOID
-	{ emplace(0, <A!&&>(at.(2))); }
+	THIS+=(v: A!&&) INLINE VOID
+	{ <Emplacer>(THIS, <A!&&>(v)); }
 
 	THIS[i: UM] INLINE T!& := Content[i];
 	THIS[i: {:ok, UM}] INLINE T!& := Content[i];
