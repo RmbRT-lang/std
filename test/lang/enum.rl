@@ -16,8 +16,8 @@
 	{
 		SWITCH(E::a)
 		{
-		CASE :b: ASSERT(FALSE);
-		CASE :a: {;}
+		:b: ASSERT(FALSE);
+		:a: {;}
 		DEFAULT: ASSERT(FALSE);
 		}
 	}
@@ -25,7 +25,7 @@
 	{
 		SWITCH(x ::= E::a)
 		{
-		CASE :a: {;}
+		:a: {;}
 		DEFAULT:
 			ASSERT(FALSE);
 		}

@@ -8,7 +8,7 @@
 	{
 		TYPE SWITCH STATIC(23)
 		{
-		CASE INT: {;}
+		INT: {;}
 		DEFAULT:
 			ASSERT(!"expected INT as type");
 		}
@@ -18,7 +18,7 @@
 	{
 		TYPE SWITCH STATIC(<Base *>(NULL))
 		{
-		CASE Base: {;}
+		Base: {;}
 		DEFAULT:
 			ASSERT(!"expected BASE as type");
 		}
@@ -29,7 +29,7 @@
 		v: D1;
 		TYPE SWITCH(<Base &>(v))
 		{
-		CASE D1: {;}
+		D1: {;}
 		DEFAULT:
 			ASSERT(!"expected D1 as type");
 		}
