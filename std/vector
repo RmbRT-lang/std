@@ -76,6 +76,38 @@ PUBLIC:
 		range::move_construct(&THIS[:ok(at)], &THIS[:ok(at+1)], ##THIS-at);
 	}
 
+	append(rhs: T!-std::Buffer, :move) VOID
+	{
+		cap: UM;
+		IF(!Capacity)
+			cap := ##rhs;
+		ELSE IF(Capacity > ##THIS + ##rhs)
+			cap := Capacity;
+		ELSE
+			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
+
+		reserve(cap);
+
+		FOR(it ::= rhs.start(); it; it++)
+			THIS += &&it!;
+	}
+
+	append(rhs: T!#-std::Buffer) VOID
+	{
+		cap: UM;
+		IF(!Capacity)
+			cap := ##rhs;
+		ELSE IF(Capacity > ##THIS + ##rhs)
+			cap := Capacity;
+		ELSE
+			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
+
+		reserve(cap);
+
+		FOR(it ::= rhs.start(); it; it++)
+			THIS += it!;
+	}
+
 	(/
 		Reserve the requested amount of space, and leave an uninitialised hole
 		in the contents at the requested location. If the hole is within the
