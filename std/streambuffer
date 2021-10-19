@@ -3,11 +3,11 @@
 INCLUDE 'std/string'
 INCLUDE 'std/io/stream'
 
-::std StreamBuffer -> Utf8, io::OStream
+::std StreamBuffer -> std::[CHAR]Vector, io::OStream
 {
 	FINAL write_some(data: VOID #\, size: UM) UM
 	{
-		Utf8::append([CHAR#]Buffer(<CHAR #\>(data), size));
+		THIS.append((<CHAR #\>(data), size));
 		RETURN size;
 	}
 }
