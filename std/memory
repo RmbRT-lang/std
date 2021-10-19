@@ -91,6 +91,10 @@ INCLUDE 'std/iterator'
 			:= range(0, size);
 		# cut(size: {:ok, UM}) [T!]Buffer
 			:= range(0, size.(1), :ok);
+		# cut_start(size: {:ok, UM}) [T!]Buffer
+			:= range(Size-size.(1), size.(1), :ok);
+		# cut_start(size: UM) [T!]Buffer
+			:= range(Size-size, size);
 
 		# ##THIS INLINE UM := Size;
 
