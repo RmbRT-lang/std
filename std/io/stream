@@ -1,63 +1,93 @@
 (/rl/)
 
 INCLUDE 'std/types'
-INCLUDE 'std/memory'
-INCLUDE 'std/string'
+INCLUDE 'std/str'
 
 ::std::io
 {
+	::detail StreamInput
+	{
+		Data: VOID #\;
+		Bytes: UM;
+
+		[T: TYPE]
+		:buf
+		{
+			slice: T! #\,
+			count: UM
+		} INLINE:
+			Data(slice),
+			Bytes(count * SIZEOF(T));
+
+		:raw{
+			slice: VOID #\,
+			bytes: UM
+		} INLINE:
+			Data(slice),
+			Bytes(bytes);
+
+		{string: CHAR#\}: Data(string), Bytes(str::len(string));
+		:ch{c: CHAR #&} INLINE: Data(&c), Bytes(1);
+	}
+
 	MASK OStream
 	{
-		write_some(data: VOID #\, size: UM) UM;
+		write_some_impl(data: VOID #\, size: UM) UM;
 
-		write(data: VOID #\, size: UM) UM
+		PRIVATE write_all(d: detail::StreamInput) UM
 		{
-			p ::= <CHAR#\>(data);
-			FOR(left ::= size; left > 0;)
+			p ::= <CHAR#\>(d.Data);
+			FOR(left ::= d.Bytes; left > 0;)
 			{
-				written ::= write_some(p, left);
+				written ::= write_some_impl(p, left);
 				left := left - written;
 				p := p + written;
 			}
-			RETURN size;
+			= d.Bytes;
 		}
 
-		write_some(str: CHAR #\) UM
-			:= write_some(str, str::len(str));
-		write(str: CHAR #\) UM
-			:= write(str, str::len(str));
+		[A...: TYPE]
+		write(a: A!&&...) UM
+		{
+			written: UM := 0;
+			(written += write_all(<A!&&>(a)))...;
+			= written;
+		}
 
-		write_some(ch: CHAR) UM
-			:= write_some(&ch, 1);
-		write(ch: CHAR) UM
-			:= write(&ch, 1);
+		write_some(d: detail::StreamInput) INLINE UM
+			:= write_some_impl(d.Data, d.Bytes);
+	}
+
+	::detail StreamOutput
+	{
+		Data: VOID \;
+		Bytes: UM;
 
 		[T: TYPE]
-		write_some(buf: [T!]Buffer #&) INLINE UM
-			:= write_some(buf.Data, buf.Size * SIZEOF(T));
+		:buf
+		{
+			slice: T! \,
+			count: UM
+		} INLINE:
+			Data(slice),
+			Bytes(count * SIZEOF(T));
 
-		[T: TYPE]
-		write(buf: [T!]Buffer #&) INLINE UM
-			:= write(buf.Data, buf.Size * SIZEOF(T));
-
-		PRIVATE write_all() INLINE ::= 0;
-		[A0: TYPE; A...: TYPE]
-		write_all(a0: A0!&&, a: A!&&...) UM
-			:= write(<A0!&&>(a0)) + write_all(<A!&&>(a)...);
+		:ch{c: CHAR &} INLINE: Data(&c), Bytes(1);
 	}
 
 	MASK IStream
 	{
-		read(data: VOID \, size: UM) UM;
+		read_some(data: VOID \, size: UM) UM;
+
 		[T: TYPE]
 		read(data: T! - Buffer #&) INLINE UM
 			:= read(data.Data, data.Size);
 
-		read() CHAR
+		read_byte() CHAR
 		{
 			c: CHAR;
-			read(&c, 1);
-			RETURN c;
+			read_some(&c, 1);
+			= c;
 		}
 	}
 }

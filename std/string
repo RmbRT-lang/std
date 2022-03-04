@@ -1,63 +1,9 @@
 (/rl/)
 
 INCLUDE 'std/memory'
-INCLUDE 'std/ringbuffer'
 INCLUDE 'std/help'
 
-::std::str
-{
-	[C: TYPE]
-	buf(str: C! \) [C!]Buffer := (str, len(str));
-
-	[C: TYPE]
-	len(str: C! #*) UM
-	{
-		IF(!str)
-			RETURN 0;
-		i: UM := 0;
-		WHILE(str[i]) ++i;
-		RETURN i;
-	}
-
-	[C: TYPE]
-	cmp(
-		lhs: [C!]Buffer#&,
-		rhs: [C!]Buffer#&) SM
-	{
-		minSz #::= ##lhs > ##rhs ? ##rhs : ##lhs;
-
-		FOR(i:UM := 0; i < minSz; i++)
-			IF(lhs[:ok(i)] != rhs[:ok(i)])
-				RETURN lhs[:ok(i)] - rhs[:ok(i)];
-
-		RETURN ##lhs - ##rhs;
-	}
-
-	[C: TYPE]
-	cmp(lhs: [C!#]Buffer#&, rhs: [C!]Buffer#&) INLINE
-		::= cmp(lhs, <[C!#]Buffer>(rhs));
-	[C: TYPE]
-	cmp(lhs: [C!]Buffer#&, rhs: [C!#]Buffer#&) INLINE
-		::= cmp(<[C!#]Buffer>(lhs), rhs);
-
-	[C:TYPE]
-	cmp(lhs: C!#\, rhs: C!#\) INLINE SM := cmp(buf(lhs), buf(rhs));
-
-	[C: TYPE]
-	starts_with(string: [C!#]Buffer #&, find: [C!#]Buffer #&) BOOL
-	{
-		IF(find.Size > string.Size)
-			RETURN FALSE;
-		RETURN memcmp(string.Data, find.Data, find.Size) == 0;
-	}
-
-	[C: TYPE]
-	starts_with(string: [C!#]Buffer #&, find: C! #\) INLINE BOOL
-		:= starts_with(string, buf(find));
-	[C: TYPE]
-	starts_with(string: C!#\, find: C!#\) INLINE BOOL
-		:= starts_with(buf(string), buf(find));
-}
+INCLUDE 'std/str'
 
 ::std [C: TYPE]
 String
@@ -65,36 +11,13 @@ String
 	PRIVATE Content: [C!]Buffer;
 
 	{} {}
-	(// Creates a 0-terminated copy of a C string. /)
-	{str: C #\, :cstring}:
-		Content(clone(str, str::len(str)+1))
-	{
-		// Remove the terminating 0-byte from the content.
-		Content.Size--;
-	}
 
-	(// Creates a 0-terminated copy of a buffer. /)
-	{str: [C#]Buffer #&, :cstring}:
-		Content([C!]alloc(str.Size+1))
-	{
-		range::copy_construct(Content.Data, str.Data, str.Size);
-		Content.Data[Content.Size-1].{0};
-		// Remove terminating 0-byte from the content.
-		Content.Size--;
-	}
+	{data: str::[C#]View #&}: Content(heap::clone(data));
+	:transfer{data: [C!]Buffer #&}: Content(data);
 
-	(// Creates a 0-terminated copy of a string. /)
-	{str: [C!]String #&, :cstring}
-	->	String(str.Content, :cstring);
-
-	{data: [C#]Buffer #&}: Content(clone(data));
-	{data: [C!]Buffer #&, :transfer}: Content(data);
-
-	{str: C #\}:
-		Content(clone(str, str::len(str)));
-	{cpy: [C]String #&}:
-		Content(clone(cpy.Content));
-	{mv: [C]String &&}:
+	{#&cpy}:
+		Content(heap::clone(cpy.Content));
+	{&&mv}:
 		Content(mv.Content)
 	{
 		mv.Content := NULL;
@@ -102,39 +25,32 @@ String
 	DESTRUCTOR
 	{
 		IF(Content)
-			free(Content);
+			heap::free(Content);
 		Content := NULL;
 	}
 
-	THIS:=(rhs: [C!]String#&) [C!]String& := help::copy_assign(THIS, rhs);
-	THIS:=(rhs: [C!]String&&) [C!]String& := help::move_assign(THIS, rhs);
-
 	# data() INLINE ::= Content.Data;
 	# ##THIS INLINE ::= ##Content;
-	# THIS[i: UM] INLINE #& ::= Content[i];
-	# THIS[i: {:ok, UM}] INLINE #& ::= Content[i];
-	# THIS! INLINE #& ::= Content;
+	# THIS[i: Index #&] INLINE #& ::= Content[i];
+	# THIS! INLINE str::[C#]View := Content++;
 
-	append(str: [C#]Buffer #&) VOID
-		:= append(str.Data, str.Size);
-	append(str: C #\, size: UM) VOID
-	{
-		new ::= [C]alloc(Content.Size + size);
-		range::copy_construct(new.Data, Content.Data, Content.Size);
-		range::copy_construct(new.Data+Content.Size, str, size);
-		THIS.~;
-		THIS.{new, :transfer};
+	[T...: TYPE]
+	append(v: T!&&...) INLINE VOID
+	{ append_impl(<str::[C#]View>(<T!&&>(v))...); }
+	[T...: TYPE]
+	PRIVATE append_impl(v: T!&&...) VOID {
+		sz: UM := ##THIS;
+		(sz += ##v)...;
+
+		new ::= heap::[C]alloc(sz);
+		start ::= new.Data;
+		start += range::copy_construct(start, Content.Data, ##Content);
+		(start += range::copy_construct(start, v.Data, ##v))...;
+		THIS := :transfer(new);
 	}
 
-	append(str: C #\) VOID := append(str::buf(str));
-	append(str: C) INLINE VOID := append(&str, 1);
-
-	# cmp(rhs: [C!]String #&) SM := str::cmp(THIS!, rhs!);
-
-	# starts_with(str: C #\) INLINE
-		::= str::starts_with(<[C#]Buffer>(Content), str);
-	# starts_with(str: [C#]Buffer #&) INLINE
-		::= str::starts_with(<[C#]Buffer>(Content), str);
+	THIS+=(str: str::[C#]View #&) INLINE VOID
+	{ append(str); }
 }
 
 ::std

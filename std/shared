@@ -26,8 +26,8 @@ INCLUDE 'std/memory'
 			{
 				ptr()->~;
 				IF(P)
-					std::free(P);
-				std::free(&THIS);
+					heap::free(P);
+				heap::free(&THIS);
 			}
 		}
 	}
@@ -37,8 +37,8 @@ INCLUDE 'std/memory'
 	{}: P(NULL);
 	{NULL}: P(NULL);
 	{p: T! *, :transfer}: P([Alloc]new(p, 1, FALSE));
-	{mv: [T!]Shared &&}: P(mv.P) { mv.{}; }
-	{cpy: [T!]Shared#&}: P(cpy.P) { IF(P) P->ref(); }
+	{&&mv}: P(mv.P) { mv.{}; }
+	{#&cpy}: P(cpy.P) { IF(P) P->ref(); }
 	PRIVATE {alloc: [T!]Shared::Alloc *}: P(alloc);
 
 	{:create}:P(alloc_impl()) { get()->{}; }
@@ -53,23 +53,20 @@ INCLUDE 'std/memory'
 	# THIS! INLINE T! * := P ? P->ptr() : NULL;
 	# <BOOL> INLINE := P != NULL;
 
-	THIS:=(cpy: [T!]Shared #&) ::= help::copy_assign(THIS, cpy);
-	THIS:=(mv: [T!]Shared &&) ::= help::move_assign(THIS, mv);
-
-	# get() T! * { ASSERT(P != NULL); RETURN P->ptr(); }
+	# get() T! * { ASSERT(P != NULL); = P->ptr(); }
 	# get(:ok) T! * := P->ptr();
 
 	# *THIS T! &
 	{
 		ASSERT(P != NULL);
-		RETURN *P->ptr();
+		= *P->ptr();
 	}
 
 	PRIVATE STATIC alloc_impl() Alloc \
 	{
-		ret ::= <Alloc \>(std::alloc(SIZEOF(Alloc) + SIZEOF(T!)));
+		ret ::= <Alloc \>(heap::alloc(SIZEOF(Alloc) + SIZEOF(T!)));
 		ret->{NULL, 1};
-		RETURN ret;
+		= ret;
 	}
 	STATIC alloc() [T!]Shared := alloc_impl();
 }

@@ -20,8 +20,8 @@ INCLUDE 'std/tags'
 			IF(!F)
 				THROW;
 		}
-		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
-		write(d: VOID #\, s: UM) INLINE ::= <<<io::OStream>>>(&THIS).write(d, s);
+		write_some_impl(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
+		write(d: VOID #\, s: UM) INLINE ::= <<<io::OStream>>>(&THIS).write(:raw(d, s));
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE INT := libc::fflush(F);
 		eof() INLINE BOOL := libc::feof(F);

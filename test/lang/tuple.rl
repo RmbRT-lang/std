@@ -78,4 +78,34 @@
 		y: INT;
 		(x,y) := <{INT, INT}>(f);
 	}
+
+	Visitor
+	{
+		Index: UINT;
+		Address: VOID #*;
+
+		{}: Index(~0), Address(NULL);
+
+		[Head:TYPE; Tail...:TYPE]
+		THIS(i: UINT, v: {Head!, Tail!...} #&) VOID
+		{
+			THIS VISIT*(v);
+		}
+		[T:TYPE]
+		THIS(i: UINT, v: T! #&) VOID
+		{
+			(Index, Address) := (i, &v);
+		}
+	}
+
+	TEST "visit"
+	{
+		v: Visitor;
+
+		x ::= (5, (7, 6));
+
+		v VISIT*(x);
+		ASSERT(v.Index == 1);
+		ASSERT(v.Address == &x.(1).(1));
+	}
 }

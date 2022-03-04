@@ -1,5 +1,7 @@
 (/rl/)
+INCLUDE 'std/dyn'
 INCLUDE 'std/map'
+INCLUDE 'std/hash'
 
 ::std [K:TYPE; V:TYPE] HashMap
 {
@@ -8,9 +10,9 @@ INCLUDE 'std/map'
 	TYPE Location := std::[Hash, V, Hash]Map::Location;
 
 	find(k: {:location, K! #&}) INLINE {V! *, Location}
-		:= find(:location(hash(k)));
+		:= find(:location(hash(k.(1))));
 	# find(k: {:location, K! #&}) INLINE {V! #*, Location}
-		:= find(:location(hash(k)));
+		:= find(:location(hash(k.(1))));
 
 	find(k: K! #&, loc: Location \) INLINE V! *
 		:= find(hash(k), loc);
@@ -62,3 +64,5 @@ INCLUDE 'std/map'
 	# end() INLINE ::= Map.end();
 	# empty() INLINE BOOL := Map.empty();
 }
+
+::std [K:TYPE; V:TYPE] TYPE DynHashMap := [K!; V!-std::Dyn]HashMap;

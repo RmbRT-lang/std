@@ -4,7 +4,7 @@ TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
 
 ::std
 {
-	TEST "Map::empty"
+	TEST "HashMap::empty"
 	{
 		map: IntBoolHashMap;
 		ASSERT(map.empty());
@@ -16,7 +16,7 @@ TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
 		ASSERT(map.empty());
 	}
 
-	TEST "Map::insert"
+	TEST "HashMap::insert"
 	{
 		map: IntBoolHashMap;
 		ASSERT(map.insert(6, TRUE) && !map.insert(6, FALSE));
@@ -29,7 +29,7 @@ TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
 		ASSERT(*i7 == FALSE);
 	}
 
-	TEST "VectorSet::remove"
+	TEST "HashMap::remove"
 	{
 		map: IntBoolHashMap;
 		map.insert(5, TRUE);
@@ -42,7 +42,7 @@ TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
 		ASSERT(map.remove(5) && !map.remove(5));
 	}
 
-	TEST "VectorSet::find"
+	TEST "HashMap::find"
 	{
 		map: IntBoolHashMap;
 		l: IntBoolHashMap::Location;

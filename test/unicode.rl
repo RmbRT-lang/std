@@ -36,7 +36,7 @@ INCLUDE "../std/memory"
 	{
 		buf: CHAR[4];
 		len ::= utf8::encode(c, buf);
-		RETURN size(buf[0]) == len
-			&& memcmp(buf, str, len) == 0;
+		= size(buf[0]) == len
+			&& mem::cmp(buf, str, len) == 0;
 	}
 }

@@ -1,0 +1,98 @@
+(/rl/)
+
+INCLUDE 'std/range'
+
+::std::heap
+{
+	[T: TYPE]
+	clone(data: T! #\, size: UM) [T]Buffer
+	{
+		tmp ::= [T]alloc(size);
+		range::copy_construct(tmp.Data, data, size);
+		= (tmp.Data, tmp.Size);
+	}
+	[T: TYPE]
+	clone_move(data: T! #\, size: UM) [T]Buffer
+	{
+		tmp ::= [T]alloc(size);
+		range::move_construct(tmp.Data, data, size);
+		= (tmp.Data, tmp.Size);
+	}
+
+	[T: TYPE]
+	clone(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
+
+
+	alloc(bytes: UM) VOID* := detail::libc::malloc(bytes);
+	[T: TYPE] alloc() INLINE T \
+	{
+		ptr ::= alloc(SIZEOF(T));
+		ASSERT(ptr != NULL);
+		= <T \>(ptr);
+	}
+
+	[T: TYPE] alloc(count: UM) [T]Buffer
+	{
+		b: [T]Buffer(<T \>(detail::libc::malloc(count * SIZEOF(T))), count);
+		ASSERT(!count || b.Data);
+		= b;
+	}
+
+	[T: TYPE; Args...: TYPE] new(args: Args!&&...) T! *
+	{
+		p ::= [T]alloc();
+		TRY
+		{
+			p->{<Args!&&>(args)...};
+			x ::= p;
+			p := NULL;
+			= x;
+		}
+		FINALLY IF(p)
+			heap::free(p);
+	}
+
+
+	calloc(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
+	[T: TYPE] calloc() T *
+	{
+		v ::= <T \>(alloc(SIZEOF(T)));
+		v->{};
+		= v;
+	}
+	[T: TYPE] calloc(count: UM) [T]Buffer
+	{
+		v ::= [T]alloc(count);
+		range::default_construct(v, count);
+		= v;
+	}
+
+	[T: TYPE] delete(v: [T!]Buffer) INLINE VOID
+	{
+		range::destroy(v);
+		heap::free(v);
+	}
+
+	[T: TYPE] delete(ptr: T! \) INLINE VOID
+	{
+		addr ::= &&&*ptr;
+		ptr->~;
+		detail::libc::free(addr);
+	}
+
+
+	free(mem: VOID#\) VOID := detail::libc::free(mem);
+
+	[T: TYPE] free(v: [T!]Buffer!#&) INLINE VOID
+	{ detail::libc::free(v.Data); }
+
+	[T: TYPE] dup(value: T! &&) INLINE T \ := [T]new(<T!&&>(value));
+}
+
+::std::detail::libc
+{
+	EXTERN malloc(UM) VOID *;
+	EXTERN calloc(UM, UM) VOID *;
+	EXTERN free(VOID #\) VOID;
+	EXTERN realloc(VOID #\, UM) VOID;
+}

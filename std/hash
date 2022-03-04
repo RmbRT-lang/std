@@ -20,9 +20,9 @@ INCLUDE 'std/io/stream'
 				Words[i] := 0;
 		}
 
-		{:noinit};
+		:noinit{};
 
-		{:seed}
+		:seed{}
 		{
 			Words[0] := 0x239f0707ec07cf21;
 			IF(##Words > 1) Words[1] := 0x40784b4fb373e78f;
@@ -38,8 +38,8 @@ INCLUDE 'std/io/stream'
 		{
 			FOR(i ::= 0; i < ##Words; i++)
 				IF(Words[i] != rhs.Words[i])
-					RETURN FALSE;
-			RETURN TRUE;
+					= FALSE;
+			= TRUE;
 		}
 		# THIS!=(rhs: Hash#&) INLINE BOOL := !(THIS == rhs);
 
@@ -47,8 +47,8 @@ INCLUDE 'std/io/stream'
 		{
 			FOR(i ::= 0; i < ##Words; i++)
 				IF(unequal ::= Words[i] - rhs.Words[i])
-					RETURN unequal;
-			RETURN 0;
+					= unequal;
+			= 0;
 		}
 
 		STATIC cmp(lhs: Hash#&, rhs: Hash #&) INLINE WordAsSigned
@@ -92,9 +92,11 @@ INCLUDE 'std/io/stream'
 					applyWord(WordAcc, (WordAccSize+7) >> 3);
 					WordAccSize := 0;
 				}
-				THIS(Current);
+				IF(Current) {
+					applyWord(Current, SIZEOF(#Current));
+				}
 			}
-			RETURN Accum;
+			= Accum;
 		}
 
 		THIS(v: BOOL) INLINE Hasher& := accum(v ? 1:0, 8);
@@ -107,7 +109,7 @@ INCLUDE 'std/io/stream'
 		THIS(v: U8) INLINE Hasher& := accum(v, 64);
 		THIS(v: S8) INLINE Hasher& := THIS(<U8>(v));
 		THIS(v: CHAR) INLINE Hasher& := THIS(<U1>(v));
-		THIS(v: CHAR #*) INLINE Hasher& := THIS(str::buf(v));
+		THIS(v: CHAR #*) INLINE Hasher& := THIS(str::view(v));
 
 		[T:TYPE]
 		THIS(v: T!-std::Vector#&) Hasher& := THIS(v!);
@@ -117,7 +119,7 @@ INCLUDE 'std/io/stream'
 		{
 			IF(v)
 				THIS(*v);
-			RETURN THIS;
+			= THIS;
 		}
 
 		[T: TYPE]
@@ -127,7 +129,7 @@ INCLUDE 'std/io/stream'
 				h->hash(THIS);
 			ELSE
 				THIS VISIT(v);
-			RETURN THIS;
+			= THIS;
 		}
 
 		[T:TYPE; N:NUMBER]
@@ -135,7 +137,7 @@ INCLUDE 'std/io/stream'
 		{
 			FOR(i ::= 0; i < N; i++)
 				THIS(v[i]);
-			RETURN THIS(<U8>(N));
+			= THIS(<U8>(N));
 		}
 
 		[T:TYPE]
@@ -143,26 +145,20 @@ INCLUDE 'std/io/stream'
 		{
 			FOR(i ::= 0; i < ##v; i++)
 				THIS(v[i]);
-			RETURN THIS(<U8>(##v));
+			= THIS(<U8>(##v));
 		}
-
-		[T:TYPE]
-		THIS(CHAR#\, v: T!&&) Hasher & := THIS(<T!&&>(v));
 
 		PRIVATE accum(v: Hash::Word, bits: U1) Hasher &
 		{
-			WordAcc |= <Hash::Word>(v) << WordAccSize;
+			WordAcc ^= <Hash::Word>(v) << WordAccSize;
 			WordAccSize += bits;
 			IF(WordAccSize >= 8 * SIZEOF(Hash::Word))
 			{
 				applyWord(WordAcc, (SIZEOF(Hash::Word)));
 				WordAccSize -= 8 * SIZEOF(Hash::Word);
-				IF(WordAccSize)
-					WordAcc := v >> (bits - WordAccSize);
-				ELSE
-					WordAcc := 0;
+				WordAcc := v >> (bits - WordAccSize);
 			}
-			RETURN THIS;
+			= THIS;
 		}
 
 		PRIVATE applyWord(v: Hash::Word, size: U1) Hasher&
@@ -188,7 +184,7 @@ INCLUDE 'std/io/stream'
 				target := next;
 			}
 			Current += size;
-			RETURN THIS;
+			= THIS;
 		}
 	}
 }

@@ -7,19 +7,19 @@ INCLUDE "../std/string"
 	StreamToVector
 	{
 		Data: std::Utf8 - std::Vector;
-		write_some(data: VOID #\, size: UM) UM {
-			Data += <Utf8>((<CHAR#\>(data), size));
-			RETURN size;
+		write_some_impl(data: VOID #\, size: UM) UM {
+			Data += <Utf8>(:buf(<CHAR#\>(data), size));
+			= size;
 		}
 
 		# THIS==(expect: CHAR#\ - std::Vector #&) BOOL
 		{
 			IF(##expect != ##Data)
-				RETURN FALSE;
+				= FALSE;
 			FOR(i ::= 0; i < ##Data; i++)
-				IF(0 != str::cmp(str::buf(expect[:ok(i)]), Data[:ok(i)]!))
-					RETURN FALSE;
-			RETURN TRUE;
+				IF(str::view(expect[i]) != Data[i]!)
+					= FALSE;
+			= TRUE;
 		}
 	}
 
@@ -28,7 +28,7 @@ INCLUDE "../std/string"
 		buf: StreamToVector;
 		o ::= <<<std::io::OStream>>>(&buf);
 
-		o.write_all("hello", "world");
-		ASSERT(buf == :emplace("hello", "world"));
+		o.write("hello", "world");
+		ASSERT(buf == :vec("hello", "world"));
 	}
 }

@@ -12,7 +12,7 @@
 		lhs.{&&rhs};
 	}
 
-	RETURN lhs;
+	= lhs;
 }
 ::std::help [T: TYPE] move_assign(
 	lhs: T! &,
@@ -31,7 +31,7 @@
 		lhs.{rhs};
 	}
 
-	RETURN lhs;
+	= lhs;
 }
 
 ::std::help [T: TYPE; V: TYPE] custom_assign(
@@ -41,5 +41,5 @@
 {
 	lhs.~;
 	lhs.{<V!&&>(rhs)};
-	RETURN lhs;
+	= lhs;
 }

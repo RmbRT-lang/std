@@ -1,0 +1,60 @@
+(/rl/)
+
+INCLUDE 'std/hashmap'
+
+::std [T: TYPE] HashSet
+{
+	PRIVATE Map: [T!; T!]HashMap;
+
+	TYPE Location := [T!; T!]HashMap::Location;
+
+	# find(k: {:location, T! #&}) INLINE {T! #*, Location}
+		:= find(:location(hash(k.(1))));
+
+	# find(k: T! #&, loc: Location \) INLINE T! #*
+		:= find(hash(k), loc);
+
+	# find(k: T! #&) INLINE T! #*
+		:= find(hash(k));
+
+
+	# find(k: {:location, Hash #&}) INLINE {T! #*, Location}
+		:= Map.find(k);
+
+	find(k: Hash #&, loc: Location \) INLINE T! *
+		:= Map.find(k, loc);
+	# find(k: Hash #&, loc: Location \) INLINE T! #*
+		:= Map.find(k, loc);
+
+	# find(k: Hash #&) INLINE T! #*
+		:= Map.find(k);
+
+	# has(v: T! #&) BOOL := find(v);
+	# has(h: Hash #&) BOOL := find(h);
+
+	[Value: TYPE]
+	insert(h: Hash #&, v: Value!&&) BOOL
+		:= Map.insert(h, <Value!&&>(v));
+
+	insert(v: T!&&) BOOL
+		:= insert(hash(v), <T!&&>(v));
+
+	remove(v: T! #&) INLINE BOOL
+		:= remove(hash(v));
+
+	remove(v: T! #&, deleted: T! \) BOOL
+		:= remove(hash(v), deleted);
+
+	remove(k: Hash #&) INLINE BOOL
+		:= Map.remove(k);
+	remove(k: Hash #&, deleted: T! \) INLINE BOOL
+		:= Map.remove(k, deleted);
+
+	start() INLINE ::= Map.start();
+	# start() INLINE ::= Map.start();
+	end() INLINE ::= Map.end();
+	# end() INLINE ::= Map.end();
+	# empty() INLINE BOOL := Map.empty();
+}
+
+::std [T: TYPE] TYPE DynHashSet := T!-Dyn-HashSet;

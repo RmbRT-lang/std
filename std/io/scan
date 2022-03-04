@@ -12,12 +12,12 @@ INCLUDE 'std/math/safe'
 		{
 			c ::= s[i];
 			IF(c < '0' || c > '9')
-				RETURN i != 0;
+				= i != 0;
 
 			v := math::safe::mul(<T>(10), v) + <T>(c-'0');
 		}
 
-		RETURN TRUE;
+		= TRUE;
 	}
 
 	[T:TYPE] hex(s: [CHAR#]Buffer, v: T! &) BOOL
@@ -45,7 +45,7 @@ INCLUDE 'std/math/safe'
 			{
 				IF(sign)
 					v := math::safe::neg(v);
-				RETURN b || i != 0;
+				= b || i != 0;
 			}
 
 			v := math::safe::mul(<T>(16), v) + <T>(d);
@@ -54,6 +54,6 @@ INCLUDE 'std/math/safe'
 		IF(sign)
 			v := math::safe::neg(v);
 
-		RETURN TRUE;
+		= TRUE;
 	}
 }

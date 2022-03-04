@@ -1,0 +1,21 @@
+(/rl/)
+
+INCLUDE 'std/error'
+INCLUDE 'std/err/indexoutofrange'
+
+::std Index
+{
+	Checked: BOOL;
+	I: UM;
+
+	{};
+	{i: UM} INLINE: Checked(FALSE), I(i);
+	:ok{i: UM} INLINE: Checked(TRUE), I(i);
+
+	# THIS(range: UM) INLINE UM
+	{
+		IF(Checked || I < range)
+			= I;
+		THROW <err::IndexOutOfRange>(range, I);
+	}
+}

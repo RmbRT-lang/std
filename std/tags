@@ -3,13 +3,11 @@
 ::std NoCopy
 {
 	{};
-	{NoCopy &&};
-	THIS:=(NoCopy &&) NoCopy & := THIS;
+	{&&};
 }
 
 ::std NoMove
 {
 	{};
-	{NoMove #&};
-	THIS:=(NoMove #&) NoMove & := THIS;
+	{#&};
 }

@@ -7,7 +7,7 @@ INCLUDE 'std/io/stream'
 
 ::std::err Unimplemented -> Error
 {
-	What: [io::Streamable]Dynamic;
+	What: [io::Streamable]Dyn;
 
 	{what: io::Streamable \}: What(:gc, what);
 	{what: CHAR #\}:

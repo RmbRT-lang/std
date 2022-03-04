@@ -1,0 +1,39 @@
+(/rl/)
+
+INCLUDE 'std/heap'
+
+::std [T:TYPE] Dyn
+{
+	Ptr: T! *;
+
+	{}: Ptr(NULL);
+	{NULL}: Ptr(NULL);
+
+	{&&m}: Ptr(m.release());
+
+	:gc{p: T! *}: Ptr(p);
+
+	[Args...: TYPE]
+	:new{args: Args!&&...}:
+		Ptr(heap::[T!]new(<Args!&&>(args)...));
+
+	# <T! \> INLINE := Ptr;
+	# *THIS INLINE T! & := *Ptr;
+	# THIS! INLINE T! * := Ptr;
+
+	release() T! *
+	{
+		p ::= Ptr;
+		Ptr := NULL;
+		= p;
+	}
+
+	DESTRUCTOR
+	{
+		IF(Ptr)
+			heap::delete(Ptr);
+	}
+}
+
+::std [T: TYPE] gc(p: T! *) T!-std::Dyn := :gc(p);
+::std [T: TYPE] gcdup(value: T! &&) INLINE  ::= gc(dup(<T!&&>(value)));

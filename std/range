@@ -1,8 +1,43 @@
+
 (/rl/)
 
 INCLUDE 'std/types'
 INCLUDE 'std/math/safe'
 INCLUDE 'std/err/indexoutofrange'
+
+(// A sub-range within an integer-indexed collection. /)
+::std Range
+{
+	Start: UM;
+	Size: UM;
+	Checked: BOOL;
+
+	{};
+
+	{
+		start: UM,
+		size: UM
+	} INLINE :
+		Start(start),
+		Size(size),
+		Checked(FALSE);
+	
+	:ok{
+		start: UM,
+		size: UM
+	} INLINE :
+		Start(start),
+		Size(size),
+		Checked(TRUE);
+
+	/// Throws if the range is outside the supplied bounds.
+	# THIS(bounds: UM) INLINE VOID
+	{
+		IF(!Checked)
+			IF(math::safe::add(Start, Size) > bounds)
+				THROW <std::err::IndexOutOfRange>(bounds, Start+Size);
+	}
+}
 
 ::std::range
 {
@@ -39,13 +74,14 @@ INCLUDE 'std/err/indexoutofrange'
 	[T: TYPE] copy_construct(
 		dst: T! \,
 		src: T!# \,
-		count: UM) VOID
+		count: UM) UM
 	{
 		i: UM;
 		TRY FOR(i := 0; i<count; i++)
 			dst[i].{src[i]};
 		FINALLY IF(i != count)
 			destroy(dst, i);
+		= count;
 	}
 
 	[T: TYPE] move_construct(
@@ -57,10 +93,7 @@ INCLUDE 'std/err/indexoutofrange'
 		TRY FOR(i := 0; i<count; i++)
 			dst[i].{&&src[i]};
 		FINALLY IF(i != count)
-		{
-			move_assign(src, dst, i);
 			destroy(dst, i);
-		}
 	}
 
 	[T: TYPE] move_assign_r(
@@ -68,12 +101,8 @@ INCLUDE 'std/err/indexoutofrange'
 		src: T! \,
 		count: UM) VOID
 	{
-		i: UM;
-		TRY FOR(i := count; i--;)
+		FOR(i ::= count; i--;)
 			dst[i] := &&src[i];
-		FINALLY IF(~i != 0)
-			FOR(j ::= count; --j != i;)
-				src[j] := &&dst[j];
 	}
 
 	[T: TYPE] destroy(
@@ -84,20 +113,22 @@ INCLUDE 'std/err/indexoutofrange'
 			range[i].~;
 	}
 
-	check(
-		range: UM,
-		index: UM) INLINE VOID
+	[T: TYPE; N: NUMBER] ArrayIter
 	{
-		IF(index >= range)
-			THROW err::IndexOutOfRange(range, index);
+		Range: T! \;
+		Index: UM;
+
+		{array: T![N] &, index: UM}: Range(&array[0]), Index(index);
+
+		# <BOOL> INLINE := Index < N;
+		# THIS! INLINE T!& := Range[Index];
+		
+		THIS++ INLINE [T!; #N]ArrayIter { t ::= THIS; ++Index; = t; }
+		++THIS INLINE [T!; #N]ArrayIter& { ++Index; = THIS; }
+		THIS-- INLINE [T!; #N]ArrayIter { t ::= THIS; --Index; = t; }
+		--THIS INLINE [T!; #N]ArrayIter& { --Index; = THIS; }
 	}
 
-	check_subrange(
-		sub_start: UM,
-		sub_size: UM,
-		size: UM) INLINE VOID
-	{
-		IF(math::safe::add(sub_start, sub_size) > size)
-			THROW err::IndexOutOfRange(size, sub_start + sub_size);
-	}
+	[T: TYPE; N: NUMBER] start(range: T![N] &) ::= [T!; #N]ArrayIter(range, 0);
+	[T: TYPE; N: NUMBER] end(range: T![N] &) ::= [T!; #N]ArrayIter(range, N-1);
 }

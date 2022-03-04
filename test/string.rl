@@ -2,10 +2,10 @@ INCLUDE "../std/string"
 
 ::std
 {
-	TEST "str::buf"
+	TEST "str::view"
 	{
 		str ::= "1234546";
-		buf ::= str::buf(str);
+		buf ::= str::view(str);
 		IF(buf.Data != str && buf.Size != 6) THROW;
 	}
 
@@ -18,18 +18,18 @@ INCLUDE "../std/string"
 
 	TEST "str::cmp"
 	{
-		IF(str::cmp("a", "b") >= 0
-		|| str::cmp("a", "a") != 0
-		|| str::cmp("aa", "a") <= 0
-		|| str::cmp("", "a") >= 0) THROW;
+		IF(str::view("a").cmp("b") >= 0
+		|| str::view("a").cmp("a") != 0
+		|| str::view("aa").cmp("a") <= 0
+		|| str::view("").cmp("a") >= 0) THROW;
 	}
 
 	TEST "str::starts_with"
 	{
-		IF(!str::starts_with("hello", "hell")
-		|| str::starts_with("hell", "hello")
-		|| !str::starts_with("test", "test")
-		|| !str::starts_with("test", "")
-		|| !str::starts_with("", "")) THROW;
+		ASSERT(str::view("hello") >= "hell");
+		ASSERT(!(str::view("hell") >= "hello"));
+		ASSERT(str::view("test") >= "test");
+		ASSERT(str::view("test") >= "");
+		ASSERT(str::view("") >= "");
 	}
 }

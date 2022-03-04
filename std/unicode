@@ -7,13 +7,13 @@ INCLUDE 'std/types'
 	size(firstByte: C8) UM
 	{
 		IF(firstByte & 0x80 == 0)
-			RETURN 1;
+			= 1;
 		IF(firstByte & 0xe0 == 0xc0)
-			RETURN 2;
+			= 2;
 		IF(firstByte & 0xf0 == 0xe0)
-			RETURN 3;
+			= 3;
 		IF(firstByte & 0xf8 == 0xf0)
-			RETURN 4;
+			= 4;
 
 		THROW;
 	}
@@ -24,7 +24,7 @@ INCLUDE 'std/types'
 	point(in: C8 #\) SYM
 	{
 		size: UM;
-		RETURN point(in, &size);
+		= point(in, &size);
 	}
 
 	point(
@@ -34,7 +34,7 @@ INCLUDE 'std/types'
 	{
 		*size := utf8::size(in[0]);
 		IF(*size == 1)
-			RETURN in[0];
+			= in[0];
 
 		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
 
@@ -49,7 +49,7 @@ INCLUDE 'std/types'
 				out |= <SYM>(in[i] & 0x3f);
 			} WHILE(++i < *size)
 
-		RETURN out;
+		= out;
 	}
 
 	encode(src: SYM, dst: C8 \) UM
@@ -66,12 +66,12 @@ INCLUDE 'std/types'
 			*--end := <C8>(src >> 6*i);
 
 		IF(size == 1)
-			RETURN 1;
+			= 1;
 
 		dst[0] |= start[size-2];
 		FOR(i ::= 1; i < size; i++)
 			dst[i] := 0x80 | (dst[i] &0x3f);
 
-		RETURN size;
+		= size;
 	}
 }

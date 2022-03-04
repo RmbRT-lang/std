@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/range'
+INCLUDE 'std/dyn'
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
 INCLUDE 'std/types'
@@ -15,26 +16,32 @@ PRIVATE:
 PUBLIC:
 	{}: Capacity(0);
 	{size: UM}:
-		Content([T]alloc(size)),
+		Content(heap::[T]alloc(size)),
 		Capacity(size)
 	{
 		range::default_construct(Content.Data, ##Content);
 	}
-	{copy: [T!]Vector#&}:
-		Content(clone(copy.Content)),
+	:reserve{capacity: UM}:
+		Content(heap::[T]alloc(capacity)),
+		Capacity(capacity)
+	{
+		Content.Size := 0;
+	}
+
+	{#&copy}:
+		Content(heap::clone(copy.Content)),
 		Capacity(##copy);
-	{move: [T!]Vector&&}:
+	{&&move}:
 		Content(move.Content),
 		Capacity(move.Capacity)
 	{
-		move.Content := NULL;
-		move.Capacity := 0;
+		move.{};
 	}
 
-	{:copy, content: [T#]Buffer #&}:
-		Content(clone(content)),
+	:copy{content: [T#]Buffer #&}:
+		Content(heap::clone(content)),
 		Capacity(##content);
-	{:move, content: [T!]Buffer &&}:
+	:move{content: [T!]Buffer &&}:
 		Content(content),
 		Capacity(##content)
 	{
@@ -42,41 +49,30 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	{:emplace, a: A!&&...}:
+	:vec{a: A!&&...}:
 		Content(NULL),
 		Capacity(0)
 	{
 		reserve(SIZEOF...(A!));
-		_emplace_back(<A!&&>(a)...);
+		(THIS += <A!&&>(a))...;
 	}
-
-	[A:TYPE; A_...:TYPE]
-	PRIVATE _emplace_back(a: A!&&, a_: A_!&&...) INLINE VOID
-	{
-		THIS += <A!&&>(a);
-		_emplace_back(<A_!&&>(a_)...);
-	}
-	PRIVATE _emplace_back() INLINE VOID {}
-
-	THIS:=(move: [T!]Vector&&) [T!]Vector & := help::move_assign(THIS, move);
-	THIS:=(copy: [T!]Vector#&) [T!]Vector & := help::copy_assign(THIS, copy);
 
 	DESTRUCTOR
 	{
 		IF(Content)
-			delete(Content);
+			heap::delete(Content);
 	}
 
 	erase(at: UM) VOID
 	{
 		ASSERT(at < ##THIS);
 
-		THIS![:ok(at)].~;
+		THIS![at].~;
 		--Content.Size;
-		range::move_construct(&THIS[:ok(at)], &THIS[:ok(at+1)], ##THIS-at);
+		range::move_construct(&THIS!.Data[at], &THIS!.Data[at+1], ##THIS-at);
 	}
 
-	append(rhs: T!-std::Buffer, :move) VOID
+	append_move(rhs: T!-std::Buffer) VOID
 	{
 		cap: UM;
 		IF(!Capacity)
@@ -127,7 +123,7 @@ PUBLIC:
 			// Grow hole if required.
 			IF(at < ##Content)
 			{
-				Content[:ok(##Content)].{&&Content.back(:ok)};
+				Content.Data[##Content].{&&Content.back()};
 				failed ::= TRUE;
 				// Shift contents right.
 				TRY
@@ -139,28 +135,29 @@ PUBLIC:
 					failed := FALSE;
 				} FINALLY IF(failed)
 				{
-					Content.back(:ok) := &&Content[:ok(##Content)];
-					Content[:ok(##Content)].~;
+					Content.back() := &&Content.Data[##Content];
+					Content.Data[##Content].~;
 				}
 
-				Content[:ok(at)].~; // Destroy hole.
+				Content[at].~; // Destroy hole.
 				++Content.Size; // Adjust size.
 
-				RETURN TRUE;
+				= TRUE;
 			} ELSE
-				RETURN FALSE;
+				= FALSE;
 
 		// Reserve enough space.
 		hasHole ::= at != ##Content;
-		new ::= [T]alloc(cap).cut(##Content + hasHole);
+		new ::= heap::[T]alloc(cap).cut(##Content + hasHole);
+
 		range::move_construct(new.Data, Content.Data, at);
 		range::move_construct(new.Data+at+1, Content.Data+at, ##Content-at);
 
 		IF(Content.Data)
-			delete(Content);
+			heap::delete(Content);
 		Content := new;
 		Capacity := cap;
-		RETURN hasHole;
+		= hasHole;
 	}
 
 	(// Reserve space for the requested capacity, without shrinking. /)
@@ -201,49 +198,31 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	emplace(at: UM, a: A!&&...) INLINE VOID
+	emplace_at(at: UM, a: A!&&...) INLINE VOID
 	{
 		grow_reserve_with_hole_at(at);
 		failed ::= TRUE;
 		TRY
 		{
-			THIS[:ok(at)].{<A!&&>(a)...};
+			THIS[at].{<A!&&>(a)...};
 			failed := FALSE;
 		} FINALLY IF(failed)
 		{
 			IF(at != ##THIS-1)
 			{
-				THIS[:ok(at)].{&&THIS[:ok(at+1)]};
-				range::move_assign(&THIS[:ok(at+1)], &THIS[:ok(at+2)], ##THIS-(at+2));
-				THIS!.back(:ok).~;
+				THIS[at].{&&THIS[at+1]};
+				range::move_assign(&THIS[at+1], &THIS[at+2], ##THIS-(at+2));
+				THIS!.back().~;
 			}
 			Content.Size--;
 		}
 	}
 
-	PRIVATE Emplacer {
-		[Head:TYPE; Tail:TYPE]
-		{vec: T!-Vector&, t: {Head!, Tail!} &&} INLINE
-		{ <Emplacer>(vec, :ok, t.(0), t.(1)); }
-		[V:TYPE]
-		{vec: T!-Vector&, v: V!&&}
-		{ vec.emplace(##vec, <V!&&>(v)); }
-		[V:TYPE]
-		{vec: T!-Vector&, :ok, at: {:at, UM&}&&, v: V!&&} INLINE
-		{ vec.emplace(at.(1), <V!&&>(v)); }
-		[A:TYPE; B:TYPE]
-		{vec: T!-Vector&, :ok, a: A!&&, b: B!&&} INLINE
-		{ vec.emplace(##vec, (<A!&&>(a), <B!&&>(b))); }
-	}
-
 	[A:TYPE]
 	THIS+=(v: A!&&) INLINE VOID
-	{ <Emplacer>(THIS, <A!&&>(v)); }
+	{ emplace_at(##THIS, <A!&&>(v)); }
 
-	THIS[i: UM] INLINE T!& := Content[i];
-	THIS[i: {:ok, UM}] INLINE T!& := Content[i];
-	# THIS[i: UM] INLINE T!#& := Content[i];
-	# THIS[i: {:ok, UM}] INLINE T!#& := Content[i];
+	#? THIS[i: Index] INLINE T!#?& := Content[i];
 
 	# <BOOL> := Content.Size;
 
@@ -251,13 +230,10 @@ PUBLIC:
 	# data() INLINE T! #* := Content.Data;
 	# empty() INLINE BOOL := ##THIS == 0;
 
-	THIS! INLINE ::= Content;
-	# THIS! INLINE #& ::= Content;
+	#? THIS! INLINE & ::= Content;
 
-	start() INLINE [T!]Vector-Iterator := (&THIS, 0);
-	# start() INLINE [T!]Vector#-Iterator := (&THIS, 0);
-	end() INLINE [T!]Vector-Iterator := (&THIS, ##THIS-1);
-	# end() INLINE [T!]Vector#-Iterator := (&THIS, ##THIS-1);
+	#? start() INLINE [T!]Vector#?-Iterator := (&THIS, 0);
+	#? end() INLINE [T!]Vector#?-Iterator := (&THIS, ##THIS-1);
 
 	[TCmp:TYPE]
 	Cmp
@@ -268,13 +244,13 @@ PUBLIC:
 			FOR(i ::= 0; i < len; i++)
 			{
 				sign ::= TCmp::cmp(a, b);
-				IF(sign) RETURN sign;
+				IF(sign) = sign;
 			}
 			IF(##a == ##b)
-				RETURN 0;
-			RETURN ##a > ##b ? 1 : -1;
+				= 0;
+			= ##a > ##b ? 1 : -1;
 		}
 	}
 }
 
-::std [T:TYPE] TYPE DynVector := T! - Dynamic - Vector;
+::std [T:TYPE] TYPE DynVector := T! - Dyn - Vector;

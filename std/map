@@ -19,9 +19,9 @@ INCLUDE 'std/set'
 	{
 		x ::= Set.find(k);
 		IF(x.(0))
-			RETURN (&x.(0)->(1), x.(1));
+			= (&x.(0)->(1), x.(1));
 		ELSE
-			RETURN (NULL, x.(1));
+			= (NULL, x.(1));
 	}
 
 	[T: TYPE]
@@ -29,41 +29,41 @@ INCLUDE 'std/set'
 	{
 		x ::= Set.find(k);
 		IF(x.(0))
-			RETURN (&x.(0)->(1), x.(1));
+			= (&x.(0)->(1), x.(1));
 		ELSE
-			RETURN (NULL, x.(1));
+			= (NULL, x.(1));
 	}
 
 	[T:TYPE]
 	find(k: T! #&, loc: Location \) V! *
 	{
 		IF(it ::= Set.find(k, loc))
-			RETURN &it->(1);
+			= &it->(1);
 		ELSE
-			RETURN NULL;
+			= NULL;
 	}
 
 	[T:TYPE]
 	# find(k: T! #&, loc: Location \) V! #*
 	{
 		IF(it ::= Set.find(k, loc))
-			RETURN &it->(1);
+			= &it->(1);
 		ELSE
-			RETURN NULL;
+			= NULL;
 	}
 
 	[T:TYPE]
 	find(k: T! #&) V! *
 	{
 		dummy: Location;
-		RETURN find(k, &dummy);
+		= find(k, &dummy);
 	}
 
 	[T:TYPE]
 	# find(k: T! #&) V! #*
 	{
 		dummy: Location;
-		RETURN find(k, &dummy);
+		= find(k, &dummy);
 	}
 
 	[Key: TYPE; Value: TYPE]
@@ -71,9 +71,9 @@ INCLUDE 'std/set'
 	{
 		loc: Location;
 		IF(find(k, &loc))
-			RETURN FALSE;
+			= FALSE;
 		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
-		RETURN TRUE;
+		= TRUE;
 	}
 
 	[T:TYPE]
@@ -86,9 +86,9 @@ INCLUDE 'std/set'
 		{
 			*deleted := &&*it;
 			Set.remove_at(loc);
-			RETURN TRUE;
+			= TRUE;
 		}
-		RETURN FALSE;
+		= FALSE;
 	}
 
 	start() INLINE ::= Set.start();
@@ -101,3 +101,5 @@ INCLUDE 'std/set'
 }
 
 ::std [K:TYPE; V:TYPE] TYPE NatMap := [K!; V!; detail::NaturalCmp]Map;
+::std [K:TYPE; V:TYPE; Cmp:TYPE] TYPE DynMap := [K!; V!-std::Dyn; Cmp]Map;
+::std [K:TYPE; V:TYPE] TYPE NatDynMap := [K!; V!; detail::NaturalCmp]DynMap;

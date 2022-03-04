@@ -30,7 +30,7 @@
 		// This should automatically call co_await.
 		// Any function called from within a coroutine should be awaited.
 		// - What about regular functions returning awaitables?
-		<-aborted_fn(done);
+		aborted_fn(done).get();
 		RETURN;
 	}
 

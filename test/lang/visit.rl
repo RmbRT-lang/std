@@ -21,12 +21,12 @@ INCLUDE 'std/memory'
 		x: Struct;
 		x.Member1 := 1;
 		x.B := 5;
-		visit VISIT(x, (result, ##result), index);
+		visit VISIT*(x, (result, ##result), index);
 
 		ASSERT(index == 2);
-		ASSERT(!std::str::cmp(result[0].(0), "Member1"));
+		ASSERT(std::str::view(result[0].(0)) == "Member1");
 		ASSERT(result[0].(1) == 1);
-		ASSERT(!std::str::cmp(result[1].(0), "B"));
+		ASSERT(std::str::view(result[1].(0)) == "B");
 		ASSERT(result[1].(1) == 5);
 	}
 }

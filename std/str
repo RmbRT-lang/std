@@ -1,0 +1,62 @@
+(/rl/)
+
+INCLUDE 'std/buffer'
+
+::std::str
+{
+	[C: TYPE]
+	View -> std::[C!]Buffer
+	{
+		{str: C! *} -> std::[C!]Buffer(str, std::str::len(str));
+		:view{str: C! *} -> std::[C!]Buffer(str, std::str::len(str));
+		:buf{str: C! *, len: UM} -> std::[C!]Buffer(str, len);
+
+		# cmp(rhs: [C!]View #&) SM
+		{
+			minSz #::= ##THIS > ##rhs ? ##rhs : ##THIS;
+
+			FOR(i:UM := 0; i < minSz; i++)
+				IF(THIS[:ok(i)] != rhs[:ok(i)])
+					= THIS[:ok(i)] - rhs[:ok(i)];
+
+			= ##THIS - ##rhs;
+		}
+
+		# starts_with(find: [C!#]View #&) BOOL
+		{
+			IF(##find > ##THIS)
+				= FALSE;
+			= mem::cmp(THIS.Data, find.Data, ##find) == 0;
+		}
+
+		# THIS>=(find: [C!#]View #&) INLINE BOOL := starts_with(find);
+
+		# THIS==(rhs: [C!]View #&) BOOL
+		{
+			IF(##THIS != ##rhs)
+				= FALSE;
+
+			FOR(i:UM := 0; i < ##THIS; i++)
+				IF(THIS[:ok(i)] != rhs[:ok(i)])
+					= FALSE;
+
+			= TRUE;
+		}
+
+		# THIS!=(rhs: [C!]View #&) INLINE BOOL
+			:= !(THIS == rhs);
+	}
+
+	[C: TYPE]
+	view(str: C! *) INLINE C!-View := str;
+
+	[C: TYPE]
+	len(str: C! #*) UM
+	{
+		IF(!str)
+			= 0;
+		i: UM := 0;
+		WHILE(str[i]) ++i;
+		= i;
+	}
+}

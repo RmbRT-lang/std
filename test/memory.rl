@@ -1,13 +1,12 @@
 INCLUDE "../std/memory"
-INCLUDE "../std/ringbuffer"
 
 ::std
 {
 	TEST "memcmp"
 	{
-		ASSERT(memcmp("aaa", "aab", 3) < 0);
+		ASSERT(mem::cmp("aaa", "aab", 3) < 0);
 		buf: CHAR[3](<CHAR>(0xe2), <CHAR>(0x82), <CHAR>(0xac));
-		ASSERT(memcmp("€", buf, 3) == 0);
+		ASSERT(mem::cmp("€", buf, 3) == 0);
 	}
 
 
@@ -34,7 +33,7 @@ INCLUDE "../std/ringbuffer"
 		mainDtor ::= FALSE;
 		calls: INT (0);
 
-		TRY [NewException]new(&mainDtor, &calls);
+		TRY heap::[NewException]new(&mainDtor, &calls);
 		CATCH() {;}
 		ASSERT(calls == 1);
 		ASSERT(!mainDtor);
@@ -48,17 +47,17 @@ INCLUDE "../std/ringbuffer"
 
 	TEST "new and delete with polymorphism"
 	{
-		ptr ::= [NewDerived]new();
+		ptr ::= heap::[NewDerived]new();
 		ASSERT(ptr != NULL);
 		ASSERT(<<NewBase1 *>>(ptr) > <VOID*>(ptr));
 		ASSERT(&&&*<<NewBase1 *>>(ptr) == <VOID*>(ptr));
 
-		delete(<<NewBase1 \>>(ptr));
+		heap::delete(<<NewBase1 \>>(ptr));
 	}
 
-	TEST "dynamic :create() ctor"
+	TEST "dynamic :new() ctor"
 	{
-		x: INT-Dynamic := :create(5);
+		x: INT-Dyn := :new(5);
 		ASSERT(x);
 		ASSERT(*x == 5);
 	}

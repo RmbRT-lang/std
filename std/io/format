@@ -1,18 +1,17 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
-INCLUDE 'std/math/unsigned'
 
 ::std::io::format
 {
 	[T:TYPE] hex(o: OStream &, n: T! #&) INLINE VOID := hex(o, n, TRUE);
 	[T:TYPE] hex(o: OStream &, n: T! #&, prefix: BOOL) VOID
 	{
-		v ::= math::unsigned(n);
+		v: UM := n;
 
 		IF(n < <T>(0))
 		{
-			o.write('-');
+			o.write(:ch('-'));
 			IF(~n) // If -max, ignore value.
 				v := -n;
 		}
@@ -20,21 +19,21 @@ INCLUDE 'std/math/unsigned'
 		IF(prefix)
 			o.write("0x");
 		FOR(i ::= 2*SIZEOF(T); i--;)
-			o.write("0123456789abcdef"[(n>>(i<<2)) & 0xf]);
+			o.write(:ch("0123456789abcdef"[(v>>(i<<2)) & 0xf]));
 	}
 
 	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
 	{
-		v ::= math::unsigned(n);
+		v: UM := n;
 		IF(n < <T>(0))
 		{
-			o.write('-');
+			o.write(:ch('-'));
 			IF(~n)
 				v := -n;
 		}
 
 		buffer: CHAR[32];
-		buf ::= [CHAR]Buffer(buffer, SIZEOF(#buffer));
+		buf: CHAR-Buffer(buffer, SIZEOF(#buffer));
 		i ::= buf.Size-1;
 		DO()
 		{
@@ -47,6 +46,6 @@ INCLUDE 'std/math/unsigned'
 			buf[i] := '0'+d;
 		} FOR(v; i--)
 
-		o.write(buf.drop_start(i));
+		o.write(buf.drop_start(i)++);
 	}
 }

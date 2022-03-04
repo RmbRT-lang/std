@@ -1,7 +1,6 @@
 (/rl/)
 
 INCLUDE 'std/error'
-INCLUDE 'std/memory'
 INCLUDE 'std/io/format'
 INCLUDE 'std/io/streamable'
 INCLUDE 'std/io/stream'

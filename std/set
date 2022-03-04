@@ -1,6 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/memory'
 INCLUDE 'std/vector'
 
 ::std [T: TYPE] MASK Set
@@ -30,10 +29,8 @@ INCLUDE 'std/vector'
 
 	TYPE Location := UM;
 
-	start() INLINE ::= Elems.start();
-	# start() INLINE ::= Elems.start();
-	end() INLINE ::= Elems.end();
-	# end() INLINE ::= Elems.end();
+	#? start() INLINE ::= Elems.start();
+	#? end() INLINE ::= Elems.end();
 	# empty() INLINE BOOL := Elems.empty();
 
 	# ##THIS INLINE UM := ##Elems;
@@ -44,7 +41,7 @@ INCLUDE 'std/vector'
 	) T! # *
 	{
 		dummy: Location;
-		RETURN find(v, &dummy);
+		= find(v, &dummy);
 	}
 
 	[V: TYPE]
@@ -52,7 +49,7 @@ INCLUDE 'std/vector'
 	{
 		loc: Location;
 		ret ::= find(v.(1), &loc);
-		RETURN (ret, loc);
+		= (ret, loc);
 	}
 
 	[V: TYPE]
@@ -68,7 +65,7 @@ INCLUDE 'std/vector'
 		WHILE(l < r)
 		{
 			i := (l + r)>>1;
-			sign ::= Cmp::cmp(v, Elems[:ok(i)]);
+			sign ::= Cmp::cmp(v, Elems[i]);
 			IF(sign < 0)
 				r := i;
 			ELSE IF(sign > 0)
@@ -76,12 +73,12 @@ INCLUDE 'std/vector'
 			ELSE
 			{
 				*location := i;
-				RETURN &Elems[:ok(i)];
+				= &Elems[i];
 			}
 		}
 
 		*location := l;
-		RETURN NULL;
+		= NULL;
 	}
 
 	[V: TYPE]
@@ -90,7 +87,7 @@ INCLUDE 'std/vector'
 	) T! *
 	{
 		dummy: Location;
-		RETURN find(v, &dummy);
+		= find(v, &dummy);
 	}
 
 	[V: TYPE]
@@ -98,7 +95,7 @@ INCLUDE 'std/vector'
 	{
 		loc: Location;
 		ret ::= find(v.(1), &loc);
-		RETURN (ret, loc);
+		= (ret, loc);
 	}
 
 	[V: TYPE]
@@ -114,7 +111,7 @@ INCLUDE 'std/vector'
 		WHILE(l < r)
 		{
 			i := (l + r)>>1;
-			sign ::= Cmp::cmp(v, Elems[:ok(i)]);
+			sign ::= Cmp::cmp(v, Elems[i]);
 			IF(sign < 0)
 				r := i;
 			ELSE IF(sign > 0)
@@ -122,12 +119,12 @@ INCLUDE 'std/vector'
 			ELSE
 			{
 				*location := i;
-				RETURN &Elems[:ok(i)];
+				= &Elems[i];
 			}
 		}
 
 		*location := l;
-		RETURN NULL;
+		= NULL;
 	}
 
 	insert_at(
@@ -144,42 +141,23 @@ INCLUDE 'std/vector'
 	{
 		loc: Location;
 		IF(find(v, &loc))
-			RETURN FALSE;
+			= FALSE;
 		insert_at(loc, v);
-		RETURN TRUE;
+		= TRUE;
 	}
 
 	insert(v: T&&) BOOL
 	{
 		loc: Location;
 		IF(find(v, &loc))
-			RETURN FALSE;
+			= FALSE;
 		insert_at(loc, &&v);
-		RETURN TRUE;
-	}
-
-	PRIVATE Emplacer {
-		TYPE THISType := [T!; Cmp!]VectorSet;
-
-		[Head:TYPE; Tail:TYPE]
-		{set: THISType&, t: {Head!, Tail!} &&} INLINE
-		{ <Emplacer>(set, :ok, <Head!>(t.(0)), <Tail!>(t.(1))); }
-		[V:TYPE]
-		{set: THISType&, v: V!&&}
-		{ set.insert(<V!&&>(v)); }
-		[V:TYPE]
-		{set: THISType&, :ok, at: {:at, UM&}&&, v: V!&&} INLINE
-		{ set.insert_at(at.(1), <V!&&>(v)); }
-		[A:TYPE; B:TYPE]
-		{set: THISType&, :ok, a: A!&&, b: B!&&} INLINE
-		{ set.insert((<A!&&>(a), <B!&&>(b))); }
+		= TRUE;
 	}
 
 	[A:TYPE]
 	THIS+=(v: A!&&) INLINE VOID
-	{
-		<Emplacer>(THIS, <A!&&>(v));
-	}
+	{ THIS.insert(<A!&&>(v)); }
 
 	remove_at(
 		position: Location #&) VOID
@@ -194,9 +172,9 @@ INCLUDE 'std/vector'
 		IF(find(v, &loc))
 		{
 			remove_at(loc);
-			RETURN TRUE;
+			= TRUE;
 		}
-		RETURN FALSE;
+		= FALSE;
 	}
 
 	[V: TYPE]
@@ -207,9 +185,9 @@ INCLUDE 'std/vector'
 		{
 			*deleted := &&*it;
 			remove_at(loc);
-			RETURN TRUE;
+			= TRUE;
 		}
-		RETURN FALSE;
+		= FALSE;
 	}
 
 
@@ -218,8 +196,8 @@ INCLUDE 'std/vector'
 		position: Location #&,
 		a: A!&&...) T! &
 	{
-		Elems.emplace(position, <A!&&>(a)...);
-		RETURN Elems[:ok(position)];
+		Elems.emplace_at(position, <A!&&>(a)...);
+		= Elems[position];
 	}
 }
 ::std::detail NaturalCmp

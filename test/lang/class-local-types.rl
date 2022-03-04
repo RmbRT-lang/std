@@ -7,7 +7,7 @@
 
 		f(SubType*) SubType { ; }
 
-		<BOOL> { RETURN FALSE; }
+		<BOOL> { = FALSE; }
 		<INT> := 0;
 		lel() ::= 5;
 	}

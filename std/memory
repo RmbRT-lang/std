@@ -2,244 +2,42 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/range'
+INCLUDE 'std/index'
 INCLUDE 'std/help'
 INCLUDE 'std/tags'
 INCLUDE 'std/math/limit'
 INCLUDE 'std/iterator'
+INCLUDE 'std/buffer'
 
 ::std
 {
-	[T: TYPE] memcmp(
+	::mem [T: TYPE] cmp(
 		lhs: T! #\,
 		rhs: T! #\,
 		elements: UM) SM
 	{
 		FOR(i ::= 0; i<elements; i++)
 			IF(lhs[i] != rhs[i])
-				RETURN lhs[i] - rhs[i];
-		RETURN 0;
+				= lhs[i] - rhs[i];
+		= 0;
 	}
 
-	[T: TYPE] memcmp(
+	::mem [T: TYPE] cmp(
 		lhs: [T!]Buffer #&,
 		rhs: [T!]Buffer #&) SM
 	{
 		minSz ::= math::min(lhs.Size, rhs.Size);
-		IF(sign ::= memcmp(lhs.Data, rhs.Data, minSz))
-			RETURN sign;
+		IF(sign ::= mem::cmp(lhs.Data, rhs.Data, minSz))
+			= sign;
 		ELSE
-			RETURN lhs.Size - rhs.Size;
+			= lhs.Size - rhs.Size;
 	}
 
-	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID
+	::mem cpy(dst: VOID \, src: VOID #\, size: UM) INLINE VOID
 	{
 		d ::= <U1 \>(dst);
 		s ::= <U1 #\>(src);
 		WHILE(size--)
 			*d++ := *s++;
 	}
-
-	(// A buffer keeps track of allocated memory but does not own it. /)
-	[T: TYPE] Buffer
-	{
-		Data: T! *;
-		Size: UM;
-
-		{NULL}: Data(NULL), Size(0);
-		{}: Data(NULL), Size(0);
-		{s: T! \, c: UM}: Data(s), Size(c)
-		{
-			ASSERT(!Size || Data);
-		}
-
-		# <[T!#]Buffer> INLINE := (Data, Size);
-		# <BOOL> INLINE := Data != NULL;
-
-
-		# THIS[i: {:ok, UM}] INLINE T!#& := Data[i.(1)];
-		# THIS[i: UM] T!#&
-		{
-			range::check(Size, i);
-			RETURN Data[i];
-		}
-		THIS[i: {:ok, UM}] INLINE T!& := Data[i.(1)];
-		THIS[i: UM] T!&
-		{
-			range::check(Size, i);
-			RETURN Data[i];
-		}
-
-		# range(start: UM, size: UM, :ok) INLINE [T!]Buffer
-			:= (Data + start, size);
-		# range(
-			start: UM,
-			size: UM) [T!]Buffer
-		{
-			range::check_subrange(start, size, Size);
-			RETURN (Data + start, size);
-		}
-
-		# drop_start(start: {:ok, UM}) [T!]Buffer
-			:= range(start.(1), Size-start.(1), :ok);
-		# drop_start(start: UM) [T!]Buffer
-			:= range(start, Size - start);
-		# drop_end(count: UM) [T!]Buffer
-			:= range(0, Size - count);
-		# drop_end(count: {:ok, UM}) [T!]Buffer
-			:= range(0, Size-count.(1), :ok);
-		# cut(size: UM) [T!]Buffer
-			:= range(0, size);
-		# cut(size: {:ok, UM}) [T!]Buffer
-			:= range(0, size.(1), :ok);
-		# cut_start(size: {:ok, UM}) [T!]Buffer
-			:= range(Size-size.(1), size.(1), :ok);
-		# cut_start(size: UM) [T!]Buffer
-			:= range(Size-size, size);
-
-		# ##THIS INLINE UM := Size;
-
-		front() INLINE T!& := THIS[0];
-		front(:ok) INLINE T!& := THIS[:ok(0)];
-		start() INLINE [T!]Buffer-Iterator := (&THIS, 0);
-		# front() INLINE T!#& := THIS[0];
-		# front(:ok) INLINE T!#& := THIS[:ok(0)];
-		# start() INLINE [T!]Buffer#-Iterator := (&THIS, 0);
-
-		back() INLINE T!& := THIS[Size-1];
-		back(:ok) INLINE T!& := THIS[:ok(Size-1)];
-		end() INLINE [T!]Buffer-Iterator := (&THIS, Size-1);
-		# back() INLINE T!#& := THIS[Size-1];
-		# back(:ok) INLINE T!#& := THIS[:ok(Size-1)];
-		# end() INLINE [T!]Buffer#-Iterator := (&THIS, Size-1);
-	}
-
-	[T: TYPE] Dynamic
-	{
-		Ptr: T! *;
-		{}: Ptr(NULL);
-		{NULL}: Ptr(NULL);
-		{:gc, p: T! *}: Ptr(p);
-		{m: [T!]Dynamic! &&}: Ptr(m.release());
-		[Args...: TYPE]
-		{:create, args: Args!&&...}:
-			Ptr([T!]new(<Args!&&>(args)...));
-
-		THIS:=(move: [T!]Dynamic&&) [T!]Dynamic & := help::move_assign(THIS, move);
-		THIS:=(NULL) & ::= help::custom_assign(THIS, NULL);
-
-		# !THIS INLINE BOOL := !Ptr;
-		# <BOOL> INLINE := Ptr;
-		# <T! \> INLINE := Ptr;
-		# *THIS INLINE T! & := *Ptr;
-		# THIS! INLINE T! * := Ptr;
-
-		release() T! *
-		{
-			p ::= Ptr;
-			Ptr := NULL;
-			RETURN p;
-		}
-
-		DESTRUCTOR
-		{
-			IF(Ptr)
-				delete(Ptr);
-		}
-	}
-
-	[T: TYPE] dup(value: T! #&) T \ := [T]new(value);
-	[T: TYPE] dup(value: T! &&) T \ := [T]new(&&value);
-
-	[T: TYPE]
-	clone(data: T! #\, size: UM) [T]Buffer
-	{
-		tmp ::= [T]alloc(size);
-		range::copy_construct(tmp.Data, data, size);
-		RETURN (tmp.Data, tmp.Size);
-	}
-	[T: TYPE]
-	clone_move(data: T! #\, size: UM) [T]Buffer
-	{
-		tmp ::= [T]alloc(size);
-		range::move_construct(tmp.Data, data, size);
-		RETURN (tmp.Data, tmp.Size);
-	}
-
-	[T: TYPE]
-	clone(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
-
-
-	alloc(bytes: UM) VOID* := detail::libc::malloc(bytes);
-	[T: TYPE] alloc() INLINE T \
-	{
-		ptr ::= alloc(SIZEOF(T));
-		ASSERT(ptr != NULL);
-		RETURN <T \>(ptr);
-	}
-
-	[T: TYPE] alloc(count: UM) [T]Buffer
-	{
-		b: [T]Buffer(<T \>(detail::libc::malloc(count * SIZEOF(T))), count);
-		ASSERT(!count || b.Data);
-		RETURN b;
-	}
-
-	[T: TYPE; Args...: TYPE] new(args: Args!&&...) T! *
-	{
-		p ::= [T]alloc();
-		TRY
-		{
-			p->{<Args!&&>(args)...};
-			x ::= p;
-			p := NULL;
-			RETURN x;
-		}
-		FINALLY IF(p)
-			free(p);
-	}
-
-
-	calloc(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
-	[T: TYPE] calloc() T *
-	{
-		v ::= <T \>(alloc(SIZEOF(T)));
-		v->{};
-		RETURN v;
-	}
-	[T: TYPE] calloc(count: UM) [T]Buffer
-	{
-		v ::= [T]alloc(count);
-		range::default_construct(v, count);
-		RETURN v;
-	}
-
-	::range [T: TYPE] destroy(v: [T!]Buffer) INLINE VOID
-		:= destroy(v.Data, v.Size);
-
-	[T: TYPE] delete(v: [T!]Buffer) INLINE VOID
-	{
-		range::destroy(v);
-		free(v);
-	}
-
-	[T: TYPE] delete(ptr: T! \) INLINE VOID
-	{
-		addr ::= &&&*ptr;
-		ptr->~;
-		detail::libc::free(addr);
-	}
-
-
-	free(mem: VOID#\) VOID := detail::libc::free(mem);
-
-	[T: TYPE] free(v: [T!]Buffer!#&) INLINE VOID
-	{ detail::libc::free(v.Data); }
-}
-
-::std::detail::libc
-{
-	EXTERN malloc(UM) VOID *;
-	EXTERN calloc(UM, UM) VOID *;
-	EXTERN free(VOID #\) VOID;
-	EXTERN realloc(VOID #\, UM) VOID;
 }
