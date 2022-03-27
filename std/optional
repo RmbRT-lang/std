@@ -1,9 +1,13 @@
 (/rl/)
 
+INCLUDE 'std/nodestruct'
+
 ::std [T: TYPE] Opt
 {
-	PRIVATE Exists: BOOL;
-	PRIVATE Obj: T;
+PRIVATE:
+	Exists: BOOL;
+	Obj: T-NoDestruct;
+PUBLIC:
 
 	{} (NULL);
 	{NULL}: Obj(NOINIT);
@@ -11,27 +15,27 @@
 	[Args...:TYPE]
 	:some{args: Args!&&...}: Exists(TRUE), Obj(<Args!&&>(args)...);
 
-	DESTRUCTOR { IF(Exists) Obj.~; }
+	DESTRUCTOR { IF(Exists) Obj->~; }
 	
 	
 	{#&rhs}: Exists(rhs.Exists), Obj(NOINIT)
 	{
 		IF(Exists)
-			Obj.{rhs.Obj};
+			Obj->{*rhs};
 	}
 	
 	{&&rhs}: Exists(rhs.Exists), Obj(NOINIT)
 	{
 		IF(Exists)
-			Obj.{&&rhs.Obj};
+			Obj->{&&*rhs};
 	}
 
 	# <BOOL> INLINE := Exists;
 
-	#? THIS! INLINE T! #?&
+	#? THIS! INLINE T! #?& := *THIS;
+	#? *THIS INLINE T! #?&
 	{
 		ASSERT(Exists);
-		= Obj;
+		= *Obj;
 	}
-	#? *THIS INLINE T! #?& := THIS!;
 }

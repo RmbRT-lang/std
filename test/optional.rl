@@ -4,8 +4,16 @@ INCLUDE 'std/optional'
 {
 	TYPE Assertion := CHAR #\;
 
+	TrackedCtor {
+		STATIC CtorCalled: BOOL := FALSE;
+		{} { CtorCalled := TRUE; }
+	}
+
 	TEST "construction"
 	{
+		<[TrackedCtor]Opt>();
+		ASSERT(!TrackedCtor::CtorCalled);
+
 		x: INT-Opt;
 		ASSERT(!x);
 
@@ -29,5 +37,19 @@ INCLUDE 'std/optional'
 
 		y := NULL;
 		ASSERT(!y);
+	}
+
+
+	NeverDestruct { STATIC Dtor: BOOL := FALSE; DESTRUCTOR { Dtor := TRUE; } }
+
+	TrackedDtor { Dtor: BOOL; DESTRUCTOR { Dtor := TRUE; } }
+
+	TEST "destructor"
+	{
+		{ x: NeverDestruct-Opt; }
+		ASSERT(!NeverDestruct::Dtor);
+		v: TrackedDtor-Opt := :some();
+		v.~;
+		ASSERT(v->Dtor);
 	}
 }

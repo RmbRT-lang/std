@@ -1,0 +1,16 @@
+(/rl/)
+
+/// Wraps a type so that it does not destruct automatically.
+::std [T:TYPE] NoDestruct
+{
+	PRIVATE UNION RawContainer { V: T; }
+	PRIVATE V: RawContainer;
+
+	[Args...:TYPE]
+	{args: Args!&&...} INLINE
+	{
+		THIS->{<Args!&&>(args)...};
+	}
+
+	#? *THIS INLINE T! #?& := V.V;
+}
