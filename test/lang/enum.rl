@@ -4,8 +4,7 @@
 
 	TEST "symbolic enum"
 	{
-		x: E;
-		x := :a;
+		x: E := :a;
 		ASSERT(x == E::a);
 		x := :b;
 		ASSERT(x == E::b);

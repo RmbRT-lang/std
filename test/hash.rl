@@ -25,9 +25,10 @@ INCLUDE 'std/io/file'
 
 	TEST "Hashing"
 	{
-		ASSERT(<Hasher>()() == :seed);
+		ASSERT(<Hasher>()++ == hash());
+		ASSERT(hash(<EmptyHashable>()) == :seed);
+		ASSERT(hash(hash()) != :seed);
 		ASSERT(hash(<TestType>((3235, 211), 32)) != :seed);
 		ASSERT(hash(0) != hash(1));
-		ASSERT(hash(<EmptyHashable>()) == :seed);
 	}
 }

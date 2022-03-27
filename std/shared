@@ -5,68 +5,93 @@ INCLUDE 'std/memory'
 
 ::std [T: TYPE] Shared
 {
-	PRIVATE Alloc
+	PRIVATE Container: detail::SharedAlloc *;
+	PRIVATE Ptr: T! *;
+
+	{}: Container(NULL), Ptr(NULL);
+	{NULL}: Container(NULL), Ptr(NULL);
+	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
+	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr) { IF(Container) Container->ref(); }
+
+	:gc{p: T! *}: Ptr(p)
 	{
-		P: T! *;
-		Refs: UM;
-		{p: T! *, refs: UM}:
-			P(p), Refs(refs);
-
-		(// Returns the address of the wrapped object. /)
-		# ptr() INLINE T! * := P ? P : <T! *>(<UM>(&THIS) + SIZEOF(#THIS));
-
-		ref() INLINE VOID { ++Refs; }
-
-		deref() VOID 
-		{
-			IF(!Refs)
-				THROW;
-
-			IF(!--Refs)
-			{
-				ptr()->~;
-				IF(P)
-					heap::free(P);
-				heap::free(&THIS);
-			}
-		}
+		IF(p)
+			Container := heap::[detail::SharedAlloc]new(p);
+		ELSE
+			Container := NULL;
 	}
-
-	PRIVATE P: Alloc *;
-
-	{}: P(NULL);
-	{NULL}: P(NULL);
-	{p: T! *, :transfer}: P([Alloc]new(p, 1, FALSE));
-	{&&mv}: P(mv.P) { mv.{}; }
-	{#&cpy}: P(cpy.P) { IF(P) P->ref(); }
-	PRIVATE {alloc: [T!]Shared::Alloc *}: P(alloc);
-
-	{:create}:P(alloc_impl()) { get()->{}; }
 
 	[A...:TYPE]
-	{:create, a: A!&&...}: P(alloc_impl())
-	{ get()->{<A!&&>(a)...}; }
-
-	DESTRUCTOR { IF(P) P->deref(); }
-
-	# <T! *> INLINE := THIS!;
-	# THIS! INLINE T! * := P ? P->ptr() : NULL;
-	# <BOOL> INLINE := P != NULL;
-
-	# get() T! * { ASSERT(P != NULL); = P->ptr(); }
-	# get(:ok) T! * := P->ptr();
-
-	# *THIS T! &
+	:new{a: A!&&...}: Container(alloc_impl()), Ptr(NOINIT)
 	{
-		ASSERT(P != NULL);
-		= *P->ptr();
+		Ptr := <T! *>(Container->RealAddr);
+		Ptr->{<A!&&>(a)...};
 	}
 
-	PRIVATE STATIC alloc_impl() Alloc \
+	[U:TYPE] :dup{rhs: U!&&}:
+		Container(NOINIT),
+		Ptr(heap::[U]new(<U!&&>(rhs)))
 	{
-		ret ::= <Alloc \>(heap::alloc(SIZEOF(Alloc) + SIZEOF(T!)));
-		ret->{NULL, 1};
+		Container := heap::[detail::SharedAlloc]new(Ptr);
+	}
+
+	[U:TYPE]{rhs: U!-Shared} INLINE:
+		Container(rhs.Container)
+	{
+		IF(rhs.Ptr)
+			Ptr := <<T! \>>(rhs.Ptr);
+		ELSE
+			Ptr := NULL;
+
+		rhs.{};
+	}
+
+	DESTRUCTOR { IF(Container) Container->deref(); }
+
+	# <T! *> INLINE := Ptr;
+	# THIS! INLINE T! * := Ptr;
+	# *THIS INLINE T! & := *Ptr;
+
+	PRIVATE STATIC alloc_impl() detail::SharedAlloc \
+	{
+		ret ::= <detail::SharedAlloc \>(
+			heap::alloc(
+				SIZEOF(detail::SharedAlloc) + SIZEOF(T!)));
+
+		ret->{:compact(detail::SharedAlloc::[T!]dtor_fn)};
 		= ret;
 	}
-	STATIC alloc() [T!]Shared := alloc_impl();
+}
+
+::std::detail SharedAlloc
+{
+	RealAddr: VOID *;
+	Refs: UM;
+	Cleanup: ((VOID *) VOID) \;
+
+	[T:TYPE] STATIC delete_fn(p: VOID *) VOID { heap::[T]delete(<T *>(p)); }
+	[T:TYPE] STATIC dtor_fn(p: VOID *) VOID { <T *>(p)->~; }
+
+	:compact{dtor_fn: ((VOID *) VOID) \}:
+		RealAddr(<VOID *>(<UM>(&THIS)+SIZEOF(#THIS))),
+		Refs(1),
+		Cleanup(dtor_fn);
+
+	[T:TYPE] {p: T! *}:
+		RealAddr(p),
+		Refs(1),
+		Cleanup([T]delete_fn);
+
+	ref() INLINE VOID { ++Refs; }
+
+	deref() VOID 
+	{
+		ASSERT(Refs);
+
+		IF(!--Refs)
+		{
+			Cleanup(RealAddr);
+			heap::delete(&THIS);
+		}
+	}
 }

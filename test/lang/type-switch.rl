@@ -16,7 +16,7 @@
 
 	TEST "Switching type (Base)"
 	{
-		TYPE SWITCH STATIC(<Base *>(NULL))
+		TYPE SWITCH STATIC(*<Base *>(NULL))
 		{
 		Base: {;}
 		DEFAULT:

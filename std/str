@@ -7,9 +7,10 @@ INCLUDE 'std/buffer'
 	[C: TYPE]
 	View -> std::[C!]Buffer
 	{
-		{str: C! *} -> std::[C!]Buffer(str, std::str::len(str));
-		:view{str: C! *} -> std::[C!]Buffer(str, std::str::len(str));
-		:buf{str: C! *, len: UM} -> std::[C!]Buffer(str, len);
+		{str: C! *} -> (str, std::str::len(str));
+		:view{str: C! *} -> (str, std::str::len(str));
+		:buf{str: C! *, len: UM} -> (str, len);
+		:ch{ch: C! &} -> (&ch, 1);
 
 		# cmp(rhs: [C!]View #&) SM
 		{
@@ -46,6 +47,9 @@ INCLUDE 'std/buffer'
 		# THIS!=(rhs: [C!]View #&) INLINE BOOL
 			:= !(THIS == rhs);
 	}
+
+	TYPE C8CView := [CHAR#]View;
+	TYPE C8View := [CHAR#]View;
 
 	[C: TYPE]
 	view(str: C! *) INLINE C!-View := str;

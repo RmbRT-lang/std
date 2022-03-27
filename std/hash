@@ -1,32 +1,29 @@
 (/rl/)
 
-INCLUDE 'std/memory'
-INCLUDE 'std/vector'
-INCLUDE 'std/string'
 INCLUDE 'std/io/format'
 INCLUDE 'std/io/stream'
 
 ::std
 {
-	Hash
+	MASK CustomHashable { # hash(Hasher &) VOID; }
+
+	Hash -> CustomHashable
 	{
 		TYPE Word := U8;
 		TYPE WordAsSigned := S8;
 		Words: Word[2];
 
-		{}
+		{}: Words(NOINIT)
 		{
 			FOR(i ::= 0; i < ##Words; i++)
 				Words[i] := 0;
 		}
 
-		:noinit{};
-
-		:seed{}
+		:seed{}: Words(NOINIT)
 		{
 			Words[0] := 0x239f0707ec07cf21;
 			IF(##Words > 1) Words[1] := 0x40784b4fb373e78f;
-			IF(##Words > 2) Words[2] := 0x4c0409cf334c870e;
+			IF(##Words > 2) Words[2] := 0x9c0409cf334c870e;
 			IF(##Words > 3) Words[3] := 0x404af6c9501b28ce;
 			IF(##Words > 4) Words[4] := 0x50aee47b8102ddca;
 			IF(##Words > 5) Words[5] := 0x1ee048f480885612;
@@ -57,20 +54,29 @@ INCLUDE 'std/io/stream'
 		# stream(into: io::OStream &) VOID
 		{
 			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex(into, Words[i], !i);
+				io::format::hex_prefixed(into, Words[i], !i);
 		}
 
-		# stream(into: io::OStream &, :noprefix) VOID
+		# stream_noprefix(into: io::OStream &) VOID
 		{
 			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex(into, Words[i], FALSE);
+				io::format::hex_prefixed(into, Words[i], FALSE);
+		}
+
+		# hash(h: std::Hasher &) VOID
+		{
+			FOR(i ::= 0; i < ##Words; i++)
+				h(Words[i]);
 		}
 	}
 
-	[T: TYPE]
-	hash(v: T! &&) INLINE Hash! := <Hasher!>()(v)();
-
-	MASK CustomHashable { # hash(Hasher &) VOID; }
+	[T...: TYPE]
+	hash(v: T! &&...) INLINE Hash!
+	{
+		h: Hasher;
+		h(<T!&&>(v))...;
+		= h++;
+	}
 
 	Hasher
 	{
@@ -80,9 +86,9 @@ INCLUDE 'std/io/stream'
 		PRIVATE Current: U1;
 		PRIVATE Digested: BOOL;
 
-		{}: Accum(:seed), Current(0), WordAcc(0), WordAccSize(0), Digested(FALSE);
+		{}: Accum(:seed), WordAcc(0), WordAccSize(0), Current(0), Digested(FALSE);
 
-		THIS() Hash #&
+		THIS++ Hash #&
 		{
 			IF(!Digested)
 			{
@@ -99,53 +105,31 @@ INCLUDE 'std/io/stream'
 			= Accum;
 		}
 
-		THIS(v: BOOL) INLINE Hasher& := accum(v ? 1:0, 8);
-		THIS(v: U1) INLINE Hasher & := accum(v, 8);
-		THIS(v: S1) INLINE Hasher & := THIS(<U1>(v));
-		THIS(v: U2) INLINE Hasher& := accum(v, 16);
-		THIS(v: S2) INLINE Hasher& := THIS(<U2>(v));
-		THIS(v: U4) INLINE Hasher& := accum(v, 32);
-		THIS(v: S4) INLINE Hasher& := THIS(<U4>(v));
-		THIS(v: U8) INLINE Hasher& := accum(v, 64);
-		THIS(v: S8) INLINE Hasher& := THIS(<U8>(v));
-		THIS(v: CHAR) INLINE Hasher& := THIS(<U1>(v));
-		THIS(v: CHAR #*) INLINE Hasher& := THIS(str::view(v));
-
-		[T:TYPE]
-		THIS(v: T!-std::Vector#&) Hasher& := THIS(v!);
-
-		[T:TYPE]
-		THIS(v: T! #*) Hasher&
-		{
-			IF(v)
-				THIS(*v);
-			= THIS;
-		}
-
-		[T: TYPE]
-		THIS(v: T! #&) Hasher &
+		[T:TYPE] THIS(v:T! #&) Hasher&
 		{
 			IF(h ::= <<CustomHashable #*>>(&v))
 				h->hash(THIS);
 			ELSE
-				THIS VISIT(v);
+				_hash(v!);
 			= THIS;
 		}
 
-		[T:TYPE; N:NUMBER]
-		THIS(v: T!#[N]) Hasher &
+		[T:TYPE] PRIVATE _hash(v: T!#&) VOID
 		{
-			FOR(i ::= 0; i < N; i++)
-				THIS(v[i]);
-			= THIS(<U8>(N));
-		}
-
-		[T:TYPE]
-		THIS(v: T!-std::Buffer#&) Hasher&
-		{
-			FOR(i ::= 0; i < ##v; i++)
-				THIS(v[i]);
-			= THIS(<U8>(##v));
+			TYPE SWITCH STATIC(v)
+			{
+			BOOL:
+				accum(v ? 1 : 0, 8);
+			U1, S1, U2, S2, U4, S4, U8, S8, CHAR:
+				accum(v, 8*SIZEOF(T));
+			DEFAULT:
+			{
+				IF(h ::= <<CustomHashable #*>>(&v))
+					h->hash(THIS);
+				ELSE
+					THIS VISIT(v!);
+			}
+			}
 		}
 
 		PRIVATE accum(v: Hash::Word, bits: U1) Hasher &

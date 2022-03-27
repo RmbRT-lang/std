@@ -2,63 +2,84 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/str'
+INCLUDE 'std/buffer'
+INCLUDE 'std/io/streamable'
 
 ::std::io
 {
-	::detail StreamInput
+	StreamInput
 	{
-		Data: VOID #\;
-		Bytes: UM;
+		PRIVATE RawBuffer {
+			Data: VOID #*;
+			Bytes: UM;
+			{};
+			{data: VOID#*, bytes: UM} INLINE: Data(data), Bytes(bytes);
+		}
+		UNION RawBufferOrStreamable
+		{
+			Buf: RawBuffer;
+			Streamable: std::io::Streamable #\;
+		}
+		IsBuffer: BOOL;
+		Value: RawBufferOrStreamable;
 
 		[T: TYPE]
 		:buf
 		{
 			slice: T! #\,
 			count: UM
-		} INLINE:
-			Data(slice),
-			Bytes(count * SIZEOF(T));
+		} INLINE: IsBuffer(TRUE)
+		{ Value.Buf := (slice, count * SIZEOF(T)); }
 
 		:raw{
 			slice: VOID #\,
 			bytes: UM
-		} INLINE:
-			Data(slice),
-			Bytes(bytes);
+		} INLINE: IsBuffer(TRUE)
+		{ Value.Buf := (slice, bytes); }
 
-		{string: CHAR#\}: Data(string), Bytes(str::len(string));
-		:ch{c: CHAR #&} INLINE: Data(&c), Bytes(1);
+		{string: CHAR#\}: IsBuffer(TRUE)
+		{ Value.Buf := (string, str::len(string)); }
+		:ch{c: CHAR #&} INLINE: IsBuffer(TRUE)
+		{ Value.Buf := (&c, 1); }
+
+		:stream{s: Streamable #&}: IsBuffer(FALSE)
+		{ Value.Streamable := &s; }
 	}
 
 	MASK OStream
 	{
 		write_some_impl(data: VOID #\, size: UM) UM;
 
-		PRIVATE write_all(d: detail::StreamInput) UM
+		PRIVATE write_all(i: StreamInput) VOID
 		{
-			p ::= <CHAR#\>(d.Data);
-			FOR(left ::= d.Bytes; left > 0;)
+			IF(i.IsBuffer)
 			{
-				written ::= write_some_impl(p, left);
-				left := left - written;
-				p := p + written;
-			}
-			= d.Bytes;
+				d ::= i.Value.Buf;
+				p ::= <CHAR#\>(d.Data);
+				FOR(left ::= d.Bytes; left > 0;)
+				{
+					written ::= write_some_impl(p, left);
+					left := left - written;
+					p := p + written;
+				}
+			} ELSE
+				i.Value.Streamable->stream(THIS);
 		}
 
 		[A...: TYPE]
-		write(a: A!&&...) UM
+		write(a: A!&&...) VOID
 		{
-			written: UM := 0;
-			(written += write_all(<A!&&>(a)))...;
-			= written;
+			write_all(<A!&&>(a))...;
 		}
 
-		write_some(d: detail::StreamInput) INLINE UM
-			:= write_some_impl(d.Data, d.Bytes);
+		write_some(d: StreamInput) INLINE UM
+		{
+			ASSERT(d.IsBuffer);
+			= write_some_impl(d.Value.Buf.Data, d.Value.Buf.Bytes);
+		}
 	}
 
-	::detail StreamOutput
+	StreamOutput
 	{
 		Data: VOID \;
 		Bytes: UM;
@@ -78,6 +99,8 @@ INCLUDE 'std/str'
 	MASK IStream
 	{
 		read_some(data: VOID \, size: UM) UM;
+
+		eof() BOOL;
 
 		[T: TYPE]
 		read(data: T! - Buffer #&) INLINE UM

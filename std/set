@@ -36,27 +36,28 @@ INCLUDE 'std/vector'
 	# ##THIS INLINE UM := ##Elems;
 
 	[V: TYPE]
-	# find(
-		v: V! #&
-	) T! # *
+	# has (v: V! #?&) INLINE BOOL := find(v);
+
+	[V: TYPE]
+	#? find(v: V! #?&) T! #? *
 	{
 		dummy: Location;
-		= find(v, &dummy);
+		= find_loc2(v, &dummy);
 	}
 
 	[V: TYPE]
-	# find(v: {:location, V! #&}) { T! #*, Location }
+	#? find_loc(v: V! #?&) { T! #?*, Location }
 	{
 		loc: Location;
-		ret ::= find(v.(1), &loc);
+		ret ::= find_loc2(v.(1), &loc);
 		= (ret, loc);
 	}
 
 	[V: TYPE]
-	# find(
-		v: V! #&,
+	#? find_loc2(
+		v: V! #?&,
 		location: Location \
-	) T! # *
+	) T! #? *
 	{
 		l: UM := 0;
 		r: UM := ##Elems;
@@ -81,86 +82,21 @@ INCLUDE 'std/vector'
 		= NULL;
 	}
 
-	[V: TYPE]
-	find(
-		v: V! #&
-	) T! *
-	{
-		dummy: Location;
-		= find(v, &dummy);
-	}
-
-	[V: TYPE]
-	find(v: {:location, V! #&}) {T! *, Location}
+	[V: TYPE] insert(v: V!&&) BOOL
 	{
 		loc: Location;
-		ret ::= find(v.(1), &loc);
-		= (ret, loc);
-	}
-
-	[V: TYPE]
-	find(
-		v: V! #&,
-		location: Location \
-	) T! *
-	{
-		l: UM := 0;
-		r: UM := ##Elems;
-
-		i: UM := 0;
-		WHILE(l < r)
-		{
-			i := (l + r)>>1;
-			sign ::= Cmp::cmp(v, Elems[i]);
-			IF(sign < 0)
-				r := i;
-			ELSE IF(sign > 0)
-				l := i+1;
-			ELSE
-			{
-				*location := i;
-				= &Elems[i];
-			}
-		}
-
-		*location := l;
-		= NULL;
-	}
-
-	insert_at(
-		position: Location #&,
-		v: T!#&) INLINE T! &
-		:= emplace_at(position, v);
-
-	insert_at(
-		position: Location #&,
-		v: T!&&) INLINE T! &
-		:= emplace_at(position, &&v);
-
-	insert(v: T#&) BOOL
-	{
-		loc: Location;
-		IF(find(v, &loc))
+		IF(find_loc2(v, &loc))
 			= FALSE;
-		insert_at(loc, v);
-		= TRUE;
-	}
-
-	insert(v: T&&) BOOL
-	{
-		loc: Location;
-		IF(find(v, &loc))
-			= FALSE;
-		insert_at(loc, &&v);
+		emplace_at(loc, <V!&&>(v));
 		= TRUE;
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) INLINE VOID
-	{ THIS.insert(<A!&&>(v)); }
+	THIS+=(v: A!&&) INLINE BOOL
+		:= THIS.insert(<A!&&>(v));
 
 	remove_at(
-		position: Location #&) VOID
+		position: Location) INLINE VOID
 	{
 		Elems.erase(position);
 	}
@@ -169,7 +105,7 @@ INCLUDE 'std/vector'
 	remove(v: V! #&) BOOL
 	{
 		loc: Location;
-		IF(find(v, &loc))
+		IF(find_loc2(v, &loc))
 		{
 			remove_at(loc);
 			= TRUE;
@@ -178,10 +114,13 @@ INCLUDE 'std/vector'
 	}
 
 	[V: TYPE]
-	remove(v: V! #&, deleted: T! \) BOOL
+	THIS-=(v: V! #&) INLINE BOOL := THIS.remove(v);
+
+	[V: TYPE]
+	pop(v: V! #&, deleted: T! \) BOOL
 	{
 		loc: Location;
-		IF(it ::= find(v, &loc))
+		IF(it ::= find_loc2(v, &loc))
 		{
 			*deleted := &&*it;
 			remove_at(loc);
@@ -193,13 +132,14 @@ INCLUDE 'std/vector'
 
 	[A...:TYPE]
 	emplace_at(
-		position: Location #&,
+		position: Location,
 		a: A!&&...) T! &
 	{
 		Elems.emplace_at(position, <A!&&>(a)...);
 		= Elems[position];
 	}
 }
+
 ::std::detail NaturalCmp
 {
 	[A:TYPE; B:TYPE]

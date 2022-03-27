@@ -15,19 +15,9 @@ INCLUDE 'std/set'
 	TYPE Location := [{K!,V!}, TupleCmp]VectorSet::Location;
 
 	[T: TYPE]
-	find(k: {:location, T! #&}) {V! *, Location}
+	#? find_loc(k: T! #?&) {V! #?*, Location}
 	{
-		x ::= Set.find(k);
-		IF(x.(0))
-			= (&x.(0)->(1), x.(1));
-		ELSE
-			= (NULL, x.(1));
-	}
-
-	[T: TYPE]
-	# find(k: {:location, T! #&}) {V! #*, Location}
-	{
-		x ::= Set.find(k);
+		x ::= Set.find_loc(k);
 		IF(x.(0))
 			= (&x.(0)->(1), x.(1));
 		ELSE
@@ -35,42 +25,35 @@ INCLUDE 'std/set'
 	}
 
 	[T:TYPE]
-	find(k: T! #&, loc: Location \) V! *
+	find_loc2(k: T! #&, loc: Location \) V! *
 	{
-		IF(it ::= Set.find(k, loc))
+		IF(it ::= Set.find_loc2(k, loc))
 			= &it->(1);
 		ELSE
 			= NULL;
 	}
 
 	[T:TYPE]
-	# find(k: T! #&, loc: Location \) V! #*
+	#? find_loc2(k: T! #?&, loc: Location \) V! #?*
 	{
-		IF(it ::= Set.find(k, loc))
+		IF(it ::= Set.find_loc2(k, loc))
 			= &it->(1);
 		ELSE
 			= NULL;
 	}
 
 	[T:TYPE]
-	find(k: T! #&) V! *
+	#? find(k: T! #&) V! #?*
 	{
 		dummy: Location;
-		= find(k, &dummy);
-	}
-
-	[T:TYPE]
-	# find(k: T! #&) V! #*
-	{
-		dummy: Location;
-		= find(k, &dummy);
+		= find_loc2(k, &dummy);
 	}
 
 	[Key: TYPE; Value: TYPE]
 	insert(k: Key!&&, v: Value!&&) BOOL
 	{
 		loc: Location;
-		IF(find(k, &loc))
+		IF(find_loc2(k, &loc))
 			= FALSE;
 		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
 		= TRUE;
@@ -79,10 +62,10 @@ INCLUDE 'std/set'
 	[T:TYPE]
 	remove(k: T! #&) INLINE BOOL := Set.remove(k);
 	[T:TYPE]
-	remove(k: T! #&, deleted: V! \) BOOL
+	pop(k: T! #&, deleted: V! \) BOOL
 	{
 		loc: Location;
-		IF(it ::= find(k, &loc))
+		IF(it ::= find_loc2(k, &loc))
 		{
 			*deleted := &&*it;
 			Set.remove_at(loc);
@@ -91,10 +74,8 @@ INCLUDE 'std/set'
 		= FALSE;
 	}
 
-	start() INLINE ::= Set.start();
-	# start() INLINE ::= Set.start();
-	end() INLINE ::= Set.end();
-	# end() INLINE ::= Set.end();
+	#? start() INLINE ::= Set.start();
+	#? end() INLINE ::= Set.end();
 	# empty() INLINE BOOL := Set.empty();
 
 	# ## THIS INLINE ::= ##Set;

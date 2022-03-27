@@ -1,11 +1,12 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
+INCLUDE 'std/buffer'
 
 ::std::io::format
 {
-	[T:TYPE] hex(o: OStream &, n: T! #&) INLINE VOID := hex(o, n, TRUE);
-	[T:TYPE] hex(o: OStream &, n: T! #&, prefix: BOOL) VOID
+	[T:TYPE] hex(o: OStream &, n: T! #&) INLINE VOID := hex_prefixed(o, n, TRUE);
+	[T:TYPE] hex_prefixed(o: OStream &, n: T! #&, prefix: BOOL) VOID
 	{
 		v: UM := n;
 
@@ -32,7 +33,7 @@ INCLUDE 'std/io/stream'
 				v := -n;
 		}
 
-		buffer: CHAR[32];
+		buffer: CHAR[32] (NOINIT);
 		buf: CHAR-Buffer(buffer, SIZEOF(#buffer));
 		i ::= buf.Size-1;
 		DO()

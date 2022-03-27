@@ -12,12 +12,12 @@ INCLUDE "../std/string"
 			= size;
 		}
 
-		# THIS==(expect: CHAR#\ - std::Vector #&) BOOL
+		# THIS==(expect: str::C8CView - std::Vector #&) BOOL
 		{
 			IF(##expect != ##Data)
 				= FALSE;
 			FOR(i ::= 0; i < ##Data; i++)
-				IF(str::view(expect[i]) != Data[i]!)
+				IF(expect[i] != Data[i]!)
 					= FALSE;
 			= TRUE;
 		}

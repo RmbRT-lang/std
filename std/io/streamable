@@ -1,13 +1,11 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
-INCLUDE 'std/memory'
+INCLUDE 'std/buffer'
 
 ::std::io MASK Streamable
 {
 	# stream(into: OStream &) VOID;
-
-	# stream(into: OStream &&) VOID { stream(into); }
 }
 
 ::std::io::detail [T: TYPE]BufStreamable
@@ -18,6 +16,6 @@ INCLUDE 'std/memory'
 
 	# stream(into: OStream &) VOID
 	{
-		into.write(Buf);
+		into.write(Buf++);
 	}
 }

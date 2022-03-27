@@ -12,7 +12,7 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 		map.insert(5, TRUE);
 		ASSERT(!map.empty());
 		del: BOOL := FALSE;
-		ASSERT(map.remove(5, &del));
+		ASSERT(map.pop(5, &del));
 		ASSERT(del);
 		ASSERT(map.empty());
 	}
@@ -47,12 +47,12 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 	{
 		map: IntBoolMap;
 		l: IntBoolMap::Location;
-		ASSERT(!map.find(5) && !map.find(5, &l));
+		ASSERT(!map.find(5) && !map.find_loc2(5, &l));
 		map.insert(7, TRUE);
-		ASSERT(map.find(7) && map.find(7, &l));
+		ASSERT(map.find(7) && map.find_loc2(7, &l));
 		map.remove(7);
-		ASSERT(!map.find(7) && !map.find(7, &l));
-		ASSERT(!map.find(4) && !map.find(4, &l));
+		ASSERT(!map.find(7) && !map.find_loc2(7, &l));
+		ASSERT(!map.find(4) && !map.find_loc2(4, &l));
 	}
 
 	TEST "VectorSet::Iterator"

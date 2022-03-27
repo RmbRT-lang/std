@@ -9,59 +9,28 @@ INCLUDE 'std/hash'
 
 	TYPE Location := std::[Hash, V, Hash]Map::Location;
 
-	find(k: {:location, K! #&}) INLINE {V! *, Location}
-		:= find(:location(hash(k.(1))));
-	# find(k: {:location, K! #&}) INLINE {V! #*, Location}
-		:= find(:location(hash(k.(1))));
+	#? find(k: K! #&) INLINE V! #?* := find_h(hash(k));
+	#? find_loc(k: K! #&) INLINE {V! #?*, Location} := find_loc_h(hash(k.(1)));
+	#? find_loc2(k: K! #&, loc: Location \) INLINE V! #?* := find_loc2_h(hash(k), loc);
 
-	find(k: K! #&, loc: Location \) INLINE V! *
-		:= find(hash(k), loc);
-	# find(k: K! #&, loc: Location \) INLINE V! #*
-		:= find(hash(k), loc);
-
-	find(k: K! #&) INLINE V! *
-		:= find(hash(k));
-	# find(k: K! #&) INLINE V! #*
-		:= find(hash(k));
-
-
-	find(k: {:location, Hash #&}) INLINE {V! *, Location}
-		:= Map.find(k);
-	# find(k: {:location, Hash #&}) INLINE {V! #*, Location}
-		:= Map.find(k);
-
-	find(k: Hash #&, loc: Location \) INLINE V! *
-		:= Map.find(k, loc);
-	# find(k: Hash #&, loc: Location \) INLINE V! #*
-		:= Map.find(k, loc);
-
-	find(k: Hash #&) INLINE V! *
-		:= Map.find(k);
-	# find(k: Hash #&) INLINE V! #*
-		:= Map.find(k);
+	#? find_h(k: Hash #&) INLINE V! #?* := Map.find(k);
+	#? find_loc_h(k: Hash #&) INLINE {V! #?*, Location} := Map.find_loc(k);
+	#? find_loc2_h(k: Hash #&, loc: Location \) INLINE V! #?* := Map.find_loc2(k, loc);
 
 	[Value: TYPE]
-	insert(k: K! #&, v: Value!&&) BOOL
-		:= Map.insert(hash(k), <Value!&&>(v));
+	insert(k: K! #&, v: Value!&&) BOOL := Map.insert(hash(k), <Value!&&>(v));
 
 	[Value: TYPE]
-	insert(k: Hash #&, v: Value!&&) BOOL
-		:= Map.insert(k, <Value!&&>(v));
+	insert_h(k: Hash #&, v: Value!&&) BOOL := Map.insert(k, <Value!&&>(v));
 
-	remove(k: K! #&) INLINE BOOL
-		:= remove(hash(k));
-	remove(k: K! #&, deleted: V! \) BOOL
-		:= remove(hash(k), deleted);
+	remove(k: K! #&) INLINE BOOL := remove_h(hash(k));
+	pop(k: K! #&, deleted: V! \) BOOL := pop_h(hash(k), deleted);
 
-	remove(k: Hash #&) INLINE BOOL
-		:= Map.remove(k);
-	remove(k: Hash #&, deleted: V! \) INLINE BOOL
-		:= Map.remove(k, deleted);
+	remove_h(k: Hash #&) INLINE BOOL := Map.remove(k);
+	pop_h(k: Hash #&, deleted: V! \) INLINE BOOL := Map.pop(k, deleted);
 
-	start() INLINE ::= Map.start();
-	# start() INLINE ::= Map.start();
-	end() INLINE ::= Map.end();
-	# end() INLINE ::= Map.end();
+	#? start() INLINE ::= Map.start();
+	#? end() INLINE ::= Map.end();
 	# empty() INLINE BOOL := Map.empty();
 }
 

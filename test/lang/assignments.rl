@@ -1,20 +1,21 @@
 ::rl::lang::assign
 {
-	Class {
+	Class
+	{
 		MovedOut: BOOL;
 		MovedIn: BOOL;
 		Destroyed: BOOL;
 
-		{}: MovedOut(FALSE), MovedIn(FALSE), Destroyed(FALSE);
+		{};
 
-		{&&m}: MovedOut(FALSE), MovedIn(TRUE)
+		{&&m}: MovedIn(TRUE), Destroyed(NOINIT)
 		{ m.MovedOut := TRUE; }
 
 		DESTRUCTOR { Destroyed := TRUE; }
 	}
 
-	TEST "move assignment" {
-
+	TEST "move assignment"
+	{
 		x: Class;
 		y: Class;
 

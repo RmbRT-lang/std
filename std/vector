@@ -2,6 +2,7 @@
 
 INCLUDE 'std/range'
 INCLUDE 'std/dyn'
+INCLUDE 'std/shared'
 INCLUDE 'std/memory'
 INCLUDE 'std/help'
 INCLUDE 'std/types'
@@ -14,7 +15,7 @@ PRIVATE:
 	Content: [T!]Buffer;
 	Capacity: UM;
 PUBLIC:
-	{}: Capacity(0);
+	{};
 	{size: UM}:
 		Content(heap::[T]alloc(size)),
 		Capacity(size)
@@ -49,13 +50,8 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	:vec{a: A!&&...}:
-		Content(NULL),
-		Capacity(0)
-	{
-		reserve(SIZEOF...(A!));
-		(THIS += <A!&&>(a))...;
-	}
+	:vec{a: A!&&...} := :reserve(SIZEOF...(A!))
+	{ (THIS += <A!&&>(a))...; }
 
 	DESTRUCTOR
 	{
@@ -198,14 +194,16 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	emplace_at(at: UM, a: A!&&...) INLINE VOID
+	emplace_at(at: UM, a: A!&&...) INLINE T! &
 	{
 		grow_reserve_with_hole_at(at);
 		failed ::= TRUE;
 		TRY
 		{
-			THIS[at].{<A!&&>(a)...};
+			elem:?& := THIS[at];
+			elem.{<A!&&>(a)...};
 			failed := FALSE;
+			= elem;
 		} FINALLY IF(failed)
 		{
 			IF(at != ##THIS-1)
@@ -219,8 +217,8 @@ PUBLIC:
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) INLINE VOID
-	{ emplace_at(##THIS, <A!&&>(v)); }
+	THIS+=(v: A!&&) INLINE T! &
+		:= emplace_at(##THIS, <A!&&>(v));
 
 	#? THIS[i: Index] INLINE T!#?& := Content[i];
 
@@ -254,3 +252,4 @@ PUBLIC:
 }
 
 ::std [T:TYPE] TYPE DynVector := T! - Dyn - Vector;
+::std [T:TYPE] TYPE SharedVector := T! - Shared - Vector;

@@ -21,7 +21,7 @@ INCLUDE 'std/io/stream'
 		Size(size),
 		Index(index);
 
-	# OVERRIDE print(o: io::OStream &) VOID
+	# OVERRIDE stream(o: io::OStream &) VOID
 	{
 		o.write("index ");
 		io::format::dec(o, Index);

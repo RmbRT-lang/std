@@ -9,12 +9,12 @@ INCLUDE 'std/io/stream'
 {
 	What: [io::Streamable]Dyn;
 
-	{what: io::Streamable \}: What(:gc, what);
+	:gc{what: io::Streamable \}: What(:gc, what);
 	{what: CHAR #\}:
-		What(:gc, dup(<<<io::Streamable>>>(
-			io::detail::[CHAR#]BufStreamable(str::buf(what)))));
+		What(:gc, heap::dup(<<<io::Streamable>>>(
+			<io::detail::[CHAR#]BufStreamable>(str::view(what)))));
 
-	# OVERRIDE print(
+	# OVERRIDE stream(
 		o: io::OStream &) VOID
 	{
 		o.write("unimplemented: ");

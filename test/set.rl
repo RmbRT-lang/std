@@ -38,12 +38,12 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 	{
 		set: IntVectorSet;
 		l: IntVectorSet::Location;
-		ASSERT(!set.find(5) && !set.find(5, &l));
+		ASSERT(!set.find(5) && !set.find_loc2(5, &l));
 		set += 7;
-		ASSERT(set.find(7) && set.find(7, &l));
+		ASSERT(set.find(7) && set.find_loc2(7, &l));
 		set.remove(7);
-		ASSERT(!set.find(7) && !set.find(7, &l));
-		ASSERT(!set.find(4) && !set.find(4, &l));
+		ASSERT(!set.find(7) && !set.find_loc2(7, &l));
+		ASSERT(!set.find(4) && !set.find_loc2(4, &l));
 	}
 
 	TEST "VectorSet::Iterator"

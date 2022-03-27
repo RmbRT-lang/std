@@ -34,7 +34,7 @@ INCLUDE "../std/memory"
 	}
 	::test encode(c: SYM, str: CHAR#\) BOOL
 	{
-		buf: CHAR[4];
+		buf: CHAR[4] (NOINIT);
 		len ::= utf8::encode(c, buf);
 		= size(buf[0]) == len
 			&& mem::cmp(buf, str, len) == 0;

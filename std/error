@@ -1,9 +1,7 @@
 (/rl/)
 
-INCLUDE 'std/io/stream'
+INCLUDE 'std/io/streamable'
 
-::std Error
+::std Error VIRTUAL -> std::io::Streamable
 {
-	# ABSTRACT print(
-		io::OStream &) VOID;
 }

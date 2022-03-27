@@ -2,6 +2,7 @@
 
 INCLUDE 'std/types'
 INCLUDE 'std/io/stream'
+INCLUDE 'std/err/filenotfound'
 INCLUDE 'std/tags'
 
 ::std::io
@@ -17,22 +18,24 @@ INCLUDE 'std/tags'
 
 		{h: libc::FileHandle \}: F(h)
 		{
-			IF(!F)
-				THROW;
+			ASSERT(F);
 		}
 		write_some_impl(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
 		write(d: VOID #\, s: UM) INLINE ::= <<<io::OStream>>>(&THIS).write(:raw(d, s));
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
+		read_some(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE INT := libc::fflush(F);
 		eof() INLINE BOOL := libc::feof(F);
 		line(d: CHAR \, s: UM) INLINE CHAR * := libc::fgets(d, s, F);
+
+		STATIC remove(file: CHAR #\) BOOL := 0 == libc::remove(file);
 
 		DESTRUCTOR { libc::fclose(F); }
 		{file: CHAR #\, mode: CHAR#\}:
 			F(libc::fopen(file, mode))
 		{
 			IF(!F)
-				THROW;
+				THROW <FileNotFound>(<std::str::C8CView>(file));
 		}
 
 		print(str: CHAR #\) ::= libc::fputs(str, F);
@@ -51,6 +54,7 @@ INCLUDE 'std/tags'
 	EXTERN fflush(FileHandle \) INT;
 	EXTERN fputs(CHAR #\, FileHandle \) INT;
 	EXTERN fgets(CHAR\, INT, FileHandle \) CHAR *;
+	EXTERN remove(CHAR#\) INT;
 
 	EXTERN stdin: FileHandle *;
 	EXTERN stdout: FileHandle *;

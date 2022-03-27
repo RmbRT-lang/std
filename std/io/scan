@@ -24,12 +24,14 @@ INCLUDE 'std/math/safe'
 	{
 		v := 0;
 
-		sign ::= str::starts_with(s, "-");
-		IF(sign) s := s.drop_start(1);
+		view: str::C8CView := s++;
 
-		b ::= str::starts_with(s, "0x") || str::starts_with(s, "0X");
+		sign ::= view.starts_with("-");
+		IF(sign) view := view.drop_start(1)++;
+
+		b ::= view.starts_with("0x") || view.starts_with("0X");
 		IF(b)
-			s := s.drop_start(2);
+			view := view.drop_start(2)++;
 
 		FOR(i ::= 0; i < s.Size; i++)
 		{

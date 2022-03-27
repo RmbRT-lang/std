@@ -8,17 +8,14 @@ INCLUDE 'std/range'
 	Data: T! *;
 	Size: UM;
 
-	{NULL}: Data(NULL), Size(0);
-	{}: Data(NULL), Size(0);
+	{};
+	{NULL};
 	{s: T! *, c: UM}: Data(s), Size(c)
 	{
 		ASSERT(!Size || Data);
 	}
 
-	:buf{s: T! *, c: UM}: Data(s), Size(c)
-	{
-		ASSERT(!Size || Data);
-	}
+	:buf{s: T! *, c: UM} (s, c);
 
 	# THIS++ INLINE {:buf, T! \, UM!} := :buf(Data, Size);
 	# <BOOL> INLINE := Data != NULL;
@@ -48,6 +45,8 @@ INCLUDE 'std/range'
 
 	#? back() INLINE T!#?& := THIS[Size-1];
 	#? end() INLINE [T!]Buffer#?-Iterator := (&THIS, Size-1);
+
+	# empty() INLINE BOOL := !Size;
 }
 
 ::std::range [T: TYPE] destroy(v: [T!]Buffer) INLINE VOID

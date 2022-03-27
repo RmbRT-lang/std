@@ -30,13 +30,16 @@ INCLUDE 'std/math/limit'
 
 	lock(:ok) VOID
 	{
-		FOR(i ::= 0; Locked(:<>(TRUE)); i++)
-			...0.0005 * std::math::min(i+1, 25);
+		FOR(i ::= 1; Locked(:<>(TRUE));)
+		{
+			IF(i != 25) ++i;
+			...0.0005 * i;
+		}
 	}
-	lock() INLINE Handle
+	THIS() INLINE Handle
 	{
 		lock(:ok);
-		= &Locked;
+		= <Handle>(&Locked);
 	}
 
 	try_lock(:ok) INLINE BOOL := !Locked(:<>(TRUE));
