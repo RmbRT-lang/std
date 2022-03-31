@@ -7,9 +7,21 @@
 		6: ASSERT(FALSE);
 		}
 	}
-	TEST "No matching case"
+
+	TEST "No matching case, strict"
 	{
-		SWITCH(5) {
+		panicked: BOOL;
+		TRY SWITCH(5) {
+		4: ASSERT(FALSE);
+		6: ASSERT(FALSE);
+		}
+		CATCH(CHAR#\) panicked := TRUE;
+		ASSERT(panicked);
+	}
+
+	TEST "No matching case, permissive"
+	{
+		SWITCH?(5) {
 		4: ASSERT(FALSE);
 		6: ASSERT(FALSE);
 		}
