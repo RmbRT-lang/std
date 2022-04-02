@@ -1,6 +1,7 @@
 INCLUDE "../std/io/stream"
 INCLUDE "../std/vector"
 INCLUDE "../std/string"
+INCLUDE 'std/io/file'
 
 ::std::io
 {
@@ -28,7 +29,7 @@ INCLUDE "../std/string"
 		buf: StreamToVector;
 		o ::= <<<std::io::OStream>>>(&buf);
 
-		o.write("hello", "world");
-		ASSERT(buf == :vec("hello", "world"));
+		o.write("hello", "world", :dec(25), :dec(-40), :hex(-0x23));
+		ASSERT(buf == :vec("hello", "world", "25", "-40", "-0x0000000000000023"));
 	}
 }
