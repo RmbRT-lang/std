@@ -15,9 +15,9 @@
 	{
 		SWITCH(E::a)
 		{
-		:b: ASSERT(FALSE);
+		:b: DIE;
 		:a: {;}
-		DEFAULT: ASSERT(FALSE);
+		DEFAULT: DIE;
 		}
 	}
 	TEST "switch symbol constant variable"
@@ -26,7 +26,7 @@
 		{
 		:a: {;}
 		DEFAULT:
-			ASSERT(FALSE);
+			DIE;
 		}
 	}
 }

@@ -15,7 +15,7 @@ INCLUDE 'std/types'
 		IF(firstByte & 0xf8 == 0xf0)
 			= 4;
 
-		THROW;
+		DIE "invalid lead byte";
 	}
 
 	is_follow(byte: C8) INLINE

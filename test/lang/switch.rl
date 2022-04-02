@@ -4,7 +4,7 @@
 	{
 		SWITCH(5) {
 		5: {;}
-		6: ASSERT(FALSE);
+		6: DIE;
 		}
 	}
 
@@ -12,8 +12,8 @@
 	{
 		panicked: BOOL;
 		TRY SWITCH(5) {
-		4: ASSERT(FALSE);
-		6: ASSERT(FALSE);
+		4: DIE;
+		6: DIE;
 		}
 		CATCH(CHAR#\) panicked := TRUE;
 		ASSERT(panicked);
@@ -22,8 +22,8 @@
 	TEST "No matching case, permissive"
 	{
 		SWITCH?(5) {
-		4: ASSERT(FALSE);
-		6: ASSERT(FALSE);
+		4: DIE;
+		6: DIE;
 		}
 	}
 
@@ -31,7 +31,7 @@
 	{
 		SWITCH(4) {
 		DEFAULT: {;}
-		5, 6: ASSERT(FALSE);
+		5, 6: DIE;
 		}
 	}
 
@@ -42,12 +42,12 @@
 
 	TEST "Switch enum values"
 	{
-		a: E := E::a;
+		a: E := :a;
 		SWITCH(a)
 		{
-		E::a: {;}
-		E::b: ASSERT(FALSE);
-		DEFAULT: ASSERT(FALSE);
+		:a: {;}
+		:b: DIE "b matched instead of a";
+		DEFAULT: DIE "invalid value matched";
 		}
 	}
 }
