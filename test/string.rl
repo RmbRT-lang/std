@@ -4,24 +4,25 @@ INCLUDE "../std/string"
 {
 	TEST "str::view"
 	{
-		str ::= "1234546";
+		str ::= "123456";
 		buf ::= str::view(str);
-		IF(buf.Data != str && buf.Size != 6) THROW;
+		ASSERT(buf.Data == str);
+		ASSERT(buf.Size == 6);
 	}
 
 	TEST "str::len"
 	{
-		IF(str::len("test") != 4
-		|| str::len("12345") != 5
-		|| str::len("") != 0) THROW;
+		ASSERT(str::len("test") == 4);
+		ASSERT(str::len("12345") == 5);
+		ASSERT(str::len("") == 0);
 	}
 
 	TEST "str::cmp"
 	{
-		IF(str::view("a").cmp("b") >= 0
-		|| str::view("a").cmp("a") != 0
-		|| str::view("aa").cmp("a") <= 0
-		|| str::view("").cmp("a") >= 0) THROW;
+		ASSERT(str::view("a").cmp("b") < 0);
+		ASSERT(str::view("a").cmp("a") == 0);
+		ASSERT(str::view("aa").cmp("a") > 0);
+		ASSERT(str::view("").cmp("a") < 0);
 	}
 
 	TEST "str::starts_with"
