@@ -13,7 +13,7 @@ PUBLIC:
 	{NULL}: Obj(NOINIT);
 
 	[Args...:TYPE]
-	:some{args: Args!&&...}: Exists(TRUE), Obj(<Args!&&>(args)...);
+	:a{args: Args!&&...}: Exists(TRUE), Obj(<Args!&&>(args)...);
 
 	DESTRUCTOR { IF(Exists) Obj->~; }
 	

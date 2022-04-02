@@ -21,7 +21,7 @@ INCLUDE 'std/optional'
 		TRY { x!; ok := TRUE; } CATCH(Assertion){}
 		ASSERT(!ok);
 
-		x := :some(5);
+		x := :a(5);
 		ASSERT(x);
 		ASSERT(x! == 5);
 
@@ -48,7 +48,7 @@ INCLUDE 'std/optional'
 	{
 		{ x: NeverDestruct-Opt; }
 		ASSERT(!NeverDestruct::Dtor);
-		v: TrackedDtor-Opt := :some();
+		v: TrackedDtor-Opt := :a();
 		v.~;
 		ASSERT(v->Dtor);
 	}
