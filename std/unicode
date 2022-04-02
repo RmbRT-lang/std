@@ -41,13 +41,11 @@ INCLUDE 'std/types'
 		out: SYM := <SYM>(in[0] & masks[*size-2]);
 
 		DO(i ::= 1)
-			IF(!is_follow(in[i]))
-				THROW;
-			ELSE
-			{
-				out <<= 6;
-				out |= <SYM>(in[i] & 0x3f);
-			} WHILE(++i < *size)
+		{
+			ASSERT(is_follow(in[i]));
+			out <<= 6;
+			out |= <SYM>(in[i] & 0x3f);
+		} WHILE(++i < *size)
 
 		= out;
 	}

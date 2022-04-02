@@ -38,9 +38,6 @@ INCLUDE 'std/buffer'
 		i ::= buf.Size-1;
 		DO()
 		{
-			IF(i < 0)
-				THROW;
-
 			d ::= v % 10;
 			v := v / 10;
 
