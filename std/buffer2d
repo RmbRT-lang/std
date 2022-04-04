@@ -1,0 +1,44 @@
+(/rl/)
+
+INCLUDE 'std/index'
+
+/// A view of two-dimensional memory.
+::std [T:TYPE] Buffer2D
+{
+	Data: T *; /// First element.
+	RowDist: UM; /// Memory gap between two rows.
+	W: UM; /// Columns
+	H: UM; /// Rows
+
+	{};
+	{NULL};
+
+	{data: T \, w: UM, h: UM}:
+		Data := data,
+		RowDist := w,
+		W := w,
+		H := h;
+
+	:slice{data: T \, w: UM, h: UM, rowDist: UM}:
+		Data := data,
+		RowDist := rowDist,
+		W := w,
+		H := h;
+
+	#? slice(
+		x: Range,
+		y: Range
+	) [T!#?]Buffer2D
+	{
+		x(W);
+		y(H);
+
+		= :slice(
+			&Data[y.Start*RowDist + x.Start],
+			x.Size,
+			y.Size, RowDist);
+	}
+
+	#? row(i: Index) INLINE [T!#?]Buffer := (&Data[i(H)*RowDist], W);
+	#? THIS[x: Index, y: Index] INLINE T #?& := Data[y(H) * RowDist + x(W)];
+}
