@@ -1,6 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/types'
 INCLUDE 'std/str'
 INCLUDE 'std/buffer'
 INCLUDE 'std/io/streamable'

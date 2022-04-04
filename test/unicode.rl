@@ -32,7 +32,7 @@ INCLUDE "../std/memory"
 		ASSERT(test::encode(0x00B4, "´"));
 		ASSERT(test::encode(0x20AC, "€"));
 	}
-	::test encode(c: SYM, str: CHAR#\) BOOL
+	::test encode(c: U4, str: CHAR#\) BOOL
 	{
 		buf: CHAR[4] (NOINIT);
 		len ::= utf8::encode(c, buf);

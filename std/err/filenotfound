@@ -5,9 +5,9 @@ INCLUDE 'std/string'
 
 ::std::io FileNotFound -> Error
 {
-	FileName: std::Utf8;
+	FileName: std::Str;
 
-	{name: std::Utf8}: FileName(&&name);
+	{name: std::Str}: FileName(&&name);
 
 	# FINAL stream(o: std::io::OStream &) VOID
 	{

@@ -48,8 +48,8 @@ INCLUDE 'std/buffer'
 			:= !(THIS == rhs);
 	}
 
-	TYPE C8CView := [CHAR#]View;
-	TYPE C8View := [CHAR#]View;
+	TYPE CV := [CHAR#]View;
+	TYPE V := [CHAR]View;
 
 	[C: TYPE]
 	view(str: C! *) INLINE C!-View := str;

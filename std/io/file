@@ -1,6 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/types'
 INCLUDE 'std/io/stream'
 INCLUDE 'std/err/filenotfound'
 INCLUDE 'std/tags'
@@ -35,7 +34,7 @@ INCLUDE 'std/tags'
 			F(libc::fopen(file, mode))
 		{
 			IF(!F)
-				THROW <FileNotFound>(<std::str::C8CView>(file));
+				THROW <FileNotFound>(<std::str::CV>(file));
 		}
 
 		print(str: CHAR #\) ::= libc::fputs(str, F);

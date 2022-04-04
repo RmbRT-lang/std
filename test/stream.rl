@@ -7,13 +7,13 @@ INCLUDE 'std/io/file'
 {
 	StreamToVector
 	{
-		Data: std::Utf8 - std::Vector;
+		Data: std::Str - std::Vector;
 		write_some_impl(data: VOID #\, size: UM) UM {
-			Data += <Utf8>(:buf(<CHAR#\>(data), size));
+			Data += <Str>(:buf(<CHAR#\>(data), size));
 			= size;
 		}
 
-		# THIS==(expect: str::C8CView - std::Vector #&) BOOL
+		# THIS==(expect: str::CV - std::Vector #&) BOOL
 		{
 			IF(##expect != ##Data)
 				= FALSE;

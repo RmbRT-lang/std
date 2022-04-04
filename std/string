@@ -1,7 +1,6 @@
 (/rl/)
 
 INCLUDE 'std/memory'
-INCLUDE 'std/help'
 
 INCLUDE 'std/str'
 
@@ -55,6 +54,7 @@ String
 
 ::std
 {
-	TYPE Utf8 := [CHAR]String;
-	TYPE Utf32 := [C32]String;
+	TYPE Str := [CHAR]String;
+	TYPE Str2 := [U2]String;
+	TYPE Str4 := [U4]String;
 }

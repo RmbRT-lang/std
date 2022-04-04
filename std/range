@@ -1,7 +1,6 @@
 
 (/rl/)
 
-INCLUDE 'std/types'
 INCLUDE 'std/math/safe'
 INCLUDE 'std/err/indexoutofrange'
 

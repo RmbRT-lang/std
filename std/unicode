@@ -1,10 +1,8 @@
 (/rl/)
 
-INCLUDE 'std/types'
-
 ::std::code::utf8
 {
-	size(firstByte: C8) UM
+	size(firstByte: U1) UM
 	{
 		IF(firstByte & 0x80 == 0)
 			= 1;
@@ -18,39 +16,39 @@ INCLUDE 'std/types'
 		DIE "invalid lead byte";
 	}
 
-	is_follow(byte: C8) INLINE
+	is_follow(byte: U1) INLINE
 		::= byte & 0xc0 == 0x80;
 
-	point(in: C8 #\) SYM
+	point(in: CHAR #\) U4
 	{
 		size: UM;
 		= point(in, &size);
 	}
 
 	point(
-		in: C8 #\,
+		in: CHAR #\,
 		size: UM \
-	) SYM
+	) U4
 	{
 		*size := utf8::size(in[0]);
 		IF(*size == 1)
 			= in[0];
 
-		STATIC masks: C8#[](0x1f, 0x0f, 0x07);
+		STATIC masks: U1#[](0x1f, 0x0f, 0x07);
 
-		out: SYM := <SYM>(in[0] & masks[*size-2]);
+		out ::= <U4>(in[0] & masks[*size-2]);
 
 		DO(i ::= 1)
 		{
 			ASSERT(is_follow(in[i]));
 			out <<= 6;
-			out |= <SYM>(in[i] & 0x3f);
+			out |= <U4>(in[i] & 0x3f);
 		} WHILE(++i < *size)
 
 		= out;
 	}
 
-	encode(src: SYM, dst: C8 \) UM
+	encode(src: U4, dst: CHAR \) UM
 	{
 		size: UM :=
 			(src < 0x00080) ? 1 :
@@ -61,7 +59,7 @@ INCLUDE 'std/types'
 		STATIC start: U1#[](0xc0, 0xe0, 0xf0);
 		end ::= dst+size;
 		FOR(i ::= 0; i < size; i++)
-			*--end := <C8>(src >> 6*i);
+			*--end := <U1>(src >> 6*i);
 
 		IF(size == 1)
 			= 1;

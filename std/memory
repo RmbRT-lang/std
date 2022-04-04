@@ -1,10 +1,7 @@
 (/rl/)
 
-INCLUDE 'std/types'
 INCLUDE 'std/range'
 INCLUDE 'std/index'
-INCLUDE 'std/help'
-INCLUDE 'std/tags'
 INCLUDE 'std/math/limit'
 INCLUDE 'std/iterator'
 INCLUDE 'std/buffer'

@@ -1,6 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/help'
 INCLUDE 'std/memory'
 
 ::std [T: TYPE] Shared

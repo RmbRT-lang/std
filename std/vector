@@ -4,8 +4,6 @@ INCLUDE 'std/range'
 INCLUDE 'std/dyn'
 INCLUDE 'std/shared'
 INCLUDE 'std/memory'
-INCLUDE 'std/help'
-INCLUDE 'std/types'
 INCLUDE 'std/math/limit'
 INCLUDE 'std/iterator'
 

@@ -24,7 +24,7 @@ INCLUDE 'std/math/safe'
 	{
 		v := 0;
 
-		view: str::C8CView := s++;
+		view: str::CV := s++;
 
 		sign ::= view.starts_with("-");
 		IF(sign) view := view.drop_start(1)++;
