@@ -9,8 +9,13 @@ INCLUDE 'std/err/indexoutofrange'
 	I: UM;
 
 	{};
-	{i: UM} INLINE: Checked(FALSE), I(i);
-	:ok{i: UM} INLINE: Checked(TRUE), I(i);
+
+	{i: UM} INLINE:
+		I := i;
+
+	:ok{i: UM} INLINE:
+		Checked := TRUE,
+		I := i;
 
 	# THIS(range: UM) INLINE UM
 	{
