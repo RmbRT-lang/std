@@ -41,4 +41,16 @@
 		special: Class := :<(6);
 		ASSERT(special.V == 8);
 	}
+
+	PODType {
+		X: INT;
+		Y: INT;
+	}
+
+	TEST "structural constructor"
+	{
+		x: PODType := (5, 6);
+		ASSERT(x.X == 5);
+		ASSERT(x.Y == 6);
+	}
 }
