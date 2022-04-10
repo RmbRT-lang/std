@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/memory'
+INCLUDE 'std/dyn'
 
 ::std [T: TYPE] Shared
 {
@@ -12,37 +13,53 @@ INCLUDE 'std/memory'
 	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
 	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr) { IF(Container) Container->ref(); }
 
-	:gc{p: T! *}: Ptr(p)
+	:gc{p: T! *}: Ptr(p), Container(NOINIT)
 	{
 		IF(p)
-			Container := heap::[detail::SharedAlloc]new(p);
+			Container := heap::[T-detail::SplitAlloc]new(:gc(p));
 		ELSE
 			Container := NULL;
 	}
 
 	[A...:TYPE]
-	:new{a: A!&&...}: Container(alloc_impl()), Ptr(NOINIT)
+	:new{a: A!&&...}:
+		Container(heap::[T-detail::CompactAlloc]new(<A!&&>(a)...)),
+		Ptr(NOINIT)
 	{
-		Ptr := <T! *>(Container->RealAddr);
-		Ptr->{<A!&&>(a)...};
+		Ptr := &<T-detail::CompactAlloc *>(Container)->Instance;
 	}
 
 	[U:TYPE] :dup{rhs: U!&&}:
-		Container(NOINIT),
-		Ptr(heap::[U]new(<U!&&>(rhs)))
+		Container(heap::[U-detail::CompactAlloc]new(<U!&&>(rhs))),
+		Ptr(NOINIT)
 	{
-		Container := heap::[detail::SharedAlloc]new(Ptr);
+		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(Container)->Instance);
 	}
 
 	[U:TYPE]{rhs: U!-Shared} INLINE:
-		Container(rhs.Container)
+		Container(rhs.container()), Ptr(NOINIT)
 	{
-		IF(rhs.Ptr)
-			Ptr := <<T! \>>(rhs.Ptr);
+		IF(rhs!)
+		{
+			Ptr := <<T! \>>(rhs!);
+			rhs.{};
+		}
 		ELSE
 			Ptr := NULL;
 
-		rhs.{};
+	}
+
+	[U:TYPE]:try{rhs: U!-Shared} INLINE:
+		Container(rhs.container()), Ptr(NOINIT)
+	{
+		IF(rhs!)
+			IF(Ptr := <<T! *>>(rhs!))
+				rhs.{};
+			ELSE
+				Container := NULL;
+		ELSE
+			Ptr := NULL;
+
 	}
 
 	DESTRUCTOR { IF(Container) Container->deref(); }
@@ -50,36 +67,14 @@ INCLUDE 'std/memory'
 	# <T! *> INLINE := Ptr;
 	# THIS! INLINE T! * := Ptr;
 	# *THIS INLINE T! & := *Ptr;
-
-	PRIVATE STATIC alloc_impl() detail::SharedAlloc \
-	{
-		ret ::= <detail::SharedAlloc \>(
-			heap::alloc(
-				SIZEOF(detail::SharedAlloc) + SIZEOF(T!)));
-
-		ret->{:compact(detail::SharedAlloc::[T!]dtor_fn)};
-		= ret;
-	}
+	# container() detail::SharedAlloc * := Container;
 }
 
-::std::detail SharedAlloc
+::std::detail SharedAlloc VIRTUAL
 {
-	RealAddr: VOID *;
 	Refs: UM;
-	Cleanup: ((VOID *) VOID) \;
 
-	[T:TYPE] STATIC delete_fn(p: VOID *) VOID { heap::[T]delete(<T *>(p)); }
-	[T:TYPE] STATIC dtor_fn(p: VOID *) VOID { <T *>(p)->~; }
-
-	:compact{dtor_fn: ((VOID *) VOID) \}:
-		RealAddr(<VOID *>(<UM>(&THIS)+SIZEOF(#THIS))),
-		Refs(1),
-		Cleanup(dtor_fn);
-
-	[T:TYPE] {p: T! *}:
-		RealAddr(p),
-		Refs(1),
-		Cleanup([T]delete_fn);
+	{}: Refs(1);
 
 	ref() INLINE VOID { ++Refs; }
 
@@ -88,9 +83,18 @@ INCLUDE 'std/memory'
 		ASSERT(Refs);
 
 		IF(!--Refs)
-		{
-			Cleanup(RealAddr);
 			heap::delete(&THIS);
-		}
 	}
+}
+
+::std::detail [T:TYPE] CompactAlloc -> SharedAlloc
+{
+	Instance: T;
+
+	[A...:TYPE]{a: A!&&...}: Instance(<A!&&>(a)...);
+}
+
+::std::detail [T:TYPE] SplitAlloc -> SharedAlloc, PRIVATE [T]Dyn
+{
+	:gc{ptr: T! *}-> (), (:gc(ptr));
 }
