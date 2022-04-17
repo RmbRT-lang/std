@@ -54,13 +54,13 @@ INCLUDE 'std/io/stream'
 		# stream(into: io::OStream &) VOID
 		{
 			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex_prefixed(into, Words[i], !i);
+				io::format::hex(into, Words[i], 2 * SIZEOF(Word), !i);
 		}
 
 		# stream_noprefix(into: io::OStream &) VOID
 		{
 			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex_prefixed(into, Words[i], FALSE);
+				io::format::hex(into, Words[i], 2 * SIZEOF(Word), FALSE);
 		}
 
 		# hash(h: std::Hasher &) VOID

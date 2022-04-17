@@ -1,6 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/io/stream'
 INCLUDE 'std/err/filenotfound'
 INCLUDE 'std/tags'
 
@@ -19,8 +18,7 @@ INCLUDE 'std/tags'
 		{
 			ASSERT(F);
 		}
-		write_some_impl(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
-		write(d: VOID #\, s: UM) INLINE ::= <<<io::OStream>>>(&THIS).write(:raw(d, s));
+		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
 		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		read_some(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
 		flush() INLINE INT := libc::fflush(F);

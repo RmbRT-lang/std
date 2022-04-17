@@ -5,7 +5,7 @@ INCLUDE 'std/io/stream'
 
 ::std StreamBuffer -> std::[CHAR]Vector, io::OStream
 {
-	FINAL write_some_impl(data: VOID #\, size: UM) UM
+	FINAL write_some(data: VOID #\, size: UM) UM
 	{
 		THIS.append((<CHAR #\>(data), size));
 		RETURN size;

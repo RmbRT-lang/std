@@ -2,8 +2,7 @@
 
 INCLUDE 'std/error'
 INCLUDE 'std/io/format'
-INCLUDE 'std/io/streamable'
-INCLUDE 'std/io/stream'
+INCLUDE 'std/io/streamutil'
 
 ::std::err IndexOutOfRange -> Error
 {
@@ -23,12 +22,8 @@ INCLUDE 'std/io/stream'
 
 	# OVERRIDE stream(o: io::OStream &) VOID
 	{
-		o.write("index ");
-		io::format::dec(o, Index);
-		o.write(" out of range: [");
-		io::format::dec(o, Start);
-		o.write(", ");
-		io::format::dec(o, Start+Size);
-		o.write(")");
+		io::write(o,
+			"index ", :dec(Index), " out of range: [",
+			:dec(Start), ", ", :dec(Start+Size), ")");
 	}
 }

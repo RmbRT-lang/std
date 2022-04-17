@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/range'
+INCLUDE 'std/index'
 
 (// A buffer keeps track of allocated memory but does not own it. /)
 ::std [T: TYPE] Buffer

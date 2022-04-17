@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/buffer'
+INCLUDE 'std/heap'
 
 ::std::str
 {

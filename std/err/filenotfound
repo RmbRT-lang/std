@@ -2,6 +2,7 @@
 
 INCLUDE 'std/error'
 INCLUDE 'std/string'
+INCLUDE 'std/io/streamutil'
 
 ::std::io FileNotFound -> Error
 {
@@ -11,6 +12,6 @@ INCLUDE 'std/string'
 
 	# FINAL stream(o: std::io::OStream &) VOID
 	{
-		o.write("File not found: '", FileName!++, "'.");
+		io::write(o, "File not found: '", FileName!++, "'.");
 	}
 }

@@ -1,20 +1,20 @@
 (/rl/)
 
 INCLUDE 'std/error'
-INCLUDE 'std/io/stream'
+INCLUDE 'std/io/streamutil'
 
 ::std::math Overflow -> Error
 {
 	# OVERRIDE stream(o: io::OStream &) VOID
 	{
-		o.write("overflow/underflow");
+		io::write(o, "overflow/underflow");
 	}
 }
 
 ::std::math ZeroDiv -> Error
 {
 	# OVERRIDE stream(o: io::OStream &) VOID
-		:= o.write("division by 0");
+		:= io::write(o, "division by 0");
 }
 
 ::std::math::safe

@@ -2,13 +2,14 @@ INCLUDE "../std/io/stream"
 INCLUDE "../std/vector"
 INCLUDE "../std/string"
 INCLUDE 'std/io/file'
+INCLUDE 'std/io/streamutil'
 
 ::std::io
 {
 	StreamToVector
 	{
 		Data: std::Str - std::Vector;
-		write_some_impl(data: VOID #\, size: UM) UM {
+		write_some(data: VOID #\, size: UM) UM {
 			Data += <Str>(:buf(<CHAR#\>(data), size));
 			= size;
 		}
@@ -29,7 +30,7 @@ INCLUDE 'std/io/file'
 		buf: StreamToVector;
 		o ::= <<<std::io::OStream>>>(&buf);
 
-		o.write("hello", "world", :dec(25), :dec(-40), :hex(-0x23));
-		ASSERT(buf == :vec("hello", "world", "25", "-40", "-0x0000000000000023"));
+		io::write(o, "hello", "world", :dec(25), :dec(-40), :hex(-0x23));
+		ASSERT(buf == :vec("hello", "world", "25", "-40", "-0x23"));
 	}
 }

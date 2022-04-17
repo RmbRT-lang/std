@@ -1,119 +1,19 @@
 (/rl/)
 
-INCLUDE 'std/str'
-INCLUDE 'std/buffer'
-INCLUDE 'std/io/streamable'
-
 ::std::io
 {
-	StreamInput
-	{
-		ENUM Type
-		{
-			buffer,
-			streamable,
-			char,
-			dec,
-			hex
-		}
-
-		PRIVATE RawBuffer {
-			Data: VOID #*;
-			Bytes: UM;
-			{data: VOID#*, bytes: UM} INLINE: Data(data), Bytes(bytes);
-		}
-		UNION RawBufferOrStreamable
-		{
-			Buf: RawBuffer;
-			Char: CHAR;
-			Streamable: std::io::Streamable #\;
-			Number: {BOOL, UM}; // (sign, bits)
-		}
-		ValueType: Type;
-		Value: RawBufferOrStreamable;
-
-		[T: TYPE]
-		:buf
-		{
-			slice: T! #\,
-			count: UM
-		} INLINE: ValueType(:buffer)
-		{ Value.Buf := (slice, count * SIZEOF(T)); }
-
-		:raw{
-			slice: VOID #\,
-			bytes: UM
-		} INLINE: ValueType(:buffer)
-		{ Value.Buf := (slice, bytes); }
-
-		{string: CHAR#\} INLINE: ValueType(:buffer)
-		{ Value.Buf := (string, str::len(string)); }
-		:ch{c: CHAR} INLINE: ValueType(:char)
-		{ Value.Char := c; }
-
-		:stream{s: Streamable #&} INLINE: ValueType(:streamable)
-		{ Value.Streamable := &s; }
-
-		[T:TYPE] :dec{v: T!} INLINE: ValueType(:dec)
-		{
-			TYPE SWITCH STATIC(v)
-			{
-			U1, U2, U4, U8: Value.Number := (FALSE, v);
-			S1, S2, S4, S8: Value.Number := (v < 0, <SM>(v));
-			}
-		}
-		[T:TYPE] :hex{v: T!} INLINE: ValueType(:hex)
-		{
-			TYPE SWITCH STATIC(v)
-			{
-			U1, U2, U4, U8: Value.Number := (FALSE, v);
-			S1, S2, S4, S8: Value.Number := (v < 0, <SM>(v));
-			}
-		}
-	}
-
 	MASK OStream
 	{
-		write_some_impl(data: VOID #\, size: UM) UM;
+		write_some(data: VOID #\, size: UM) UM;
 
-		PRIVATE write_all(i: StreamInput) INLINE VOID
-		{
-			SWITCH(i.ValueType)
-			{
-			:buffer: write_all_helper(i.Value.Buf.Data, i.Value.Buf.Bytes);
-			:streamable: i.Value.Streamable->stream(THIS);
-			:dec: i.Value.Number.(0)
-				? format::[SM]dec(THIS, i.Value.Number.(1))
-				: format::[UM]dec(THIS, i.Value.Number.(1));
-			:hex: i.Value.Number.(0)
-				? format::[SM]hex(THIS, i.Value.Number.(1))
-				: format::[UM]hex(THIS, i.Value.Number.(1));
-			:char: write_all_helper(&i.Value.Char, 1);
-			}
-		}
-
-		[A...: TYPE]
-		write(a: A!&&...) VOID
-		{
-			write_all(<A!&&>(a))...;
-		}
-
-		write_some(d: StreamInput) INLINE UM
-		{
-			SWITCH(d.ValueType)
-			{
-			:buffer: = write_some_impl(d.Value.Buf.Data, d.Value.Buf.Bytes);
-			}
-		}
-
-		PRIVATE write_all_helper(
+		write(
 			data: VOID #\,
 			bytes: UM) VOID
 		{
 			p ::= <CHAR#\>(data);
 			WHILE(bytes > 0)
 			{
-				written ::= write_some_impl(p, bytes);
+				written ::= write_some(p, bytes);
 				bytes -= written;
 				p += written;
 			}

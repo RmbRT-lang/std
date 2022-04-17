@@ -5,8 +5,12 @@ INCLUDE 'std/buffer'
 
 ::std::io::format
 {
-	[T:TYPE] hex(o: OStream &, n: T! #&) INLINE VOID := hex_prefixed(o, n, TRUE);
-	[T:TYPE] hex_prefixed(o: OStream &, n: T! #&, prefix: BOOL) VOID
+	[T:TYPE] hex(
+		o: OStream &,
+		n: T! #&,
+		minDigits: U1,
+		prefix: BOOL
+	) VOID
 	{
 		v: UM := n;
 
@@ -29,9 +33,22 @@ INCLUDE 'std/buffer'
 			buf[len++] := '0';
 			buf[len++] := 'x';
 		}
+		printed ::= FALSE;
 		FOR(bit ::= 2*SIZEOF(T); bit--;)
-			buf[len++] := "0123456789abcdef"[(v>>(bit<<2)) & 0xf];
-		o.write(buf.cut(len)++);
+		{
+			nibble: U1# := (v>>(bit<<2)) & 0xf;
+			IF(nibble || printed || bit < minDigits)
+			{
+				buf[len++] := "0123456789abcdef"[nibble];
+				printed := TRUE;
+			}
+		}
+
+		IF(!printed)
+			buf[len++] := '0';
+
+		write ::= buf.cut(len);
+		o.write(write.Data, write.Size);
 	}
 
 	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
@@ -59,6 +76,7 @@ INCLUDE 'std/buffer'
 		IF(neg)
 			buf[--i] := '-';
 
-		o.write(buf.drop_start(i)++);
+		write ::= buf.drop_start(i);
+		o.write(write.Data, write.Size);
 	}
 }

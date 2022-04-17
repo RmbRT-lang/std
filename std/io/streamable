@@ -1,21 +1,8 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
-INCLUDE 'std/buffer'
 
 ::std::io MASK Streamable
 {
 	# stream(into: OStream &) VOID;
-}
-
-::std::io::detail [T: TYPE]BufStreamable
-{
-	PRIVATE Buf: [T!]Buffer;
-
-	{buf: [T!]Buffer}: Buf(buf);
-
-	# stream(into: OStream &) VOID
-	{
-		into.write(Buf++);
-	}
 }

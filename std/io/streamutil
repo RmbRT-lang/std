@@ -1,0 +1,95 @@
+(/rl/)
+
+INCLUDE 'std/io/format'
+INCLUDE 'std/io/stream'
+
+::std::io [O: TYPE; T...:TYPE] write(o: O!&&, args: T!&&...) INLINE VOID
+{
+	os: ?&& := &&<<<OStream>>>(<O!&&>(o));
+	<detail::StreamInput>(<T!&&>(args)).stream(o)...;
+}
+
+::std::io::detail StreamInput
+{
+	ENUM Type
+	{
+		buffer,
+		streamable,
+		char,
+		dec,
+		hex
+	}
+
+	PRIVATE RawBuffer {
+		Data: VOID #*;
+		Bytes: UM;
+		{data: VOID#*, bytes: UM} INLINE: Data(data), Bytes(bytes);
+	}
+	UNION RawBufferOrStreamable
+	{
+		Buf: RawBuffer;
+		Char: CHAR;
+		Streamable: std::io::Streamable #\;
+		DecNumber: {BOOL, UM}; // (sign, bits)
+		HexNumber: {BOOL, UM, U1}; // (sign, bits, minDigits)
+	}
+	ValueType: Type;
+	Value: RawBufferOrStreamable;
+
+	[T: TYPE]
+	:buf
+	{
+		slice: T! #\,
+		count: UM
+	} INLINE: ValueType(:buffer)
+	{ Value.Buf := (slice, count * SIZEOF(T)); }
+
+	:raw{
+		slice: VOID #\,
+		bytes: UM
+	} INLINE: ValueType(:buffer)
+	{ Value.Buf := (slice, bytes); }
+
+	{string: CHAR#\} INLINE: ValueType(:buffer)
+	{ Value.Buf := (string, str::len(string)); }
+	:ch{c: CHAR} INLINE: ValueType(:char)
+	{ Value.Char := c; }
+
+	:stream{s: Streamable #&} INLINE: ValueType(:streamable)
+	{ Value.Streamable := &s; }
+
+	[T:TYPE] :dec{v: T!} INLINE: ValueType(:dec)
+	{
+		TYPE SWITCH STATIC(v)
+		{
+		U1, U2, U4, U8: Value.DecNumber := (FALSE, v);
+		S1, S2, S4, S8: Value.DecNumber := (v < 0, <SM>(v));
+		}
+	}
+	[T:TYPE] :hexm{v: T!} INLINE (:hexn(v, 2 * SIZEOF(T)));
+	[T:TYPE] :hex{v: T!} INLINE (:hexn(v, 0));
+	[T:TYPE] :hexn{v: T!, minDigits: U1} INLINE: ValueType(:hex)
+	{
+		TYPE SWITCH STATIC(v)
+		{
+		U1, U2, U4, U8: Value.HexNumber := (FALSE, v, minDigits);
+		S1, S2, S4, S8: Value.HexNumber := (v < 0, <SM>(v), minDigits);
+		}
+	}
+
+	# stream(o: OStream &) INLINE VOID
+	{ 
+		SWITCH(ValueType)
+		{
+		:buffer: o.write(Value.Buf.Data, Value.Buf.Bytes);
+		:streamable: Value.Streamable->stream(o);
+		:dec: Value.DecNumber.(0)
+			? format::[SM]dec(o, Value.DecNumber.(1))
+			: format::[UM]dec(o, Value.DecNumber.(1));
+		:hex: Value.HexNumber.(0)
+			? format::[SM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
+			: format::[UM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE);
+		:char: o.write(&Value.Char, 1);
+		}
+	}
+}
