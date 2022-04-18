@@ -6,15 +6,15 @@ INCLUDE 'std/io/streamutil'
 
 ::std::io
 {
-	StreamToVector
+	StreamToVec
 	{
-		Data: std::Str - std::Vector;
+		Data: std::Str - std::Vec;
 		write_some(data: VOID #\, size: UM) UM {
 			Data += <Str>(:buf(<CHAR#\>(data), size));
 			= size;
 		}
 
-		# THIS==(expect: str::CV - std::Vector #&) BOOL
+		# THIS==(expect: str::CV - std::Vec #&) BOOL
 		{
 			IF(##expect != ##Data)
 				= FALSE;
@@ -27,7 +27,7 @@ INCLUDE 'std/io/streamutil'
 
 	TEST "OStream"
 	{
-		buf: StreamToVector;
+		buf: StreamToVec;
 		o ::= <<<std::io::OStream>>>(&buf);
 
 		io::write(o, "hello", "world", :dec(25), :dec(-40), :hex(-0x23));

@@ -1,12 +1,12 @@
 INCLUDE "../std/set"
 
-TYPE IntVectorSet := std::[INT]NatVectorSet;
+TYPE IntVecSet := std::[INT]NatVecSet;
 
 ::std
 {
-	TEST "VectorSet::empty"
+	TEST "VecSet::empty"
 	{
-		set: IntVectorSet;
+		set: IntVecSet;
 		ASSERT(set.empty());
 		set += 5;
 		ASSERT(!set.empty());
@@ -14,16 +14,16 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 		ASSERT(set.empty());
 	}
 
-	TEST "VectorSet::insert"
+	TEST "VecSet::insert"
 	{
-		set: IntVectorSet;
+		set: IntVecSet;
 		ASSERT(set.insert(6) && !set.insert(6));
 		ASSERT(set.insert(7) && !set.insert(7));
 	}
 
-	TEST "VectorSet::remove"
+	TEST "VecSet::remove"
 	{
-		set: IntVectorSet;
+		set: IntVecSet;
 		set += 5;
 		ASSERT(set.remove(5) && !set.remove(5));
 		set += 5;
@@ -34,10 +34,10 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 		ASSERT(set.remove(5) && !set.remove(5));
 	}
 
-	TEST "VectorSet::find"
+	TEST "VecSet::find"
 	{
-		set: IntVectorSet;
-		l: IntVectorSet::Location;
+		set: IntVecSet;
+		l: IntVecSet::Location;
 		ASSERT(!set.find(5) && !set.find_loc2(5, &l));
 		set += 7;
 		ASSERT(set.find(7) && set.find_loc2(7, &l));
@@ -46,9 +46,9 @@ TYPE IntVectorSet := std::[INT]NatVectorSet;
 		ASSERT(!set.find(4) && !set.find_loc2(4, &l));
 	}
 
-	TEST "VectorSet::Iterator"
+	TEST "VecSet::Iterator"
 	{
-		set: IntVectorSet;
+		set: IntVecSet;
 		set.insert(1);
 		set.insert(0);
 		set.insert(3);

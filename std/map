@@ -10,9 +10,9 @@ INCLUDE 'std/set'
 		STATIC cmp(a: T!&&, b: {K!,V!}#&) ::= Cmp::cmp(<T!&&>(a), b.(0));
 	}
 
-	PRIVATE Set: [{K!,V!}, TupleCmp]VectorSet;
+	PRIVATE Set: [{K!,V!}, TupleCmp]VecSet;
 
-	TYPE Location := [{K!,V!}, TupleCmp]VectorSet::Location;
+	TYPE Location := [{K!,V!}, TupleCmp]VecSet::Location;
 
 	[T: TYPE]
 	#? find_loc(k: T! #?&) {V! #?*, Location}

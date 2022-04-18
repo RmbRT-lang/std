@@ -30,7 +30,7 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 		ASSERT(*i7 == FALSE);
 	}
 
-	TEST "VectorSet::remove"
+	TEST "VecSet::remove"
 	{
 		map: IntBoolMap;
 		map.insert(5, TRUE);
@@ -43,7 +43,7 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 		ASSERT(map.remove(5) && !map.remove(5));
 	}
 
-	TEST "VectorSet::find"
+	TEST "VecSet::find"
 	{
 		map: IntBoolMap;
 		l: IntBoolMap::Location;
@@ -55,7 +55,7 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 		ASSERT(!map.find(4) && !map.find_loc2(4, &l));
 	}
 
-	TEST "VectorSet::Iterator"
+	TEST "VecSet::Iterator"
 	{
 		map: IntBoolMap;
 		map.insert(1, TRUE);

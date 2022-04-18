@@ -4,7 +4,7 @@ INCLUDE "../std/vector"
 {
 	TEST "emplace"
 	{
-		v: {INT, INT}-Vector := :vec((0,1), (2,3), (4,5));
+		v: {INT, INT}-Vec := :vec((0,1), (2,3), (4,5));
 		ASSERT(##v == 3);
 		ASSERT(v[0] == (0,1));
 		ASSERT(v[1] == (2,3));
