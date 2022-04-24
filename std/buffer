@@ -1,5 +1,6 @@
 (/rl/)
 
+INCLUDE 'std/iterator'
 INCLUDE 'std/range'
 INCLUDE 'std/index'
 

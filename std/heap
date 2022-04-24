@@ -1,6 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/range'
+INCLUDE 'std/buffer'
 
 ::std::heap
 {
