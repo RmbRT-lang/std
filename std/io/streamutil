@@ -6,8 +6,8 @@ INCLUDE 'std/str'
 
 ::std::io [O: TYPE; T...:TYPE] write(o: O!&&, args: T!&&...) INLINE VOID
 {
-	os: ?&& := &&<<<OStream>>>(<O!&&>(o));
-	<detail::StreamInput>(<T!&&>(args)).stream(o)...;
+	os: ?&& := <<<OStream>>>(<O!&&>(o));
+	<detail::StreamInput>(<T!&&>(args)).stream(os)...;
 }
 
 ::std::io::detail StreamInput
