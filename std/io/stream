@@ -35,6 +35,9 @@
 			Bytes(count * SIZEOF(T));
 
 		:ch{c: CHAR &} INLINE: Data(&c), Bytes(1);
+
+		{data: VOID *, bytes: UM}:
+			Data(data), Bytes(bytes);
 	}
 
 	MASK IStream
@@ -43,9 +46,16 @@
 
 		eof() BOOL;
 
-		[T: TYPE]
-		read(data: T! - Buffer #&) INLINE UM
-			:= read(data.Data, data.Size);
+		read(o: StreamOutput) VOID
+		{
+			p ::= <U1 \>(o.Data);
+			WHILE(o.Bytes)
+			{
+				n ::= read_some(p, o.Bytes);
+				p += n;
+				o.Bytes -= n;
+			}
+		}
 
 		read_byte() CHAR
 		{
