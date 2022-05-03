@@ -120,8 +120,9 @@ INCLUDE 'std/err/indexoutofrange'
 		{array: T![N] &, index: UM}: Range(&array[0]), Index(index);
 
 		# <BOOL> INLINE := Index < N;
-		# THIS! INLINE T!& := Range[Index];
-		
+		# THIS! INLINE T!& := *THIS;
+		# *THIS INLINE T!& := Range[Index];
+
 		THIS++ INLINE [T!; #N]ArrayIter { t ::= THIS; ++Index; = t; }
 		++THIS INLINE [T!; #N]ArrayIter& { ++Index; = THIS; }
 		THIS-- INLINE [T!; #N]ArrayIter { t ::= THIS; --Index; = t; }
