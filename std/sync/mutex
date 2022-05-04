@@ -36,12 +36,12 @@ INCLUDE 'std/math/limit'
 			...0.0005 * i;
 		}
 	}
-	THIS() INLINE Handle
+	THIS() Handle INLINE
 	{
 		lock(:ok);
 		= <Handle>(&Locked);
 	}
 
-	try_lock(:ok) INLINE BOOL := !Locked(:<>(TRUE));
-	unlock(:ok) INLINE VOID { Locked := :>(FALSE); }
+	try_lock(:ok) BOOL INLINE := !Locked(:<>(TRUE));
+	unlock(:ok) VOID INLINE { Locked := :>(FALSE); }
 }

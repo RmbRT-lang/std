@@ -18,12 +18,12 @@ INCLUDE 'std/tags'
 		{
 			ASSERT(F);
 		}
-		write_some(d: VOID #\, s: UM) INLINE UM := libc::fwrite(d, 1, s, F);
-		read(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
-		read_some(d: VOID \, s: UM) INLINE UM := libc::fread(d, 1, s, F);
-		flush() INLINE INT := libc::fflush(F);
-		eof() INLINE BOOL := libc::feof(F);
-		line(d: CHAR \, s: UM) INLINE CHAR * := libc::fgets(d, s, F);
+		write_some(d: VOID #\, s: UM) UM INLINE := libc::fwrite(d, 1, s, F);
+		read(d: VOID \, s: UM) UM INLINE := libc::fread(d, 1, s, F);
+		read_some(d: VOID \, s: UM) UM INLINE := libc::fread(d, 1, s, F);
+		flush() INT INLINE := libc::fflush(F);
+		eof() BOOL INLINE := libc::feof(F);
+		line(d: CHAR \, s: UM) CHAR * INLINE := libc::fgets(d, s, F);
 
 		STATIC remove(file: CHAR #\) BOOL := 0 == libc::remove(file);
 

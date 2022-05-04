@@ -32,8 +32,8 @@ PUBLIC:
 
 	# <BOOL> INLINE := Exists;
 
-	#? THIS! INLINE T! #?& := *THIS;
-	#? *THIS INLINE T! #?&
+	#? THIS! T! #?& INLINE := *THIS;
+	#? *THIS T! #?& INLINE
 	{
 		ASSERT(Exists);
 		= *Obj;

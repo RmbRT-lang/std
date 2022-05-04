@@ -19,14 +19,14 @@ INCLUDE 'std/io/streamutil'
 
 ::std::math::safe
 {
-	[T:TYPE] addc(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
+	[T:TYPE] addc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
 	{
 		ret: T := <UM>(lhs) + <UM>(rhs);
 		carry := <UM>(ret) < lhs;
 		= ret;
 	}
 
-	[T:TYPE] add(lhs: T! #&, rhs: T! #&) INLINE T
+	[T:TYPE] add(lhs: T! #&, rhs: T! #&) T INLINE
 	{
 		carry: BOOL;
 		ret ::= addc(lhs, rhs, carry);
@@ -35,13 +35,13 @@ INCLUDE 'std/io/streamutil'
 		= ret;
 	}
 
-	[T: TYPE] mulc(lhs: T! #&, rhs: T! #&, carry: BOOL &) INLINE T
+	[T: TYPE] mulc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
 	{
 		carry := rhs && <UM>(lhs) > <UM>(~<T>(0)) / <UM>(rhs);
 		= <UM>(lhs) * <UM>(rhs);
 	}
 
-	[T: TYPE] mul(lhs: T! #&, rhs: T! #&) INLINE T
+	[T: TYPE] mul(lhs: T! #&, rhs: T! #&) T INLINE
 	{
 		carry: BOOL;
 		ret ::= mulc(lhs, rhs, carry);
@@ -50,7 +50,7 @@ INCLUDE 'std/io/streamutil'
 		= ret;
 	}
 
-	[T: TYPE] neg(x: T! #&) INLINE T
+	[T: TYPE] neg(x: T! #&) T INLINE
 	{
 		IF(<T>(<UM>(x) << 1) == 0)
 			THROW <Overflow>();

@@ -12,5 +12,5 @@
 		THIS->{<Args!&&>(args)...};
 	}
 
-	#? *THIS INLINE T! #?& := V.V;
+	#? *THIS T! #?& INLINE := V.V;
 }

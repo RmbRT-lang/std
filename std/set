@@ -31,12 +31,12 @@ INCLUDE 'std/vector'
 
 	#? start() INLINE ::= Elems.start();
 	#? end() INLINE ::= Elems.end();
-	# empty() INLINE BOOL := Elems.empty();
+	# empty() BOOL INLINE := Elems.empty();
 
-	# ##THIS INLINE UM := ##Elems;
+	# ##THIS UM INLINE := ##Elems;
 
 	[V: TYPE]
-	# has (v: V! #?&) INLINE BOOL := find(v);
+	# has (v: V! #?&) BOOL INLINE := find(v);
 
 	[V: TYPE]
 	#? find(v: V! #?&) T! #? *
@@ -92,11 +92,11 @@ INCLUDE 'std/vector'
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) INLINE BOOL
+	THIS+=(v: A!&&) BOOL INLINE
 		:= THIS.insert(<A!&&>(v));
 
 	remove_at(
-		position: Location) INLINE VOID
+		position: Location) VOID INLINE
 	{
 		Elems.erase(position);
 	}
@@ -114,7 +114,7 @@ INCLUDE 'std/vector'
 	}
 
 	[V: TYPE]
-	THIS-=(v: V! #&) INLINE BOOL := THIS.remove(v);
+	THIS-=(v: V! #&) BOOL INLINE := THIS.remove(v);
 
 	[V: TYPE]
 	pop(v: V! #&, deleted: T! \) BOOL

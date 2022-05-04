@@ -34,8 +34,8 @@ INCLUDE 'std/heap'
 	}
 
 	# <T! \> INLINE := Ptr;
-	# *THIS INLINE T! & := *Ptr;
-	# THIS! INLINE T! * := Ptr;
+	# *THIS T! & INLINE := *Ptr;
+	# THIS! T! * INLINE := Ptr;
 
 	release() T! *
 	{

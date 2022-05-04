@@ -36,7 +36,7 @@ INCLUDE 'std/dyn'
 		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(Container)->Instance);
 	}
 
-	[U:TYPE]{rhs: U!-Shared} INLINE:
+	[U:TYPE] {rhs: U!-Shared} INLINE:
 		Container(rhs.container()), Ptr(NOINIT)
 	{
 		IF(rhs!)
@@ -49,7 +49,7 @@ INCLUDE 'std/dyn'
 
 	}
 
-	[U:TYPE]:try{rhs: U!-Shared} INLINE:
+	[U:TYPE]:try {rhs: U!-Shared} INLINE:
 		Container(rhs.container()), Ptr(NOINIT)
 	{
 		IF(rhs!)
@@ -65,8 +65,8 @@ INCLUDE 'std/dyn'
 	DESTRUCTOR { IF(Container) Container->deref(); }
 
 	# <T! *> INLINE := Ptr;
-	# THIS! INLINE T! * := Ptr;
-	# *THIS INLINE T! & := *Ptr;
+	# THIS! T! * INLINE := Ptr;
+	# *THIS T! & INLINE := *Ptr;
 	# container() detail::SharedAlloc * := Container;
 }
 
@@ -76,7 +76,7 @@ INCLUDE 'std/dyn'
 
 	{}: Refs(1);
 
-	ref() INLINE VOID { ++Refs; }
+	ref() VOID INLINE { ++Refs; }
 
 	deref() VOID 
 	{

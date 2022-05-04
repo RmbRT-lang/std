@@ -6,8 +6,8 @@
 		p: Point;
 
 		++THIS INT := 1;
-		*THIS INLINE Point& { = p; }
-		THIS*(vint: INT) INLINE INT := 2;
+		*THIS Point& INLINE { = p; }
+		THIS*(vint: INT) INT INLINE := 2;
 		THIS(lel: INT, y: INT) VOID {}
 		THIS[i: INT] INT := i;
 		<-THIS VOID {}

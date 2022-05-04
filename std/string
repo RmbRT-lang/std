@@ -30,11 +30,11 @@ String
 
 	# data() INLINE ::= Content.Data;
 	# ##THIS INLINE ::= ##Content;
-	# THIS[i: Index #&] INLINE #& ::= Content[i];
-	# THIS! INLINE str::[C#]View := Content++;
+	# THIS[i: Index #&] #& INLINE ::= Content[i];
+	# THIS! str::[C#]View INLINE := Content++;
 
 	[T...: TYPE]
-	append(v: T!&&...) INLINE VOID
+	append(v: T!&&...) VOID INLINE
 	{ append_impl(<str::[C#]View>(<T!&&>(v))...); }
 	[T...: TYPE]
 	PRIVATE append_impl(v: T!&&...) VOID {
@@ -48,7 +48,7 @@ String
 		THIS := :transfer(new);
 	}
 
-	THIS+=(str: str::[C#]View #&) INLINE VOID
+	THIS+=(str: str::[C#]View #&) VOID INLINE
 	{ append(str); }
 }
 

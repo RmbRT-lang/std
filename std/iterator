@@ -10,9 +10,9 @@ Iterator
 		Elems(elems),
 		Current(start);
 
-	# get() INLINE & ::= (*Elems)[Current];
-	# THIS! INLINE & ::= (*Elems)[Current];
-	# ok() INLINE [V!]OkIterator := (Elems, Current);
+	# get() & INLINE ::= (*Elems)[Current];
+	# THIS! & INLINE ::= (*Elems)[Current];
+	# ok() [V!]OkIterator INLINE := (Elems, Current);
 
 	next() VOID
 	{
@@ -20,12 +20,12 @@ Iterator
 		++Current;
 	}
 
-	++THIS INLINE [V!]Iterator& { next(); = THIS; }
-	THIS++ INLINE [V!]Iterator { v ::= THIS; next(); = v; }
-	--THIS INLINE [V!]Iterator& { prev(); = THIS; }
-	THIS-- INLINE [V!]Iterator { v ::= THIS; prev(); = v; }
+	++THIS [V!]Iterator& INLINE { next(); = THIS; }
+	THIS++ [V!]Iterator INLINE { v ::= THIS; next(); = v; }
+	--THIS [V!]Iterator& INLINE { prev(); = THIS; }
+	THIS-- [V!]Iterator INLINE { v ::= THIS; prev(); = v; }
 
-	# *THIS INLINE & ::= get();
+	# *THIS & INLINE ::= get();
 
 	# THIS+(offset: UM) [V!]Iterator
 	{
@@ -57,20 +57,20 @@ OkIterator
 	# get() & ::= (*Elems)[Current];
 	# THIS! & ::= (*Elems)[Current];
 
-	next() INLINE VOID
+	next() VOID INLINE
 	{ ++Current; }
 
-	++THIS INLINE [V!]OkIterator& { next(); = THIS; }
-	THIS++ INLINE [V!]OkIterator { v ::= THIS; next(); = v; }
-	--THIS INLINE [V!]OkIterator& { prev(); = THIS; }
-	THIS-- INLINE [V!]OkIterator { v ::= THIS; prev(); = v; }
+	++THIS [V!]OkIterator& INLINE { next(); = THIS; }
+	THIS++ [V!]OkIterator INLINE { v ::= THIS; next(); = v; }
+	--THIS [V!]OkIterator& INLINE { prev(); = THIS; }
+	THIS-- [V!]OkIterator INLINE { v ::= THIS; prev(); = v; }
 
-	# *THIS INLINE & ::= get();
+	# *THIS & INLINE ::= get();
 
-	# THIS+(offset: UM) INLINE [V!]OkIterator
+	# THIS+(offset: UM) [V!]OkIterator INLINE
 		:= (Elems, Current + offset);
 
-	prev() INLINE VOID
+	prev() VOID INLINE
 	{ --Current; }
 
 	# <BOOL> INLINE := Current < ##*Elems;

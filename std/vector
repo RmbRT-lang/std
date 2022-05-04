@@ -192,7 +192,7 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	emplace_at(at: UM, a: A!&&...) INLINE T! &
+	emplace_at(at: UM, a: A!&&...) T! & INLINE
 	{
 		grow_reserve_with_hole_at(at);
 		failed ::= TRUE;
@@ -215,21 +215,21 @@ PUBLIC:
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) INLINE T! &
+	THIS+=(v: A!&&) T! & INLINE
 		:= emplace_at(##THIS, <A!&&>(v));
 
-	#? THIS[i: Index] INLINE T!#?& := Content[i];
+	#? THIS[i: Index] T!#?& INLINE := Content[i];
 
 	# <BOOL> := Content.Size;
 
-	# ##THIS INLINE UM := Content.Size;
-	# data() INLINE T! #* := Content.Data;
-	# empty() INLINE BOOL := ##THIS == 0;
+	# ##THIS UM INLINE := Content.Size;
+	# data() T! #* INLINE := Content.Data;
+	# empty() BOOL INLINE := ##THIS == 0;
 
-	#? THIS! INLINE & ::= Content;
+	#? THIS! & INLINE ::= Content;
 
-	#? start() INLINE [T!]Vec#?-Iterator := (&THIS, 0);
-	#? end() INLINE [T!]Vec#?-Iterator := (&THIS, ##THIS-1);
+	#? start() [T!]Vec#?-Iterator INLINE := (&THIS, 0);
+	#? end() [T!]Vec#?-Iterator INLINE := (&THIS, ##THIS-1);
 
 	[TCmp:TYPE]
 	Cmp

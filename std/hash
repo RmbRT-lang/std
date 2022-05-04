@@ -38,7 +38,7 @@ INCLUDE 'std/io/stream'
 					= FALSE;
 			= TRUE;
 		}
-		# THIS!=(rhs: Hash#&) INLINE BOOL := !(THIS == rhs);
+		# THIS!=(rhs: Hash#&) BOOL INLINE := !(THIS == rhs);
 
 		# cmp(rhs: Hash#&) WordAsSigned
 		{
@@ -48,7 +48,7 @@ INCLUDE 'std/io/stream'
 			= 0;
 		}
 
-		STATIC cmp(lhs: Hash#&, rhs: Hash #&) INLINE WordAsSigned
+		STATIC cmp(lhs: Hash#&, rhs: Hash #&) WordAsSigned INLINE 
 			:= lhs.cmp(rhs);
 
 		# stream(into: io::OStream &) VOID
@@ -71,7 +71,7 @@ INCLUDE 'std/io/stream'
 	}
 
 	[T...: TYPE]
-	hash(v: T! &&...) INLINE Hash!
+	hash(v: T! &&...) Hash! INLINE
 	{
 		h: Hasher;
 		h(<T!&&>(v))...;

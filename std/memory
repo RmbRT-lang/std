@@ -30,7 +30,7 @@ INCLUDE 'std/buffer'
 			= lhs.Size - rhs.Size;
 	}
 
-	::mem cpy(dst: VOID \, src: VOID #\, size: UM) INLINE VOID
+	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID INLINE
 	{
 		d ::= <U1 \>(dst);
 		s ::= <U1 #\>(src);

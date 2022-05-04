@@ -30,7 +30,7 @@ INCLUDE 'std/err/indexoutofrange'
 		Checked(TRUE);
 
 	/// Throws if the range is outside the supplied bounds.
-	# THIS(bounds: UM) INLINE VOID
+	# THIS(bounds: UM) VOID INLINE
 	{
 		IF(!Checked)
 			IF(math::safe::add(Start, Size) > bounds)
@@ -106,7 +106,7 @@ INCLUDE 'std/err/indexoutofrange'
 
 	[T: TYPE] destroy(
 		range: T! \,
-		count: UM) INLINE VOID
+		count: UM) VOID INLINE
 	{
 		FOR(i ::= 0; i<count; i++)
 			range[i].~;
@@ -120,13 +120,13 @@ INCLUDE 'std/err/indexoutofrange'
 		{array: T![N] &, index: UM}: Range(&array[0]), Index(index);
 
 		# <BOOL> INLINE := Index < N;
-		# THIS! INLINE T!& := *THIS;
-		# *THIS INLINE T!& := Range[Index];
+		# THIS! T!& INLINE := *THIS;
+		# *THIS T!& INLINE := Range[Index];
 
-		THIS++ INLINE [T!; #N]ArrayIter { t ::= THIS; ++Index; = t; }
-		++THIS INLINE [T!; #N]ArrayIter& { ++Index; = THIS; }
-		THIS-- INLINE [T!; #N]ArrayIter { t ::= THIS; --Index; = t; }
-		--THIS INLINE [T!; #N]ArrayIter& { --Index; = THIS; }
+		THIS++ [T!; #N]ArrayIter INLINE { t ::= THIS; ++Index; = t; }
+		++THIS [T!; #N]ArrayIter& INLINE { ++Index; = THIS; }
+		THIS-- [T!; #N]ArrayIter INLINE { t ::= THIS; --Index; = t; }
+		--THIS [T!; #N]ArrayIter& INLINE { --Index; = THIS; }
 	}
 
 	[T: TYPE; N: NUMBER] start(range: T![N] &) ::= [T!; #N]ArrayIter(range, 0);

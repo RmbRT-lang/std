@@ -31,7 +31,7 @@ INCLUDE 'std/heap'
 			= mem::cmp(THIS.Data, find.Data, ##find) == 0;
 		}
 
-		# THIS>=(find: [C!#]View #&) INLINE BOOL := starts_with(find);
+		# THIS>=(find: [C!#]View #&) BOOL INLINE := starts_with(find);
 
 		# THIS==(rhs: [C!]View #&) BOOL
 		{
@@ -45,7 +45,7 @@ INCLUDE 'std/heap'
 			= TRUE;
 		}
 
-		# THIS!=(rhs: [C!]View #&) INLINE BOOL
+		# THIS!=(rhs: [C!]View #&) BOOL INLINE
 			:= !(THIS == rhs);
 	}
 
@@ -53,7 +53,7 @@ INCLUDE 'std/heap'
 	TYPE V := [CHAR]View;
 
 	[C: TYPE]
-	view(str: C! *) INLINE C!-View := str;
+	view(str: C! *) C!-View INLINE := str;
 
 	[C: TYPE]
 	len(str: C! #*) UM

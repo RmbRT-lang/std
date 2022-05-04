@@ -60,7 +60,7 @@ INCLUDE 'std/set'
 	}
 
 	[T:TYPE]
-	remove(k: T! #&) INLINE BOOL := Set.remove(k);
+	remove(k: T! #&) BOOL INLINE := Set.remove(k);
 	[T:TYPE]
 	pop(k: T! #&, deleted: V! \) BOOL
 	{
@@ -76,7 +76,7 @@ INCLUDE 'std/set'
 
 	#? start() INLINE ::= Set.start();
 	#? end() INLINE ::= Set.end();
-	# empty() INLINE BOOL := Set.empty();
+	# empty() BOOL INLINE := Set.empty();
 
 	# ## THIS INLINE ::= ##Set;
 }
