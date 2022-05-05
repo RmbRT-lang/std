@@ -33,4 +33,11 @@
 		IF!(c ::= TRUE) DIE; ELSE ASSERT(c);
 		IF!(c ::= FALSE) ASSERT(!c); ELSE DIE;
 	}
+
+	TEST "expose variable"
+	{
+		IF: [if_label] !(c ::= TRUE) DIE;
+
+		ASSERT(c);
+	}
 }
