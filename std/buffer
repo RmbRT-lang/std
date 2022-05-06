@@ -32,13 +32,13 @@ INCLUDE 'std/index'
 	}
 
 	# drop_start(start: Index) [T!]Buffer
-		:= range((start(Size), Size - start(Size)));
+		:= range((start[Size], Size - start[Size]));
 	# drop_end(count: Index) [T!]Buffer
-		:= range((0, Size - count(Size)));
+		:= range((0, Size - count[Size]));
 	# cut(size: Index) [T!]Buffer
-		:= range((0, size(Size)));
+		:= range((0, size[Size]));
 	# cut_start(size: Index) [T!]Buffer
-		:= range((Size-size(Size), size(Size)));
+		:= range((Size-size[Size], size[Size]));
 
 	# ##THIS UM INLINE := Size;
 

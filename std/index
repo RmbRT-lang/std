@@ -23,4 +23,12 @@ INCLUDE 'std/err/indexoutofrange'
 			= I;
 		THROW <err::IndexOutOfRange>(range, I);
 	}
+
+
+	# THIS[range: UM] UM INLINE
+	{
+		IF(Checked || I <= range)
+			= I;
+		THROW <err::IndexOutOfRange>(range+1, I);
+	}
 }
