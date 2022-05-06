@@ -12,6 +12,11 @@ String
 	{} {}
 
 	{data: str::[C#]View #&}: Content(heap::clone(data));
+	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc(##data+1))
+	{
+		range::copy_construct(Content.Data, data.Data, ##data);
+		Content.Data[Content.Size--] := 0;
+	}
 	:transfer{data: [C!]Buffer #&}: Content(data);
 
 	{#&cpy}:
