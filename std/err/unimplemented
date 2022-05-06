@@ -4,20 +4,23 @@ INCLUDE 'std/error'
 INCLUDE 'std/memory'
 INCLUDE 'std/io/streamable'
 INCLUDE 'std/io/stream'
+INCLUDE 'std/io/streamutil'
 
 ::std::err Unimplemented -> Error
 {
-	What: [io::Streamable]Dyn;
+	(/What: [io::Streamable]Dyn;
 
 	:gc{what: io::Streamable \}: What(:gc, what);
 	{what: CHAR #\}:
-		What(:gc, heap::dup(<<<io::Streamable>>>(
-			<io::detail::[CHAR#]BufStreamable>(str::view(what)))));
+		What(:dup(<<<io::Streamable>>>(
+			<io::detail::[CHAR#]BufStreamable>(str::view(what)))));/)
+
+	What: CHAR #\;
+	{what: CHAR#\}: What(what);
 
 	# OVERRIDE stream(
 		o: io::OStream &) VOID
 	{
-		o.write("unimplemented: ");
-		What->stream(o);
+		write(o, "unimplemented: ", What);
 	}
 }

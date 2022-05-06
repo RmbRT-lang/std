@@ -10,7 +10,7 @@ INCLUDE 'std/hash'
 	TYPE Location := std::[Hash, V, Hash]Map::Location;
 
 	#? find(k: K! #&) V! #?* INLINE := find_h(hash(k));
-	#? find_loc(k: K! #&) {V! #?*, Location} INLINE := find_loc_h(hash(k.(1)));
+	#? find_loc(k: K! #&) {V! #?*, Location} INLINE := find_loc_h(hash(k));
 	#? find_loc2(k: K! #&, loc: Location \) V! #?* INLINE := find_loc2_h(hash(k), loc);
 
 	#? find_h(k: Hash #&) V! #?* INLINE := Map.find(k);

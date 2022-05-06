@@ -49,7 +49,7 @@ INCLUDE 'std/vector'
 	#? find_loc(v: V! #?&) { T! #?*, Location }
 	{
 		loc: Location;
-		ret ::= find_loc2(v.(1), &loc);
+		ret ::= find_loc2(v, &loc);
 		= (ret, loc);
 	}
 
