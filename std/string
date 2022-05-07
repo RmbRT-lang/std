@@ -15,7 +15,7 @@ String
 	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc(##data+1))
 	{
 		range::copy_construct(Content.Data, data.Data, ##data);
-		Content.Data[Content.Size--] := 0;
+		Content.Data[--Content.Size] := 0;
 	}
 	:transfer{data: [C!]Buffer #&}: Content(data);
 
@@ -33,9 +33,9 @@ String
 		Content := NULL;
 	}
 
-	# data() INLINE ::= Content.Data;
-	# ##THIS INLINE ::= ##Content;
-	# THIS[i: Index #&] #& INLINE ::= Content[i];
+	# data() ? INLINE := Content.Data;
+	# ##THIS ? INLINE := ##Content;
+	# THIS[i: Index #&] ?#& INLINE := Content[i];
 	# THIS! str::[C#]View INLINE := Content++;
 
 	[T...: TYPE]

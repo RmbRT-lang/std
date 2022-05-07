@@ -7,7 +7,7 @@ INCLUDE 'std/set'
 	PRIVATE TupleCmp
 	{
 		[T:TYPE]
-		STATIC cmp(a: T!&&, b: {K!,V!}#&) ::= Cmp::cmp(<T!&&>(a), b.(0));
+		STATIC cmp(a: T!&&, b: {K!,V!}#&) ? := Cmp::cmp(<T!&&>(a), b.(0));
 	}
 
 	PRIVATE Set: [{K!,V!}, TupleCmp]VecSet;
@@ -59,6 +59,12 @@ INCLUDE 'std/set'
 		= TRUE;
 	}
 
+	[Key: TYPE; Value: TYPE]
+	insert_at(loc: Location, k: Key!&&, v: Value!&&) VOID
+	{
+		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
+	}
+
 	[T:TYPE]
 	remove(k: T! #&) BOOL INLINE := Set.remove(k);
 	[T:TYPE]
@@ -74,11 +80,11 @@ INCLUDE 'std/set'
 		= FALSE;
 	}
 
-	#? start() INLINE ::= Set.start();
-	#? end() INLINE ::= Set.end();
+	#? start() ? INLINE := Set.start();
+	#? end() ? INLINE := Set.end();
 	# empty() BOOL INLINE := Set.empty();
 
-	# ## THIS INLINE ::= ##Set;
+	# ## THIS ? INLINE := ##Set;
 }
 
 ::std [K:TYPE; V:TYPE] TYPE NatMap := [K!; V!; detail::NaturalCmp]Map;

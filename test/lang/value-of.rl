@@ -8,7 +8,7 @@
 		{v: T!}: v(v);
 
 		//# THIS! & INLINE ::= v;
-		THIS! & INLINE ::= v;
+		THIS! ?& INLINE := v;
 	}
 
 	TEST "recursive unwrap"

@@ -29,8 +29,8 @@ INCLUDE 'std/hash'
 	remove_h(k: Hash #&) BOOL INLINE := Map.remove(k);
 	pop_h(k: Hash #&, deleted: V! \) BOOL INLINE := Map.pop(k, deleted);
 
-	#? start() INLINE ::= Map.start();
-	#? end() INLINE ::= Map.end();
+	#? start() ? INLINE := Map.start();
+	#? end() ? INLINE := Map.end();
 	# empty() BOOL INLINE := Map.empty();
 }
 

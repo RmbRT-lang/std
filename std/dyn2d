@@ -38,5 +38,5 @@ PUBLIC:
 		}
 	}
 
-	#? THIS! & INLINE ::= Content;
+	#? THIS! ?& INLINE := Content;
 }

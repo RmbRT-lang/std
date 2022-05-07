@@ -16,8 +16,8 @@
 		DIE "invalid lead byte";
 	}
 
-	is_follow(byte: U1) INLINE
-		::= byte & 0xc0 == 0x80;
+	is_follow(byte: U1) ? INLINE
+		:= byte & 0xc0 == 0x80;
 
 	point(in: CHAR #\) U4
 	{

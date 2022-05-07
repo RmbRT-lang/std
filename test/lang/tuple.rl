@@ -14,7 +14,7 @@
 		# <{INT, INT}> := (A, B);
 	}
 
-	f(c: Class#&) ::= c;
+	f(c: Class#&) ? := c;
 
 	TEST "tuple expressions"
 	{
@@ -35,9 +35,9 @@
 		{}: V(0);
 		{v: INT}: V(v);
 
-		# THIS/(rhs: INT) ::= V/rhs;
-		# THIS%(rhs: INT) ::= V%rhs;
-		# THIS/(rhs: {:divmod, INT}) ::= (V/rhs.(1), V%rhs.(1));
+		# THIS/(rhs: INT) ? := V/rhs;
+		# THIS%(rhs: INT) ? := V%rhs;
+		# THIS/(rhs: {:divmod, INT}) ? := (V/rhs.(1), V%rhs.(1));
 	}
 
 	TEST "tuple arguments and returns"

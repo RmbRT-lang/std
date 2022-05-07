@@ -29,8 +29,8 @@ INCLUDE 'std/vector'
 
 	TYPE Location := UM;
 
-	#? start() INLINE ::= Elems.start();
-	#? end() INLINE ::= Elems.end();
+	#? start() ? INLINE := Elems.start();
+	#? end() ? INLINE := Elems.end();
 	# empty() BOOL INLINE := Elems.empty();
 
 	# ##THIS UM INLINE := ##Elems;

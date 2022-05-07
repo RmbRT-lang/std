@@ -14,7 +14,7 @@
 		//THIS? (a: INT): (b: INT) INT := i;
 		THIS<<(i: INT) INT := -i;
 
-		THIS<-(i: INT) & ::= THIS;
+		THIS<-(i: INT) ?& := THIS;
 	}
 
 	TEST "operator overloading"

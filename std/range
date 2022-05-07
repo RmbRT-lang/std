@@ -129,6 +129,6 @@ INCLUDE 'std/err/indexoutofrange'
 		--THIS [T!; #N]ArrayIter& INLINE { --Index; = THIS; }
 	}
 
-	[T: TYPE; N: NUMBER] start(range: T![N] &) ::= [T!; #N]ArrayIter(range, 0);
-	[T: TYPE; N: NUMBER] end(range: T![N] &) ::= [T!; #N]ArrayIter(range, N-1);
+	[T: TYPE; N: NUMBER] start(range: T![N] &) ? := [T!; #N]ArrayIter(range, 0);
+	[T: TYPE; N: NUMBER] end(range: T![N] &) ? := [T!; #N]ArrayIter(range, N-1);
 }
