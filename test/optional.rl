@@ -31,9 +31,8 @@ INCLUDE 'std/optional'
 
 		y ::= &&x;
 		ASSERT(y);
-		ASSERT(x);
+		ASSERT(!x);
 		ASSERT(!y!);
-		ASSERT(!x!);
 
 		y := NULL;
 		ASSERT(!y);

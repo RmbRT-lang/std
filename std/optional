@@ -27,7 +27,10 @@ PUBLIC:
 	{&&rhs}: Exists(rhs.Exists), Obj(NOINIT)
 	{
 		IF(Exists)
+		{
 			Obj->{&&*rhs};
+			rhs := NULL;
+		}
 	}
 
 	# <BOOL> INLINE := Exists;
