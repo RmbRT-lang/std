@@ -53,4 +53,24 @@
 		ASSERT(x.X == 5);
 		ASSERT(x.Y == 6);
 	}
+
+	Point2 {
+		X: INT;
+		Y: INT;
+
+		:origin{} (0,0);
+		PRIVATE {...};
+
+		:f{x: INT} (x, 5*x);
+	}
+
+	TEST "manual structural constructor"
+	{
+		p: Point2 := :origin;
+		ASSERT(p.X == 0);
+		ASSERT(p.Y == 0);
+		p2: Point2 := :f(5);
+		ASSERT(p2.X == 5);
+		ASSERT(p2.Y == 25);
+	}
 }
