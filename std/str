@@ -13,6 +13,11 @@ INCLUDE 'std/heap'
 		:buf{str: C! *, len: UM} -> (str, len);
 		:ch{ch: C! &} -> (&ch, 1);
 
+		Cmp
+		{
+			STATIC cmp(lhs: C!-View#&, rhs: C!-View#&) SM := lhs.cmp(rhs);
+		}
+
 		# cmp(rhs: [C!]View #&) SM
 		{
 			minSz #::= ##THIS > ##rhs ? ##rhs : ##THIS;

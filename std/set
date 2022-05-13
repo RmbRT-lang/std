@@ -149,4 +149,7 @@ INCLUDE 'std/vector'
 			: a < b ? -1 : 1;
 }
 
+::std::detail [T:TYPE] TYPE CmpOf := T::Cmp;
+
 ::std [T:TYPE] TYPE NatVecSet := [T!; detail::NaturalCmp]VecSet;
+::std [T:TYPE] TYPE AutoVecSet := [T!; T-detail::CmpOf]VecSet;

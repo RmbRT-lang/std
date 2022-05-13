@@ -4,8 +4,8 @@ INCLUDE 'std/memory'
 
 INCLUDE 'std/str'
 
-::std [C: TYPE]
-String
+/// Dynamic container for an std::str::View.
+::std [C: TYPE] String
 {
 	PRIVATE Content: [C!]Buffer;
 
@@ -31,6 +31,11 @@ String
 		IF(Content)
 			heap::free(Content);
 		Content := NULL;
+	}
+
+	Cmp
+	{
+		STATIC cmp(lhs: C!-String#&, rhs: C!-String#&) SM := lhs!.cmp(rhs!);
 	}
 
 	# data() ? INLINE := Content.Data;
