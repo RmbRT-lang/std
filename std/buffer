@@ -19,7 +19,7 @@ INCLUDE 'std/index'
 
 	:buf{s: T! *, c: UM} (s, c);
 
-	# THIS++ {:buf, T! \, UM!} INLINE := :buf(Data, Size);
+	# THIS++ {:buf, T! \, UM} INLINE := :buf(Data, Size);
 	# <BOOL> INLINE := Data != NULL;
 
 	#? THIS[i: Index #&] T!#?& INLINE := Data[i(Size)];
@@ -31,8 +31,8 @@ INCLUDE 'std/index'
 		= (Data + r.Start, r.Size);
 	}
 
-	# drop_start(start: Index) [T!]Buffer
-		:= range((start[Size], Size - start[Size]));
+	# drop_start(count: Index) [T!]Buffer
+		:= range((count[Size], Size - count[Size]));
 	# drop_end(count: Index) [T!]Buffer
 		:= range((0, Size - count[Size]));
 	# cut(size: Index) [T!]Buffer
