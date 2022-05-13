@@ -10,5 +10,7 @@
 		<BOOL> { = FALSE; }
 		<INT> := 0;
 		lel() ? := 5;
+
+		f(t: THIS&) ? := t.lel();
 	}
 }
