@@ -83,6 +83,7 @@ INCLUDE 'std/set'
 	#? start() ? INLINE := Set.start();
 	#? end() ? INLINE := Set.end();
 	# empty() BOOL INLINE := Set.empty();
+	#? at_loc(l: Location) {K!,V!}#? * INLINE := Set.at_loc(l);
 
 	# ## THIS ? INLINE := ##Set;
 }
