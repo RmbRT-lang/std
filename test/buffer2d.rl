@@ -5,7 +5,7 @@ INCLUDE 'std/dyn2d'
 {
 	TEST "Dyn2D, Buffer2D[x,y]"
 	{
-		b: INT-Dyn2D := :new(3, 2);
+		b: INT-Dyn2D := :a(3, 2);
 
 		b![0, 0] := 0;
 		b![1, 0] := 1;
@@ -17,7 +17,7 @@ INCLUDE 'std/dyn2d'
 
 	TEST "Buffer2D::slice"
 	{
-		b: INT-Dyn2D := :new(3, 3);
+		b: INT-Dyn2D := :a(3, 3);
 		/// (1, 1-2)
 		s ::= b!.slice((1, 1), (1, 2));
 
@@ -27,7 +27,7 @@ INCLUDE 'std/dyn2d'
 
 	TEST "Buffer2D::row"
 	{
-		b: INT-Dyn2D := :new(3, 4);
+		b: INT-Dyn2D := :a(3, 4);
 		FOR(y ::= 0; y < b!.H; y++)
 		{
 			row ::= b!.row(y);

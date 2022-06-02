@@ -23,7 +23,7 @@ INCLUDE 'std/dyn'
 	}
 
 	[A...:TYPE]
-	:new{a: A!&&...}:
+	:a{a: A!&&...}:
 		Container(heap::[T-detail::CompactAlloc]new(<A!&&>(a)...)),
 		Ptr(NOINIT)
 	{

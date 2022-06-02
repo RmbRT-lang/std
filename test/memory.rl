@@ -55,9 +55,9 @@ INCLUDE "../std/memory"
 		heap::delete(<<NewBase1 \>>(ptr));
 	}
 
-	TEST "dynamic :new() ctor"
+	TEST "dynamic :a() ctor"
 	{
-		x: INT-Dyn := :new(5);
+		x: INT-Dyn := :a(5);
 		ASSERT(x);
 		ASSERT(*x == 5);
 	}

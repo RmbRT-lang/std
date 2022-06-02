@@ -24,7 +24,7 @@ PUBLIC:
 	:alloc{w: UM, h: UM}:
 		Content(std::heap::[T]alloc(w * h).Data, w, h);
 
-	:new{w: UM, h: UM} (:alloc(w, h))
+	:a{w: UM, h: UM} (:alloc(w, h))
 	{
 		FOR(i ::= Content.W * Content.H; i--;)
 			Content.Data[i].{};
