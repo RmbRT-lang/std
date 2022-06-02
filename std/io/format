@@ -23,7 +23,7 @@ INCLUDE 'std/buffer'
 		}
 
 		buffer: CHAR[32] (NOINIT);
-		buf: CHAR-Buffer(buffer, ##buffer);
+		buf: CHAR-Buffer(buffer!, ##buffer);
 
 		len ::= 0;
 		IF(neg)
@@ -63,7 +63,7 @@ INCLUDE 'std/buffer'
 		}
 
 		buffer: CHAR[32] (NOINIT);
-		buf: CHAR-Buffer(buffer, ##buffer);
+		buf: CHAR-Buffer(buffer!, ##buffer);
 		i ::= buf.Size-1;
 		DO()
 		{

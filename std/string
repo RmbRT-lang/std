@@ -9,7 +9,8 @@ INCLUDE 'std/str'
 {
 	PRIVATE Content: [C!]Buffer;
 
-	{} {}
+	{};
+	{BARE} ();
 
 	{data: str::[C#]View #&}: Content(heap::clone(data));
 	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc(##data+1))

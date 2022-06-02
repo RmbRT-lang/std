@@ -9,6 +9,7 @@ INCLUDE 'std/dyn'
 	PRIVATE Ptr: T! *;
 
 	{}: Container(NULL), Ptr(NULL);
+	{BARE} ();
 	{NULL}: Container(NULL), Ptr(NULL);
 	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
 	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr) { IF(Container) Container->ref(); }

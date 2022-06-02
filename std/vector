@@ -14,6 +14,8 @@ PRIVATE:
 	Capacity: UM;
 PUBLIC:
 	{};
+	{BARE} ();
+
 	{size: UM}:
 		Content(heap::[T]alloc(size)),
 		Capacity(size)

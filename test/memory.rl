@@ -6,7 +6,7 @@ INCLUDE "../std/memory"
 	{
 		ASSERT(mem::cmp("aaa", "aab", 3) < 0);
 		buf: CHAR[3](<CHAR>(0xe2), <CHAR>(0x82), <CHAR>(0xac));
-		ASSERT(mem::cmp("€", buf, 3) == 0);
+		ASSERT(mem::cmp("€", buf!, 3) == 0);
 	}
 
 

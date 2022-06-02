@@ -6,6 +6,7 @@
 		{}: V(1);
 		{#&}: V(2);
 		{&&}: V(3);
+		{BARE}: V(4);
 
 		{v: INT}: V(v);
 
@@ -24,6 +25,8 @@
 		ASSERT(copy.V == 2);
 		move: Class := &&copy;
 		ASSERT(move.V == 3);
+		bare: Class (BARE);
+		ASSERT(bare.V == 4);
 	}
 
 	TEST "custom constructor"
@@ -60,6 +63,7 @@
 
 		:origin{} (0,0);
 		PRIVATE {...};
+		{BARE}: X(5), Y(6);
 
 		:f{x: INT} (x, 5*x);
 	}
@@ -72,5 +76,18 @@
 		p2: Point2 := :f(5);
 		ASSERT(p2.X == 5);
 		ASSERT(p2.Y == 25);
+	}
+
+	BareContainer {
+		P: Point2;
+		C: Class;
+	}
+
+	TEST "bare constructor"
+	{
+		x: BareContainer (BARE);
+		ASSERT(x.C.V == 4);
+		ASSERT(x.P.X == 5);
+		ASSERT(x.P.Y == 6);
 	}
 }

@@ -17,4 +17,11 @@ INCLUDE "../std/vector"
 		ASSERT(v[2] == (2,3));
 		ASSERT(v[3] == (4,5));
 	}
+
+	TEST "bare ctor"
+	{
+		v: INT-Vec(BARE);
+		ASSERT(!##v);
+		ASSERT(!v.data());
+	}
 }

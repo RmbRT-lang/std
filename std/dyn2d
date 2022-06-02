@@ -9,7 +9,9 @@ INCLUDE 'std/buffer2d'
 PRIVATE:
 	Content: [T!]Buffer2D;
 PUBLIC:
+	{};
 	{NULL};
+	{BARE} ();
 
 	{&&mv}:
 		Content := mv.Content

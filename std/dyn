@@ -8,6 +8,7 @@ INCLUDE 'std/heap'
 
 	{}: Ptr(NULL);
 	{NULL}: Ptr(NULL);
+	{BARE} ();
 
 	{&&m}: Ptr(m.release());
 

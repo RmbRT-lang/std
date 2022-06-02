@@ -21,7 +21,7 @@ INCLUDE 'std/memory'
 		x: Struct;
 		x.Member1 := 1;
 		x.B := 5;
-		visit VISIT*(x, (result, ##result), index);
+		visit VISIT*(x, (result!, ##result), index);
 
 		ASSERT(index == 2);
 		ASSERT(std::str::view(result[0].(0)) == "Member1");
