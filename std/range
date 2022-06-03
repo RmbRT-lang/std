@@ -112,23 +112,27 @@ INCLUDE 'std/err/indexoutofrange'
 			range[i].~;
 	}
 
-	[T: TYPE; N: NUMBER] ArrayIter
+	[T: TYPE] ArrayIter
 	{
 		Range: T! \;
 		Index: UM;
+		Size: SM;
 
-		{array: T![N] &, index: UM}: Range(&array[0]), Index(index);
+		{...};
 
-		# <BOOL> INLINE := Index < N;
-		# THIS! T!& INLINE := *THIS;
+		# <BOOL> INLINE := Index < Size;
 		# *THIS T!& INLINE := Range[Index];
+		# THIS! T!& INLINE := *THIS;
 
-		THIS++ [T!; #N]ArrayIter INLINE { t ::= THIS; ++Index; = t; }
-		++THIS [T!; #N]ArrayIter& INLINE { ++Index; = THIS; }
-		THIS-- [T!; #N]ArrayIter INLINE { t ::= THIS; --Index; = t; }
-		--THIS [T!; #N]ArrayIter& INLINE { --Index; = THIS; }
+		THIS++ THIS INLINE { t ::= THIS; ++Index; = t; }
+		++THIS THIS& INLINE { ++Index; = THIS; }
+		THIS-- THIS INLINE { t ::= THIS; --Index; = t; }
+		--THIS THIS& INLINE { --Index; = THIS; }
 	}
+	::detail [T: TYPE] array_iter(arr: T! *, i: UM, sz: UM) [T!]ArrayIter
+		:= (arr, i, sz);
 
-	[T: TYPE; N: NUMBER] start(range: T![N] &) ? := [T!; #N]ArrayIter(range, 0);
-	[T: TYPE; N: NUMBER] end(range: T![N] &) ? := [T!; #N]ArrayIter(range, N-1);
+	[T: TYPE] start(range: T! &&) ? := detail::array_iter(&range[0], 0, ##range);
+	[T: TYPE] end(range: T! &&) ?
+		:= detail::array_iter(&range[0], ##range-1, ##range);
 }
