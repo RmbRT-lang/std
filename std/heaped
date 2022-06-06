@@ -1,0 +1,24 @@
+(/rl/)
+
+INCLUDE 'std/dyn'
+
+(// Behaves like a normal instance but is placed on the heap.
+	Copying creates an allocated copy, but moving will just transfer ownership of the pointer.
+	Use `*`, `->`, or `!` to access the object's value. /)
+::std [T:TYPE] Heaped
+{
+	PRIVATE Value: T - std::Dyn;
+
+	{} INLINE: Value := :a();
+	{BARE} INLINE: Value := :a(BARE);
+	{#&cpy} INLINE: Value := :a(cpy!);
+	{&&};
+
+	[Args...:TYPE]
+	{args: Args!&&...} INLINE: Value := :a(<Args!&&>(args)...);
+
+	#? THIS! T#?& INLINE := *Value;
+	#? *THIS T#?& INLINE := *Value;
+
+	# <BOOL> INLINE := Value;
+}

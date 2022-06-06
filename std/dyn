@@ -22,7 +22,7 @@ INCLUDE 'std/heap'
 	:dup{v: V!&&}:
 		Ptr(heap::[V]new(<V!&&>(v)));
 
-	[V:TYPE] {m: V!-Dyn &&}
+	[V:TYPE] {m: V!-Dyn! &&}
 	{
 		IF(m)
 		{
