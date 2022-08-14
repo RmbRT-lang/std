@@ -57,7 +57,7 @@ INCLUDE 'std/io/streamutil'
 		= -x;
 	}
 
-	(/[T:TYPE]
+	[T:TYPE]
 	Int
 	{
 		PRIVATE V: T;
@@ -66,21 +66,21 @@ INCLUDE 'std/io/streamutil'
 		{v: T #&}: V(v);
 		{v: T &&}: V(v);
 
-		# -THIS [T]Int := neg(V);
-		# +THIS [T]Int #& := THIS;
+		# -THIS THIS := neg(V);
+		# +THIS THIS #& := THIS;
 
-		# THIS+(rhs: T#&) [T]Int := add(V, rhs);
-		# THIS-(rhs: T#&) [T]Int := sub(V, rhs);
-		# THIS*(rhs: T#&) [T]Int := mul(V, rhs);
-		# THIS/(rhs: T#&) [T]Int := div(V, rhs);
-		# THIS%(rhs: T#&) [T]Int := mod(V, rhs);
+		# THIS+(rhs: T#&) THIS := add(V, rhs);
+		# THIS-(rhs: T#&) THIS := sub(V, rhs);
+		# THIS*(rhs: T#&) THIS := mul(V, rhs);
+		# THIS/(rhs: T#&) THIS := div(V, rhs);
+		# THIS%(rhs: T#&) THIS := mod(V, rhs);
 
-		THIS+=(rhs: T#&) [T]Int& := THIS := THIS + rhs;
-		THIS-=(rhs: T#&) [T]Int& := THIS := THIS - rhs;
-		THIS*=(rhs: T#&) [T]Int& := THIS := THIS * rhs;
-		THIS/=(rhs: T#&) [T]Int& := THIS := THIS / rhs;
-		THIS%=(rhs: T#&) [T]Int& := THIS := THIS % rhs;
+		THIS+=(rhs: T#&) THIS& := THIS := THIS + rhs;
+		THIS-=(rhs: T#&) THIS& := THIS := THIS - rhs;
+		THIS*=(rhs: T#&) THIS& := THIS := THIS * rhs;
+		THIS/=(rhs: T#&) THIS& := THIS := THIS / rhs;
+		THIS%=(rhs: T#&) THIS& := THIS := THIS % rhs;
 
 		# <T #&> INLINE := V;
-	}/)
+	}
 }
