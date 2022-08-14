@@ -32,7 +32,7 @@ INCLUDE 'std/math/limit'
 	{
 		FOR(i ::= 1; Locked(:<>(TRUE));)
 		{
-			IF(i != 25) ++i;
+			IF(i < 25) ++i;
 			...0.0005 * i;
 		}
 	}

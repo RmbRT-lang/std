@@ -33,7 +33,7 @@ INCLUDE 'std/dyn'
 	#? start() ? INLINE := Elems.start();
 	#? end() ? INLINE := Elems.end();
 	# empty() BOOL INLINE := Elems.empty();
-	#? at_loc(l: Location) T#? * INLINE := l >= ##Elems ? NULL : Elems[:ok(l)];
+	#? at_loc(l: Location) T#? * INLINE := l >= ##Elems ? NULL : &Elems[:ok(l)];
 
 	# ##THIS UM INLINE := ##Elems;
 
