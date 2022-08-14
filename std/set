@@ -30,6 +30,9 @@ INCLUDE 'std/dyn'
 
 	TYPE Location := UM;
 
+	{};
+	:reserve{cap: UM}: Elems := :reserve(cap);
+
 	#? start() ? INLINE := Elems.start();
 	#? end() ? INLINE := Elems.end();
 	# empty() BOOL INLINE := Elems.empty();
