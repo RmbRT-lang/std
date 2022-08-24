@@ -1,6 +1,6 @@
 (/rl/)
 
-::std [V: TYPE]
+::std [T: TYPE; V: TYPE]
 Iterator
 {
 	PRIVATE Elems: V! \;
@@ -10,9 +10,9 @@ Iterator
 		Elems(elems),
 		Current(start);
 
-	# get() ?& INLINE := (*Elems)[Current];
-	# THIS! ?& INLINE := (*Elems)[Current];
-	# ok() [V!]OkIterator INLINE := (Elems, Current);
+	# get() T!& INLINE := (*Elems)[Current];
+	# THIS! T!& INLINE := (*Elems)[Current];
+	# ok() [T!; V!]OkIterator INLINE := (Elems, Current);
 
 	next() VOID
 	{
@@ -20,14 +20,14 @@ Iterator
 		++Current;
 	}
 
-	++THIS [V!]Iterator& INLINE { next(); = THIS; }
-	THIS++ [V!]Iterator INLINE { v ::= THIS; next(); = v; }
-	--THIS [V!]Iterator& INLINE { prev(); = THIS; }
-	THIS-- [V!]Iterator INLINE { v ::= THIS; prev(); = v; }
+	++THIS THIS& INLINE { next(); = THIS; }
+	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
+	--THIS THIS& INLINE { prev(); = THIS; }
+	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
 
-	# *THIS ?& INLINE := get();
+	# *THIS T!& INLINE := get();
 
-	# THIS+(offset: UM) [V!]Iterator
+	# THIS+(offset: UM) THIS
 	{
 		ASSERT(Current+offset < ##*Elems);
 		= (Elems, Current + offset);
@@ -42,7 +42,7 @@ Iterator
 	# <BOOL> INLINE := Current < ##*Elems;
 }
 
-::std [V: TYPE]
+::std [T: TYPE; V: TYPE]
 OkIterator
 {
 	PRIVATE Elems: V! \;
@@ -52,22 +52,22 @@ OkIterator
 		Elems(elems),
 		Current(start);
 
-	# <[V!]Iterator> INLINE := (Elems, Current);
+	# <[T!; V!]Iterator> INLINE := (Elems, Current);
 
-	# get() ?& := (*Elems)[Current];
-	# THIS! ?& := (*Elems)[Current];
+	# get() T!& := (*Elems)[Current];
+	# THIS! T!& := (*Elems)[Current];
 
 	next() VOID INLINE
 	{ ++Current; }
 
-	++THIS [V!]OkIterator& INLINE { next(); = THIS; }
-	THIS++ [V!]OkIterator INLINE { v ::= THIS; next(); = v; }
-	--THIS [V!]OkIterator& INLINE { prev(); = THIS; }
-	THIS-- [V!]OkIterator INLINE { v ::= THIS; prev(); = v; }
+	++THIS THIS& INLINE { next(); = THIS; }
+	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
+	--THIS THIS& INLINE { prev(); = THIS; }
+	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
 
-	# *THIS ?& INLINE := get();
+	# *THIS T!& INLINE := get();
 
-	# THIS+(offset: UM) [V!]OkIterator INLINE
+	# THIS+(offset: UM) THIS INLINE
 		:= (Elems, Current + offset);
 
 	prev() VOID INLINE

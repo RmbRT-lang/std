@@ -43,10 +43,10 @@ INCLUDE 'std/index'
 	# ##THIS UM INLINE := Size;
 
 	#? front() T!#?& INLINE := THIS[0];
-	#? start() [T!]Buffer#?-Iterator INLINE := (&THIS, 0);
+	#? start() [T!]Buffer#?-[T!#?]Iterator INLINE := (&THIS, 0);
 
 	#? back() T!#?& INLINE:= THIS[Size-1];
-	#? end() [T!]Buffer#?-Iterator INLINE := (&THIS, Size-1);
+	#? end() [T!]Buffer#?-[T!#?]Iterator INLINE := (&THIS, Size-1);
 
 	# empty() BOOL INLINE := !Size;
 }

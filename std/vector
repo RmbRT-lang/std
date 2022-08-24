@@ -230,8 +230,8 @@ PUBLIC:
 
 	#? THIS! ?& INLINE := Content;
 
-	#? start() [T!]Vec#?-Iterator INLINE := (&THIS, 0);
-	#? end() [T!]Vec#?-Iterator INLINE := (&THIS, ##THIS-1);
+	#? start() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, 0);
+	#? end() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, ##THIS-1);
 
 	[TCmp:TYPE]
 	Cmp
