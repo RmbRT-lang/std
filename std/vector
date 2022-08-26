@@ -228,7 +228,7 @@ PUBLIC:
 	# data() T! #* INLINE := Content.Data;
 	# empty() BOOL INLINE := ##THIS == 0;
 
-	#? THIS! ?& INLINE := Content;
+	#? THIS! ? #?& INLINE := Content;
 
 	#? start() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, 0);
 	#? end() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, ##THIS-1);
