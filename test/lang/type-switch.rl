@@ -10,7 +10,7 @@
 		{
 		INT: {;}
 		DEFAULT:
-			ASSERT(!"expected INT as type");
+			DIE "expected INT as type";
 		}
 	}
 
@@ -20,7 +20,7 @@
 		{
 		Base: {;}
 		DEFAULT:
-			ASSERT(!"expected BASE as type");
+			DIE "expected BASE as type";
 		}
 	}
 
@@ -31,7 +31,23 @@
 		{
 		D1: {;}
 		DEFAULT:
-			ASSERT(!"expected D1 as type");
+			DIE "expected D1 as type";
 		}
+	}
+
+	TEST "Switching type (strict)"
+	{
+		v: D1;
+
+		threw ::= FALSE;
+		TRY TYPE SWITCH STATIC(v) { INT:{;} }
+		CATCH(CHAR#\){threw := TRUE; }
+		ASSERT(threw);
+	}
+
+	TEST "Switching type (lenient)"
+	{
+		v: D1;
+		TYPE SWITCH STATIC?(v) { INT:{;} }
 	}
 }
