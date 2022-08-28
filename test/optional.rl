@@ -6,13 +6,17 @@ INCLUDE 'std/optional'
 
 	TrackedCtor {
 		STATIC CtorCalled: BOOL := FALSE;
+		STATIC BareCalled: BOOL := FALSE;
 		{} { CtorCalled := TRUE; }
+		{BARE} { BareCalled := TRUE; }
 	}
 
 	TEST "construction"
 	{
 		<[TrackedCtor]Opt>();
 		ASSERT(!TrackedCtor::CtorCalled);
+		<[TrackedCtor]Opt>(:a);
+		ASSERT(TrackedCtor::CtorCalled);
 
 		x: INT-Opt;
 		ASSERT(!x);
@@ -36,6 +40,12 @@ INCLUDE 'std/optional'
 
 		y := NULL;
 		ASSERT(!y);
+
+		ASSERT(!TrackedCtor::BareCalled);
+		TrackedCtor::CtorCalled := FALSE;
+		<[TrackedCtor]Opt>(:a(BARE));
+		ASSERT(!TrackedCtor::CtorCalled);
+		ASSERT(TrackedCtor::BareCalled);
 	}
 
 

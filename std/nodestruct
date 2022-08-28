@@ -6,6 +6,9 @@
 	PRIVATE UNION RawContainer { V: T; }
 	PRIVATE V: RawContainer;
 
+	{} { THIS->{}; }
+	{BARE} { THIS->{BARE}; }
+
 	[Args...:TYPE]
 	{args: Args!&&...} INLINE
 	{
