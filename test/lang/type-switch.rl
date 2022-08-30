@@ -41,7 +41,7 @@
 
 		threw ::= FALSE;
 		TRY TYPE SWITCH STATIC(v) { INT:{;} }
-		CATCH(CHAR#\){threw := TRUE; }
+		CATCH({CHAR#\, CHAR#\}){threw := TRUE; }
 		ASSERT(threw);
 	}
 
