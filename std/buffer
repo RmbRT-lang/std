@@ -19,7 +19,7 @@ INCLUDE 'std/index'
 
 	:buf{s: T! *, c: UM} (s, c);
 
-	# THIS++ {:buf, T! \, UM} INLINE := :buf(Data, Size);
+	# THIS++ {:buf, T! *, UM} INLINE := :buf(Data, Size);
 	# <BOOL> INLINE := Data != NULL;
 
 	#? THIS[i: Index #&] T!#?& INLINE := Data[i(Size)];
