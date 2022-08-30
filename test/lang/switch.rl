@@ -12,8 +12,8 @@
 	{
 		panicked: BOOL;
 		TRY SWITCH(5) {
-		4: DIE;
-		6: DIE;
+		4: {;}
+		6: {;}
 		}
 		CATCH(CHAR#\) panicked := TRUE;
 		ASSERT(panicked);
