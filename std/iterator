@@ -29,7 +29,7 @@ Iterator
 
 	# THIS+(offset: UM) THIS
 	{
-		ASSERT(Current+offset < ##*Elems);
+		ASSERT(Current+offset <= ##*Elems);
 		= (Elems, Current + offset);
 	}
 
