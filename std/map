@@ -89,7 +89,8 @@ INCLUDE 'std/set'
 }
 
 ::std [K:TYPE; V:TYPE] TYPE NatMap := [K!; V!; detail::NaturalCmp]Map;
-::std [K:TYPE; V:TYPE] TYPE AutoMap := [K!; V!; K-detail::CmpOf]Map;
+::std [K:TYPE; V:TYPE] TYPE AutoMap := [K!; V!; K::Cmp+]Map;
 ::std [K:TYPE; V:TYPE; Cmp:TYPE] TYPE DynMap := [K!; V!-std::Dyn; Cmp]Map;
 ::std [K:TYPE; V:TYPE] TYPE NatDynMap := [K!; V!; detail::NaturalCmp]DynMap;
-::std [K:TYPE; V:TYPE] TYPE AutoDynMap := [K!; V!; K-detail::CmpOf]DynMap;
+::std [K:TYPE; V:TYPE] TYPE AutoDynMap := [K!; V!; K::Cmp+]DynMap;
+::std [K:TYPE; V:TYPE] TYPE AutoPtrDynMap := [K!; V!; detail::AutoPtrCmp]DynMap;

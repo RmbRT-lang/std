@@ -119,7 +119,7 @@ INCLUDE 'std/io/stream'
 			TYPE SWITCH STATIC(v)
 			{
 			BOOL:
-				accum(v ? 1 : 0, 8);
+				accum(v ?? 1 : 0, 8);
 			U1, S1, U2, S2, U4, S4, U8, S8, CHAR:
 				accum(v, 8*SIZEOF(T));
 			DEFAULT:

@@ -17,6 +17,31 @@ INCLUDE 'std/heap'
 	[Args...: TYPE]
 	:a{args: Args!&&...}:
 		Ptr(heap::[T]new(<Args!&&>(args)...));
+	[Arg: TYPE]
+	:if{if: BOOL, then: Arg!&&}:
+		Ptr := if ?? heap::[T]new(<Arg!&&>(then)) : NULL;
+
+	[Args...: TYPE]
+	:make{args: Args!&&...}
+		(<<<T>>>(<Args!&&>(args)...));
+	[Args...: TYPE]
+	:gcmake{args: Args!&&...}:
+		Ptr := <<<T>>>(<Args!&&>(args)...);
+
+
+	[Args...: TYPE]
+	:make_if{if: BOOL, args: Args!&&...}:
+		Ptr := NOINIT
+	{
+		IF(if)
+			THIS.{<<<T>>>(<Args!&&>(args)...)};
+		ELSE
+			Ptr := NULL;
+	}
+
+	[Args...: TYPE]
+	:gcmake_if{if: BOOL, args: Args!&&...}:
+		Ptr := if ?? <<<T>>>(<Args!&&>(args)...) : NULL;
 
 	[V:TYPE]
 	:dup{v: V!&&}:
@@ -43,6 +68,14 @@ INCLUDE 'std/heap'
 		p ::= Ptr;
 		Ptr := NULL;
 		= p;
+	}
+
+	[Args...: TYPE]
+	ensure(args: Args!&&...) T! * INLINE
+	{
+		IF(!Ptr)
+			Ptr := heap::[T]new(<Args!&&>(args)...);
+		= Ptr;
 	}
 
 	DESTRUCTOR

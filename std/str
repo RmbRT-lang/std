@@ -20,7 +20,7 @@ INCLUDE 'std/heap'
 
 		# cmp(rhs: [C!]View #&) SM
 		{
-			minSz #::= ##THIS > ##rhs ? ##rhs : ##THIS;
+			minSz #::= ##THIS > ##rhs ?? ##rhs : ##THIS;
 
 			FOR(i:UM := 0; i < minSz; i++)
 				IF(THIS[:ok(i)] != rhs[:ok(i)])

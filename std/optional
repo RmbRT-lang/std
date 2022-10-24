@@ -34,6 +34,17 @@ PUBLIC:
 		}
 	}
 
+	[Args...: TYPE]
+	ensure(args: Args!&&...) T!& INLINE
+	{
+		IF(!Exists)
+		{
+			Obj.{<Args!&&>(args)...};
+			Exists := TRUE;
+		}
+		= *THIS;
+	}
+
 	# <BOOL> INLINE := Exists;
 
 	#? THIS! T! #?& INLINE := *THIS;

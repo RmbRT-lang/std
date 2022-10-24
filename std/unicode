@@ -51,9 +51,9 @@
 	encode(src: U4, dst: CHAR \) UM
 	{
 		size: UM :=
-			(src < 0x00080) ? 1 :
-			(src < 0x00800) ? 2 :
-			(src < 0x10000) ? 3 :
+			(src < 0x00080) ?? 1 :
+			(src < 0x00800) ?? 2 :
+			(src < 0x10000) ?? 3 :
 			4;
 
 		STATIC start: U1#[](0xc0, 0xe0, 0xf0);

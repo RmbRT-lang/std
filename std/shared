@@ -71,19 +71,86 @@ INCLUDE 'std/dyn'
 	# container() detail::SharedAlloc * := Container;
 }
 
+::std [T:TYPE] Weak
+{
+	PRIVATE Container: detail::SharedAlloc *;
+	PRIVATE Ptr: T! *;
+
+	{}: Container(NULL), Ptr(NULL);
+	{BARE} ();
+	{NULL}: Container(NULL), Ptr(NULL);
+	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
+	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr) { IF(Container) Container->ref_weak(); }
+
+	:weak{v: [T!]Shared #&}: Container(v.container()), Ptr(v!)
+	{
+		IF(Container)
+			Container->ref_weak();
+	}
+
+	[U:TYPE] {rhs: U!-Shared} INLINE:
+		Container(rhs.container()), Ptr(NOINIT)
+	{
+		IF(rhs!)
+		{
+			Ptr := <<T! \>>(rhs!);
+			rhs.{};
+		}
+		ELSE
+			Ptr := NULL;
+
+	}
+
+	[U:TYPE]:try {rhs: U!-Shared} INLINE:
+		Container(rhs.container()), Ptr(NOINIT)
+	{
+		IF(rhs!)
+			IF(Ptr := <<T! *>>(rhs!))
+				rhs.{};
+			ELSE
+				Container := NULL;
+		ELSE
+			Ptr := NULL;
+
+	}
+
+	DESTRUCTOR { IF(Container) Container->deref_weak(); }
+
+	# ptr() T! * INLINE := Container && Container->Refs ?? Ptr : NULL;
+
+	# <T! *> INLINE := ptr();
+	# THIS! T! * INLINE := ptr();
+	# *THIS T! & INLINE { IF(Container && Container->Refs) = Ptr; ELSE THROW NULL; }
+	# container() detail::SharedAlloc * := Container;	
+}
+
 ::std::detail SharedAlloc VIRTUAL
 {
-	Refs: UM;
+	Refs: U2;
+	Weaks: U2;
 
 	{}: Refs(1);
 
-	ref() VOID INLINE { ++Refs; }
+	ref() VOID INLINE { ASSERT(++Refs); }
+	ref_weak() VOID INLINE { ASSERT(++Weaks); }
+
+	/// Destroys and if possible deallocates the payload.
+	PRIVATE ABSTRACT kill_payload() VOID;
 
 	deref() VOID 
 	{
 		ASSERT(Refs);
-
 		IF(!--Refs)
+		{
+			kill_payload();
+			IF(!Weaks)
+				heap::delete(&THIS);
+		}
+	}
+
+	deref_weak() VOID
+	{
+		IF(!--Weaks && !Refs)
 			heap::delete(&THIS);
 	}
 }
@@ -93,9 +160,13 @@ INCLUDE 'std/dyn'
 	Instance: T;
 
 	[A...:TYPE]{a: A!&&...}: Instance(<A!&&>(a)...);
+
+	PRIVATE FINAL kill_payload() VOID { Instance.~; Instance.{BARE}; }
 }
 
 ::std::detail [T:TYPE] SplitAlloc -> SharedAlloc, PRIVATE [T]Dyn
 {
 	:gc{ptr: T! *}-> (), (:gc(ptr));
+
+	PRIVATE FINAL kill_payload() VOID { <[T]Dyn&>(THIS) := NULL; }
 }

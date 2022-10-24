@@ -11,6 +11,12 @@ INCLUDE 'std/optional'
 		{BARE} { BareCalled := TRUE; }
 	}
 
+	TestStruct {
+		A: INT;
+		B: INT;
+		C: CHAR #\ -Opt;
+	}
+
 	TEST "construction"
 	{
 		<[TrackedCtor]Opt>();
@@ -40,6 +46,10 @@ INCLUDE 'std/optional'
 
 		y := NULL;
 		ASSERT(!y);
+
+		a: TestStruct (5, 6, :a("hello"));
+		b: TestStruct := a;
+
 
 		ASSERT(!TrackedCtor::BareCalled);
 		TrackedCtor::CtorCalled := FALSE;

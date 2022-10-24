@@ -85,10 +85,10 @@ INCLUDE 'std/str'
 		:buffer: o.write(Value.Buf.Data, Value.Buf.Bytes);
 		:streamable: Value.Streamable->stream(o);
 		:dec: Value.DecNumber.(0)
-			? format::[SM]dec(o, Value.DecNumber.(1))
+			?? format::[SM]dec(o, Value.DecNumber.(1))
 			: format::[UM]dec(o, Value.DecNumber.(1));
 		:hex: Value.HexNumber.(0)
-			? format::[SM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
+			?? format::[SM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
 			: format::[UM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE);
 		:char: o.write(&Value.Char, 1);
 		}

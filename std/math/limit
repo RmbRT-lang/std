@@ -3,7 +3,7 @@
 ::std::math
 {
 	[T: TYPE] min(a: T! #&, b: T! #&) ? INLINE
-	{ = a < b ? a : b; }
+	{ = a < b ?? a : b; }
 	[T: TYPE] max(a: T! #&, b: T! #&) ? INLINE
-	{ = a > b ? a : b; }
+	{ = a > b ?? a : b; }
 }
