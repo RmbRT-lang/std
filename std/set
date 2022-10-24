@@ -157,7 +157,7 @@ INCLUDE 'std/dyn'
 ::std::detail AutoPtrCmp
 {
 	[T:TYPE]
-	STATIC cmp(a: T#\, b: T#\) ? := T::cmp(*a, *b);
+	STATIC cmp(a: T!#\, b: T!#\) SM := T::cmp(*a, *b);
 }
 
 ::std [T:TYPE] TYPE NatVecSet := [T!; detail::NaturalCmp]VecSet;
