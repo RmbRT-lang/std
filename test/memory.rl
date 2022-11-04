@@ -57,7 +57,7 @@ INCLUDE "../std/memory"
 
 	TEST "dynamic :a() ctor"
 	{
-		x: INT-Dyn := :a(5);
+		x: INT-DynOpt := :a(5);
 		ASSERT(x);
 		ASSERT(*x == 5);
 	}
