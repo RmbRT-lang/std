@@ -61,4 +61,14 @@ INCLUDE "../std/memory"
 		ASSERT(x);
 		ASSERT(*x == 5);
 	}
+
+	Animal VIRTUAL {}
+	Cow -> Animal  {}
+
+	TEST "polymorphic :a.T() ctor"
+	{
+		cattle: Animal-std::Dyn := :a.Cow();
+		ASSERT(cattle);
+		ASSERT(TYPE(*cattle) == TYPE TYPE(Cow));
+	}
 }

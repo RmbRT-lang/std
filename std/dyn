@@ -17,8 +17,12 @@ INCLUDE 'std/heap'
 	:gc{p: T! *}: Ptr(p);
 
 	[Args...: TYPE]
-	:a{args: Args!&&...}:
-		Ptr(heap::[T]new(<Args!&&>(args)...));
+	:a{args: Args!&&...} := :a.T(<Args!&&>(args)...);
+
+	[U: TYPE; Args...: TYPE]
+	:a.U!{args: Args!&&...}:
+		Ptr := heap::[U]new(<Args!&&>(args)...);
+
 	[Arg: TYPE]
 	:if{if: BOOL, then: Arg!&&}:
 		Ptr := if ?? heap::[T]new(<Arg!&&>(then)) : NULL;
@@ -46,15 +50,20 @@ INCLUDE 'std/heap'
 		Ptr := if ?? <<<T>>>(<Args!&&>(args)...) : NULL;
 
 	[V:TYPE]
-	:dup{v: V!&&}:
-		Ptr(heap::[V]new(<V!&&>(v)));
+	:dup{v: V!&&} := :a.V!(<V!&&>(v));
 
-	[V:TYPE] {m: V!-Dyn! &&}
+	[V:TYPE] {m: V!-DynOpt! &&}:
+		Ptr := <T *>(&*m)
+	{
+		m.{};
+	}
+
+	[V:TYPE] :<>{m: V!-DynOpt! &&}
 	{
 		IF(m)
 		{
 			// Try to convert into our pointer type, this might fail.
-			Ptr := <<T \>>(m!);
+			Ptr := <<T \>>(&*m);
 			m.{};
 		}
 		ELSE
@@ -67,6 +76,8 @@ INCLUDE 'std/heap'
 	# THIS! T! & INLINE := *THIS;
 	# THIS() T! & INLINE := *THIS;
 
+	# ok() T! & := *Ptr;
+
 	release() T! *
 	{
 		p ::= Ptr;
@@ -75,11 +86,11 @@ INCLUDE 'std/heap'
 	}
 
 	[Args...: TYPE]
-	ensure(args: Args!&&...) T! * INLINE
+	ensure(args: Args!&&...) T! & INLINE
 	{
 		IF(!Ptr)
 			Ptr := heap::[T]new(<Args!&&>(args)...);
-		= Ptr;
+		= *Ptr;
 	}
 
 	# THIS<>(rhs: THIS #&) S1
@@ -99,39 +110,43 @@ INCLUDE 'std/heap'
 
 (// Behaves like a normal instance but is placed on the heap.
 	Copying creates an allocated copy, but moving will just transfer ownership of the pointer. After moving, the object's value is invalid until re-initialised. Use `*`, `->`, `!` or `()` to access the object's value. `BARE` initialisation will not allocate an instance. /)
-::std [T:TYPE] Dyn
+::std [T:TYPE] Dyn -> std::[T]DynOpt
 {
-	PRIVATE Value: T - std::DynOpt;
-
-	{} INLINE: Value := :a();
-	{BARE} INLINE: Value := NULL;
-	{#&cpy} INLINE: Value := :a(cpy!);
+	{} INLINE -> (:a());
+	{BARE} INLINE -> (NULL);
+	{#&cpy} INLINE -> (:a(cpy!));
 	{&&};
 
-	:gc{p: T! \}: Value := :gc(p) { ASSERT(p); }
+	[V:TYPE] :<>{m: V!-Dyn! &&} -> (:<>(&&m)) { ASSERT(valid()); }
+	[V:TYPE] :!{m: V!-DynOpt! &&} -> (&&m) { ASSERT(valid()); }
+
+	[U: TYPE] :gc{p: U! \} -> (:gc(p)) { ASSERT(p); }
 
 	[Args...: TYPE]
-	:make{args: Args!&&...}:
-		Value := :make(<Args!&&>(args)...);
+	:make{args: Args!&&...} -> (:make(<Args!&&>(args)...));
 	[Args...: TYPE]
-	:gcmake{args: Args!&&...}:
-		Value := :gcmake(<Args!&&>(args)...);
+	:gcmake{args: Args!&&...} -> (:gcmake(<Args!&&>(args)...));
+
+	[V:TYPE]
+	:dup{v: V!&&} -> (:dup(<V!&&>(v)));
+
+	[U: TYPE; Args...: TYPE]
+	:a.U!{args: Args!&&...} -> (:a.U!(<Args!&&>(args)...));
 
 	[Args...:TYPE]
-	{args: Args!&&...} INLINE: Value := :a(<Args!&&>(args)...);
+	{args: Args!&&...} INLINE -> (:a(<Args!&&>(args)...));
 
-	#? THIS! T#?& INLINE := *Value;
-	#? *THIS T#?& INLINE := *Value;
-	# THIS() T#?& INLINE := *Value;
+	[Args...:TYPE]
+	:a{args: Args!&&...} INLINE -> (:a(<Args!&&>(args)...));
 
-	[Args...: TYPE]
-	/// Create the internal value if the object is currently invalid.
-	ensure(args: Args!&&...) T! & INLINE
-		:= Value.ensure(<Args!&&>(args)...);
+	# <T! *> INLINE := <std::[T]DynOpt#&>(THIS);
+
+	# *THIS T! & INLINE := THIS.ok();
+	# THIS! T! & INLINE := *THIS;
+	# THIS() T! & INLINE := *THIS;
 
 	/// Detect invalid state after moving. If invalid, any operation besides checking validity is forbidden.
-	# valid() BOOL INLINE := Value;
-	# <T *> := Value;
+	# valid() BOOL INLINE := THIS;
 
 	# THIS <> (rhs: THIS #&) S1 := THIS() <> rhs();
 }
