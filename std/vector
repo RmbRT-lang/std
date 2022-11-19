@@ -233,21 +233,13 @@ PUBLIC:
 	#? start() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, 0);
 	#? end() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, ##THIS-1);
 
-	[TCmp:TYPE]
-	Cmp
+	# THIS <> (rhs: THIS #&) S1
 	{
-		STATIC cmp(a: [T!]Vec#&, b:[T!]Vec#&) SM
-		{
-			len # ::= math::min(##a, ##b);
-			FOR(i ::= 0; i < len; i++)
-			{
-				sign ::= TCmp::cmp(a, b);
-				IF(sign) = sign;
-			}
-			IF(##a == ##b)
-				= 0;
-			= ##a > ##b ?? 1 : -1;
-		}
+		len # ::= math::min(##THIS, ##rhs);
+		FOR(i ::= 0; i < len; i++)
+			IF(sign ::= THIS[:ok(i)] <> rhs[:ok(i)])
+				= sign;
+		= ##THIS <> ##rhs;
 	}
 }
 

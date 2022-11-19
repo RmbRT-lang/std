@@ -40,16 +40,13 @@ INCLUDE 'std/io/stream'
 		}
 		# THIS!=(rhs: Hash#&) BOOL INLINE := !(THIS == rhs);
 
-		# cmp(rhs: Hash#&) WordAsSigned
+		# THIS<>(rhs: Hash#&) S1
 		{
 			FOR(i ::= 0; i < ##Words; i++)
-				IF(unequal ::= Words[i] - rhs.Words[i])
+				IF(unequal ::= Words[i] <> rhs.Words[i])
 					= unequal;
 			= 0;
 		}
-
-		STATIC cmp(lhs: Hash#&, rhs: Hash #&) WordAsSigned INLINE 
-			:= lhs.cmp(rhs);
 
 		# stream(into: io::OStream &) VOID
 		{

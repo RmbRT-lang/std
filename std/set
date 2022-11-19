@@ -24,7 +24,7 @@ INCLUDE 'std/dyn'
 	remove(v: T! #&) BOOL;
 }
 
-::std [T: TYPE; Cmp: TYPE] VecSet
+::std [T: TYPE] VecSet
 {
 	PRIVATE Elems: [T!]Vec;
 
@@ -71,16 +71,16 @@ INCLUDE 'std/dyn'
 		WHILE(l < r)
 		{
 			i := (l + r)>>1;
-			sign ::= Cmp::cmp(v, Elems[i]);
-			IF(sign < 0)
-				r := i;
-			ELSE IF(sign > 0)
-				l := i+1;
-			ELSE
+			IF:!(sign ::= Elems[i] <> v)
 			{
 				*location := i;
 				= &Elems[i];
 			}
+
+			IF(sign > 0)
+				r := i;
+			ELSE
+				l := i+1;
 		}
 
 		*location := l;
@@ -145,22 +145,4 @@ INCLUDE 'std/dyn'
 	}
 }
 
-::std::detail NaturalCmp
-{
-	[A:TYPE; B:TYPE]
-	STATIC cmp(a: A!#&, b: B!#&) SM
-		:= a == b
-			?? 0
-			: a < b ?? -1 : 1;
-}
-
-::std::detail AutoPtrCmp
-{
-	[T:TYPE]
-	STATIC cmp(a: T!#\, b: T!#\) SM := T::cmp(*a, *b);
-}
-
-::std [T:TYPE] TYPE NatVecSet := [T!; detail::NaturalCmp]VecSet;
-::std [T:TYPE] TYPE NatDynVecSet := [T!-std::Dyn; detail::NaturalCmp]VecSet;
-::std [T:TYPE] TYPE AutoVecSet := [T!; T::Cmp+]VecSet;
-::std [T:TYPE] TYPE AutoDynVecSet := [T!-std::Dyn; T::Cmp+]VecSet;
+::std [T:TYPE] TYPE DynVecSet := [T!-std::Dyn+]VecSet;

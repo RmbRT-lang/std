@@ -1,6 +1,6 @@
 INCLUDE "../std/set"
 
-TYPE IntVecSet := std::[INT]NatVecSet;
+TYPE IntVecSet := std::[INT]VecSet;
 
 ::std
 {

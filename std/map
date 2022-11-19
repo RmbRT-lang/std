@@ -2,48 +2,46 @@
 
 INCLUDE 'std/set'
 
-::std [K:TYPE; V:TYPE; Cmp:TYPE] Map
+::std [K:TYPE; V:TYPE] Map
 {
-	PRIVATE TupleCmp
+	PRIVATE Pair
 	{
+		Key: K;
+		Value: V;
+
+		{...};
+
+		# |THIS ? := (Key, Value);
+
 		[T:TYPE]
-		STATIC cmp(a: T!&&, b: {K!,V!}#&) ? := Cmp::cmp(<T!&&>(a), b.(0));
+		# THIS <>(rhs: T!&&) S1 := Key <> <T!&&>(rhs);
 	}
 
-	PRIVATE Set: [{K!,V!}, TupleCmp]VecSet;
+	PRIVATE Set: [Pair]VecSet;
 
-	TYPE Location := [{K!,V!}, TupleCmp]VecSet::Location;
+	TYPE Location := [Pair]VecSet::Location;
 
 	[T: TYPE]
-	#? find_loc(k: T! #?&) {V! #?*, Location}
+	#? find_loc(k: T! #?&) {V! #?-OptRef, Location}
 	{
 		x ::= Set.find_loc(k);
 		IF(x.(0))
-			= (&x.(0)->(1), x.(1));
+			= (&x.(0)->Value, x.(1));
 		ELSE
 			= (NULL, x.(1));
 	}
 
 	[T:TYPE]
-	find_loc2(k: T! #&, loc: Location \) V! *
+	#? find_loc2(k: T! #?&, loc: Location \) V! #?-OptRef
 	{
 		IF(it ::= Set.find_loc2(k, loc))
-			= &it->(1);
+			= &it->Value;
 		ELSE
 			= NULL;
 	}
 
 	[T:TYPE]
-	#? find_loc2(k: T! #?&, loc: Location \) V! #?*
-	{
-		IF(it ::= Set.find_loc2(k, loc))
-			= &it->(1);
-		ELSE
-			= NULL;
-	}
-
-	[T:TYPE]
-	#? find(k: T! #&) V! #?*
+	#? find(k: T! #&) V! #?-OptRef
 	{
 		dummy: Location;
 		= find_loc2(k, &dummy);
@@ -88,9 +86,4 @@ INCLUDE 'std/set'
 	# ## THIS ? INLINE := ##Set;
 }
 
-::std [K:TYPE; V:TYPE] TYPE NatMap := [K!; V!; detail::NaturalCmp]Map;
-::std [K:TYPE; V:TYPE] TYPE AutoMap := [K!; V!; K::Cmp+]Map;
-::std [K:TYPE; V:TYPE; Cmp:TYPE] TYPE DynMap := [K!; V!-std::Dyn; Cmp]Map;
-::std [K:TYPE; V:TYPE] TYPE NatDynMap := [K!; V!; detail::NaturalCmp]DynMap;
-::std [K:TYPE; V:TYPE] TYPE AutoDynMap := [K!; V!; K::Cmp+]DynMap;
-::std [K:TYPE; V:TYPE] TYPE AutoPtrDynMap := [K!; V!; detail::AutoPtrCmp]DynMap;
+::std [K:TYPE; V:TYPE] TYPE DynMap := [K!; V!-std::Dyn]Map;

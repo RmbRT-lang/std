@@ -34,10 +34,7 @@ INCLUDE 'std/str'
 		Content := NULL;
 	}
 
-	Cmp
-	{
-		STATIC cmp(lhs: C!-String#&, rhs: C!-String#&) SM := lhs!.cmp(rhs!);
-	}
+	# THIS <> (rhs: THIS#&) S1 := THIS! <> rhs!;
 
 	# data() ? INLINE := Content.Data;
 	# ##THIS ? INLINE := ##Content;

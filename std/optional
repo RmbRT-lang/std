@@ -53,4 +53,13 @@ PUBLIC:
 		ASSERT(Exists);
 		= *Obj;
 	}
+
+	
+	# THIS<>(rhs: THIS #&) S1
+	{
+		IF(!THIS) = rhs ?? -1 : 0;
+		IF(!rhs) = 1;
+
+		= *THIS <> *rhs;
+	}
 }

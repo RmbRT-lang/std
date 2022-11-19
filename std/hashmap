@@ -5,9 +5,9 @@ INCLUDE 'std/hash'
 
 ::std [K:TYPE; V:TYPE] HashMap
 {
-	PRIVATE Map: std::[Hash, V, Hash]Map;
+	PRIVATE Map: std::[Hash, V]Map;
 
-	TYPE Location := std::[Hash, V, Hash]Map::Location;
+	TYPE Location := std::[Hash, V]Map::Location;
 
 	#? find(k: K! #&) V! #?* INLINE := find_h(hash(k));
 	#? find_loc(k: K! #&) {V! #?*, Location} INLINE := find_loc_h(hash(k));

@@ -19,10 +19,10 @@ INCLUDE "../std/string"
 
 	TEST "str::cmp"
 	{
-		ASSERT(str::view("a").cmp("b") < 0);
-		ASSERT(str::view("a").cmp("a") == 0);
-		ASSERT(str::view("aa").cmp("a") > 0);
-		ASSERT(str::view("").cmp("a") < 0);
+		ASSERT((str::view("a") <> "b") < 0);
+		ASSERT((str::view("a") <> "a") == 0);
+		ASSERT((str::view("aa") <> "a") > 0);
+		ASSERT((str::view("") <> "a") < 0);
 	}
 
 	TEST "str::starts_with"

@@ -13,20 +13,15 @@ INCLUDE 'std/heap'
 		:buf{str: C! *, len: UM} -> (str, len);
 		:ch{ch: C! &} -> (&ch, 1);
 
-		Cmp
-		{
-			STATIC cmp(lhs: C!-View#&, rhs: C!-View#&) SM := lhs.cmp(rhs);
-		}
-
-		# cmp(rhs: [C!]View #&) SM
+		# THIS <> (rhs: [C!]View #&) S1
 		{
 			minSz #::= ##THIS > ##rhs ?? ##rhs : ##THIS;
 
 			FOR(i:UM := 0; i < minSz; i++)
-				IF(THIS[:ok(i)] != rhs[:ok(i)])
-					= THIS[:ok(i)] - rhs[:ok(i)];
+				IF(s ::= THIS[:ok(i)] <> rhs[:ok(i)])
+					= s;
 
-			= ##THIS - ##rhs;
+			= ##THIS <> ##rhs;
 		}
 
 		# starts_with(find: [C!#]View #&) BOOL

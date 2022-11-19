@@ -1,7 +1,7 @@
 INCLUDE "../std/map"
 INCLUDE "set.rl"
 
-TYPE IntBoolMap := std::[INT, BOOL]NatMap;
+TYPE IntBoolMap := std::[INT, BOOL]Map;
 
 ::std
 {
@@ -63,11 +63,11 @@ TYPE IntBoolMap := std::[INT, BOOL]NatMap;
 		map.insert(3, TRUE);
 
 		i ::= map.start();
-		ASSERT(i && i.get() == (0, FALSE));
+		ASSERT(i && |i.get() == (0, FALSE));
 		i.next();
-		ASSERT(i && i.get() == (1, TRUE));
+		ASSERT(i && |i.get() == (1, TRUE));
 		i.next();
-		ASSERT(i && i.get() == (3, TRUE));
+		ASSERT(i && |i.get() == (3, TRUE));
 		i.next();
 		ASSERT(!i);
 	}
