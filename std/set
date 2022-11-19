@@ -44,14 +44,14 @@ INCLUDE 'std/dyn'
 	# has (v: V! #?&) BOOL INLINE := find(v);
 
 	[V: TYPE]
-	#? find(v: V! #?&) T! #? *
+	#? find(v: V! #?&) T! #? -OptRef
 	{
 		dummy: Location;
 		= find_loc2(v, &dummy);
 	}
 
 	[V: TYPE]
-	#? find_loc(v: V! #?&) { T! #?*, Location }
+	#? find_loc(v: V! #?&) { T! #?-OptRef, Location }
 	{
 		loc: Location;
 		ret ::= find_loc2(v, &loc);

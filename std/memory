@@ -37,4 +37,29 @@ INCLUDE 'std/buffer'
 		WHILE(size--)
 			*d++ := *s++;
 	}
+
+	/// Simple non-null reference type with value-comparison behaviour.
+	[T: TYPE] Ref
+	{
+		V: T! \;
+		{...};
+
+		# <T! &> INLINE := *V;
+		# *THIS T!& := *V;
+		# THIS! T!& := *V;
+		# THIS() T!& := *V;
+
+		# THIS <>(rhs: THIS) S1 := *V <> *rhs;
+	}
+
+	[T: TYPE] OptRef
+	{
+		V: T! *;
+		{...};
+
+		# <T! *> INLINE := V;
+		# *THIS T!& := *V;
+		# THIS! T!& := *V;
+		# THIS() T!& := *V;
+	}
 }
