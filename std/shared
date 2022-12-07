@@ -22,27 +22,34 @@ INCLUDE 'std/dyn'
 			Container := NULL;
 	}
 
+	:share{v: T!-std::Dyn}:
+		Ptr := &*v,
+		Container := heap::[T-detail::SplitAlloc]new(:share(&&v));
+
+	[A...:TYPE]
+	:make{a: A!&&...} := :share(:make(<A!&&>(a)...));
+
 	[A...:TYPE]
 	:a{a: A!&&...}:
 		Container(heap::[T-detail::CompactAlloc]new(<A!&&>(a)...)),
 		Ptr(NOINIT)
 	{
-		Ptr := &<T-detail::CompactAlloc *>(Container)->Instance;
+		Ptr := &<T-detail::CompactAlloc *>(Container)->Value;
 	}
 
 	[U:TYPE] :dup{rhs: U!&&}:
 		Container(heap::[U-detail::CompactAlloc]new(<U!&&>(rhs))),
 		Ptr(NOINIT)
 	{
-		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(Container)->Instance);
+		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(Container)->Value);
 	}
 
 	[U:TYPE] {rhs: U!-Shared} INLINE:
 		Container(rhs.container()), Ptr(NOINIT)
 	{
-		IF(rhs!)
+		IF(rhs.ptr())
 		{
-			Ptr := <<T! \>>(rhs!);
+			Ptr := <<T! \>>(rhs.ptr());
 			rhs.{};
 		}
 		ELSE
@@ -51,10 +58,11 @@ INCLUDE 'std/dyn'
 	}
 
 	[U:TYPE]:try {rhs: U!-Shared} INLINE:
-		Container(rhs.container()), Ptr(NOINIT)
+		Container := rhs.container(),
+		Ptr (NOINIT)
 	{
-		IF(rhs!)
-			IF(Ptr := <<T! *>>(rhs!))
+		IF(rhs)
+			IF(Ptr := <<T! *>>(rhs))
 				rhs.{};
 			ELSE
 				Container := NULL;
@@ -65,9 +73,10 @@ INCLUDE 'std/dyn'
 
 	DESTRUCTOR { IF(Container) Container->deref(); }
 
+	# ptr() T! * INLINE := Ptr;
 	# <T! *> INLINE := Ptr;
-	# THIS! T! * INLINE := Ptr;
-	# *THIS T! & INLINE := *Ptr;
+	# THIS! T! & INLINE := *THIS;
+	# *THIS T! & INLINE { ASSERT(Ptr); = *Ptr; }
 	# container() detail::SharedAlloc * := Container;
 }
 
@@ -98,7 +107,6 @@ INCLUDE 'std/dyn'
 		}
 		ELSE
 			Ptr := NULL;
-
 	}
 
 	[U:TYPE]:try {rhs: U!-Shared} INLINE:
@@ -111,7 +119,6 @@ INCLUDE 'std/dyn'
 				Container := NULL;
 		ELSE
 			Ptr := NULL;
-
 	}
 
 	DESTRUCTOR { IF(Container) Container->deref_weak(); }
@@ -119,9 +126,9 @@ INCLUDE 'std/dyn'
 	# ptr() T! * INLINE := Container && Container->Refs ?? Ptr : NULL;
 
 	# <T! *> INLINE := ptr();
-	# THIS! T! * INLINE := ptr();
+	# THIS! T! & INLINE := *THIS;
 	# *THIS T! & INLINE { IF(Container && Container->Refs) = Ptr; ELSE THROW NULL; }
-	# container() detail::SharedAlloc * := Container;	
+	# container() detail::SharedAlloc * := Container;
 }
 
 ::std::detail SharedAlloc VIRTUAL
@@ -137,7 +144,7 @@ INCLUDE 'std/dyn'
 	/// Destroys and if possible deallocates the payload.
 	PRIVATE ABSTRACT kill_payload() VOID;
 
-	deref() VOID 
+	deref() VOID
 	{
 		ASSERT(Refs);
 		IF(!--Refs)
@@ -150,6 +157,7 @@ INCLUDE 'std/dyn'
 
 	deref_weak() VOID
 	{
+		ASSERT(Weaks);
 		IF(!--Weaks && !Refs)
 			heap::delete(&THIS);
 	}
@@ -157,16 +165,17 @@ INCLUDE 'std/dyn'
 
 ::std::detail [T:TYPE] CompactAlloc -> SharedAlloc
 {
-	Instance: T;
+	Value: T;
 
-	[A...:TYPE]{a: A!&&...}: Instance(<A!&&>(a)...);
+	[A...:TYPE]{a: A!&&...}: Value(<A!&&>(a)...);
 
-	PRIVATE FINAL kill_payload() VOID { Instance.~; Instance.{BARE}; }
+	PRIVATE FINAL kill_payload() VOID { Value := BARE; }
 }
 
 ::std::detail [T:TYPE] SplitAlloc -> SharedAlloc, PRIVATE [T]Dyn
 {
-	:gc{ptr: T! *}-> (), (:gc(ptr));
+	:gc{ptr: T! \}-> (), (:gc(ptr));
+	:share{v: T!-std::Dyn} -> (), (&&v);
 
-	PRIVATE FINAL kill_payload() VOID { <[T]Dyn&>(THIS) := NULL; }
+	PRIVATE FINAL kill_payload() VOID { <[T]Dyn &>(THIS) := BARE; }
 }

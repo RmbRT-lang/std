@@ -53,7 +53,7 @@ INCLUDE 'std/heap'
 	:dup{v: V!&&} := :a.V!(<V!&&>(v));
 
 	[V:TYPE] {m: V!-DynOpt! &&}:
-		Ptr := <T *>(&*m)
+		Ptr := <T *>(m.ptr())
 	{
 		m.{};
 	}
@@ -63,7 +63,7 @@ INCLUDE 'std/heap'
 		IF(m)
 		{
 			// Try to convert into our pointer type, this might fail.
-			Ptr := <<T \>>(&*m);
+			Ptr := <<T \>>(m.ptr());
 			m.{};
 		}
 		ELSE
@@ -76,7 +76,8 @@ INCLUDE 'std/heap'
 	# THIS! T! & INLINE := *THIS;
 	# THIS() T! & INLINE := *THIS;
 
-	# ok() T! & := *Ptr;
+	# ok() T! & INLINE := *Ptr;
+	# ptr() T! * INLINE := Ptr;
 
 	release() T! *
 	{

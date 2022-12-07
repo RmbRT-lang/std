@@ -34,8 +34,8 @@ Derived2 -> BaseClass { }
 {
 	s: Derived1-Shared := :a();
 	s2: BaseClass-Shared := s;
-	ASSERT(s! == s2!);
+	ASSERT(s.ptr() == s2.ptr());
 
 	s3: Derived2-Shared := :try(s2);
-	ASSERT(s3! == NULL);
+	ASSERT(s3.ptr() == NULL);
 }
