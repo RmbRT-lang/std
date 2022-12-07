@@ -8,5 +8,6 @@
 		d: Derived;
 		b: Base & := d;
 		dr: Derived & := >>b;
+		dr2: Derived && := >>&&b;
 	}
 }
