@@ -3,8 +3,8 @@
 ::std [T: TYPE; V: TYPE]
 Iterator
 {
-	PRIVATE Elems: V! \;
-	PRIVATE Current: UM;
+	PROTECTED Elems: V! \;
+	PROTECTED Current: UM;
 
 	{elems: V! \, start: UM}:
 		Elems(elems),
@@ -43,35 +43,25 @@ Iterator
 }
 
 ::std [T: TYPE; V: TYPE]
-OkIterator
+OkIterator -> [T!; V!]Iterator
 {
-	PRIVATE Elems: V! \;
-	PRIVATE Current: UM;
-
-	{elems: V! \, start: UM}:
-		Elems(elems),
-		Current(start);
-
-	# <[T!; V!]Iterator> INLINE := (Elems, Current);
-
-	# get() T!& := (*Elems)[Current];
-	# THIS! T!& := (*Elems)[Current];
+	{elems: V! \, start: UM} -> (elems, start);
 
 	next() VOID INLINE
-	{ ++Current; }
+	{ ++THIS.Current; }
 
 	++THIS THIS& INLINE { next(); = THIS; }
 	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
 	--THIS THIS& INLINE { prev(); = THIS; }
 	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
 
+	# get() T!& INLINE := (*THIS.Elems)[:ok(THIS.Current)];
+	# THIS! T!& INLINE := (*THIS.Elems)[:ok(THIS.Current)];
 	# *THIS T!& INLINE := get();
 
 	# THIS+(offset: UM) THIS INLINE
-		:= (Elems, Current + offset);
+		:= (THIS.Elems, THIS.Current + offset);
 
 	prev() VOID INLINE
-	{ --Current; }
-
-	# <BOOL> INLINE := Current < ##*Elems;
+	{ --THIS.Current; }
 }
