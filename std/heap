@@ -70,7 +70,7 @@ INCLUDE 'std/buffer'
 
 	[T: TYPE] delete(v: [T!]Buffer) VOID INLINE
 	{
-		range::destroy(v);
+		range::destroy_buf(v);
 		heap::free(v);
 	}
 

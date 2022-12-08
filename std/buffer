@@ -51,5 +51,5 @@ INCLUDE 'std/index'
 	# empty() BOOL INLINE := !Size;
 }
 
-::std::range [T: TYPE] destroy(v: [T!]Buffer) VOID INLINE
+::std::range [T: TYPE] destroy_buf(v: [T!]Buffer) VOID INLINE
 	:= destroy(v.Data, v.Size);
