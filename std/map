@@ -53,14 +53,23 @@ INCLUDE 'std/set'
 		loc: Location;
 		IF(find_loc2(k, &loc))
 			= FALSE;
-		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
+		Set.emplace_at(loc, <Key!&&>(k), <Value!&&>(v));
 		= TRUE;
+	}
+
+	[Key: TYPE; Val...: TYPE]
+	ensure(k: Key!, v: Val!&&...) V! &
+	{
+		loc: Location;
+		IF(exists ::= find_loc2(k, &loc))
+			= exists!;
+		= Set.emplace_at(loc, <Key!&&>(k), (<Val!&&>(v)...)).Value;
 	}
 
 	[Key: TYPE; Value: TYPE]
 	insert_at(loc: Location, k: Key!&&, v: Value!&&) VOID
 	{
-		Set.emplace_at(loc, (<Key!&&>(k), <Value!&&>(v)));
+		Set.emplace_at(loc, <Key!&&>(k), <Value!&&>(v));
 	}
 
 	[T:TYPE]
