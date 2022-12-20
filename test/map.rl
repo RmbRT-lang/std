@@ -30,6 +30,19 @@ TYPE IntBoolMap := std::[INT, BOOL]Map;
 		ASSERT(*i7 == FALSE);
 	}
 
+	TrackCtor{
+		Magic: UINT;
+		called() BOOL := Magic == 0xc0c0a7a;
+		{...};
+		{}: Magic := 0xc0c0a7a;
+	}
+	TEST "Map::ensure"
+	{
+		map: [INT, TrackCtor]Map;
+		ASSERT(map.ensure(5).called());
+		ASSERT(!map.ensure(231, 102).called());
+	}
+
 	TEST "VecSet::remove"
 	{
 		map: IntBoolMap;
