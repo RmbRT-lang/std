@@ -4,7 +4,7 @@ INCLUDE 'std/nodestruct'
 {
 	Type
 	{
-		Dtor: BOOL;
+		STATIC Dtor: BOOL;
 		DESTRUCTOR { Dtor := TRUE; }
 	}
 

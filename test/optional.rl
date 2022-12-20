@@ -61,7 +61,7 @@ INCLUDE 'std/optional'
 
 	NeverDestruct { STATIC Dtor: BOOL := FALSE; DESTRUCTOR { Dtor := TRUE; } }
 
-	TrackedDtor { Dtor: BOOL; DESTRUCTOR { Dtor := TRUE; } }
+	TrackedDtor { STATIC Dtor: BOOL; DESTRUCTOR { Dtor := TRUE; } }
 
 	TEST "destructor"
 	{

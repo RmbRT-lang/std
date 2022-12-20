@@ -4,11 +4,11 @@
 	{
 		MovedOut: BOOL;
 		MovedIn: BOOL;
-		Destroyed: BOOL;
+		STATIC Destroyed: BOOL;
 
 		{};
 
-		{&&m}: MovedIn(TRUE), Destroyed(NOINIT)
+		{&&m}: MovedIn(TRUE)
 		{ m.MovedOut := TRUE; }
 
 		DESTRUCTOR { Destroyed := TRUE; }
