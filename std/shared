@@ -59,7 +59,6 @@ INCLUDE 'std/dyn'
 		}
 	}
 
-	// ok
 	[U:TYPE] :try{rhs: U!-Shared} INLINE
 	{
 		IF(rhs)
@@ -72,11 +71,22 @@ INCLUDE 'std/dyn'
 
 	DESTRUCTOR { IF(Container) Container->deref(); }
 
+	[Args...: TYPE]
+	ensure(args: Args!&&...) T! & INLINE
+	{
+		IF(!THIS)
+			THIS.{:a(<Args!&&>(args)...)};
+		= *Ptr;
+	}
+
 	# ptr() T! * INLINE := Ptr;
 	# <T! *> INLINE := Ptr;
 	# THIS! T! & INLINE := *THIS;
 	# *THIS T! & INLINE { ASSERT(Ptr); = *Ptr; }
+	# THIS() T! & INLINE := *THIS;
 	# container() detail::SharedAlloc * := Container;
+
+	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
 }
 
 ::std [T:TYPE] Weak
@@ -126,6 +136,8 @@ INCLUDE 'std/dyn'
 	# THIS! T! & INLINE := *THIS;
 	# *THIS T! & INLINE { p ::= ptr(); ASSERT(p); = p; }
 	# container() detail::SharedAlloc * := Container;
+
+	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
 }
 
 ::std::detail SharedAlloc VIRTUAL
