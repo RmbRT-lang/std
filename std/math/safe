@@ -35,6 +35,13 @@ INCLUDE 'std/io/streamutil'
 		= ret;
 	}
 
+	[T: TYPE] neg(lhs: T! #&) T INLINE
+	{
+		IF(-lhs == lhs)
+			THROW <Overflow>();
+		= -lhs;
+	}
+
 	[T: TYPE] mulc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
 	{
 		carry := rhs && <UM>(lhs) > <UM>(~<T>(0)) / <UM>(rhs);
