@@ -110,7 +110,7 @@ PUBLIC:
 			THIS += it!;
 	}
 
-	(/
+	(//
 		Reserve the requested amount of space, and leave an uninitialised hole
 		in the contents at the requested location. If the hole is within the
 		contents, increases the container size to accomodate the hole.
@@ -120,18 +120,18 @@ PUBLIC:
 		ASSERT(at <= ##Content);
 		ASSERT(at <= cap);
 
-		// Make sure there is space for the hole.
+		/// Make sure there is space for the hole.
 		IF(at < ##Content && cap == ##Content)
 			++cap;
 
-		// Is the container already large enough?
+		/// Is the container already large enough?
 		IF(Capacity >= cap)
-			// Grow hole if required.
+			/// Grow hole if required.
 			IF(at < ##Content)
 			{
 				Content.Data[##Content].{&&Content.back()};
 				failed ::= TRUE;
-				// Shift contents right.
+				/// Shift contents right.
 				TRY
 				{
 					range::move_assign_r(
@@ -145,14 +145,14 @@ PUBLIC:
 					Content.Data[##Content].~;
 				}
 
-				Content[at].~; // Destroy hole.
-				++Content.Size; // Adjust size.
+				Content[at].~; /// Destroy hole.
+				++Content.Size; /// Adjust size.
 
 				= TRUE;
 			} ELSE
 				= FALSE;
 
-		// Reserve enough space.
+		/// Reserve enough space.
 		hasHole ::= at != ##Content;
 		new ::= heap::[T]alloc_array(cap).cut(##Content + hasHole);
 
@@ -186,7 +186,7 @@ PUBLIC:
 		Content.Size := size;
 	}
 
-	(/
+	(//
 		Reserve space for at least one more entry than is currently held.
 		Increases ##Content. Leaves an uninitialised hole at the requested
 		location.
@@ -201,7 +201,7 @@ PUBLIC:
 		ELSE
 			cap := (Capacity+1 + (Capacity >> 4)) | 3;
 
-		// Increase content if appending.
+		/// Increase content if appending.
 		Content.Size += !reserve_with_hole_at(cap, at);
 	}
 
