@@ -5,22 +5,22 @@ INCLUDE 'std/math/safe'
 
 ::std::io::scan
 {
-	[T:TYPE] dec(s: [CHAR#]Buffer #&, v: T! &) BOOL
+	[T:TYPE] dec(s: [CHAR#]Buffer #&, v: T! &) UINT
 	{
 		v := 0;
 		FOR(i ::= 0; i < s.Size; i++)
 		{
 			c ::= s[i];
 			IF(c < '0' || c > '9')
-				= i != 0;
+				= i;
 
 			v := math::safe::mul(<T>(10), v) + <T>(c-'0');
 		}
 
-		= TRUE;
+		= s.Size;
 	}
 
-	[T:TYPE] hex(s: [CHAR#]Buffer, v: T! &) BOOL
+	[T:TYPE] hex(s: [CHAR#]Buffer, v: T! &) UINT
 	{
 		v := 0;
 
@@ -33,7 +33,7 @@ INCLUDE 'std/math/safe'
 		IF(b)
 			view := view.drop_start(2)++;
 
-		FOR(i ::= 0; i < s.Size; i++)
+		FOR(i ::= 0; i < ##view; i++)
 		{
 			d: T;
 			c ::= s[i];
@@ -47,7 +47,7 @@ INCLUDE 'std/math/safe'
 			{
 				IF(sign)
 					v := math::safe::neg(v);
-				= b || i != 0;
+				= i ?? (b ?? 2:0) + (sign ??1:0) + i : 0;
 			}
 
 			v := math::safe::mul(<T>(16), v) + <T>(d);
@@ -56,6 +56,6 @@ INCLUDE 'std/math/safe'
 		IF(sign)
 			v := math::safe::neg(v);
 
-		= TRUE;
+		= ##s;
 	}
 }
