@@ -118,6 +118,15 @@ INCLUDE 'std/dyn'
 		= FALSE;
 	}
 
+	ensure(v: T!) T! &
+	{
+		loc: Location;
+		IF(found ::= find_loc2(v, &loc))
+			= *found;
+		ELSE
+			= emplace_at(loc, &&v);
+	}
+
 	THIS-=(v: T! #&) BOOL INLINE := THIS.remove(v);
 
 	[V: TYPE]
@@ -142,6 +151,8 @@ INCLUDE 'std/dyn'
 		Elems.emplace_at(position, <A!&&>(a)...);
 		= Elems[position];
 	}
+
+	# THIS <> (rhs: THIS #&) S1 := Elems <> rhs.Elems;
 }
 
 ::std [T:TYPE] TYPE DynVecSet := [T!-std::Dyn+]VecSet;
