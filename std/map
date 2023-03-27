@@ -21,6 +21,9 @@ INCLUDE 'std/set'
 
 	TYPE Location := [Pair]VecSet::Location;
 
+	{};
+	:reserve{cap: UM}: Set := :reserve(cap);
+
 	[T: TYPE]
 	#? find_loc(k: T! #?&) {V! #?-OptRef, Location}
 	{
@@ -62,7 +65,7 @@ INCLUDE 'std/set'
 	{
 		loc: Location;
 		IF(exists ::= find_loc2(k, &loc))
-			= exists!;
+			= *exists;
 		= Set.emplace_at(loc, <Key!&&>(k), (<Val!&&>(v)...)).Value;
 	}
 
@@ -91,6 +94,8 @@ INCLUDE 'std/set'
 	#? end() ? INLINE := Set.end();
 	# empty() BOOL INLINE := Set.empty();
 	#? at_loc(l: Location) {K!,V!}#? * INLINE := Set.at_loc(l);
+
+	# THIS <> (rhs: THIS #&) S1 := Set <> rhs.Set;
 
 	# ## THIS ? INLINE := ##Set;
 }
