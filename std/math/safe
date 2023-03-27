@@ -49,38 +49,4 @@ INCLUDE 'std/io/streamutil'
 			THROW <Overflow>();
 		= ret;
 	}
-
-	[T: TYPE] neg(x: T! #&) T INLINE
-	{
-		IF(<T>(<UM>(x) << 1) == 0)
-			THROW <Overflow>();
-		= -x;
-	}
-
-	[T:TYPE]
-	Int
-	{
-		PRIVATE V: T;
-
-		{};
-		{v: T #&}: V(v);
-		{v: T &&}: V(v);
-
-		# -THIS THIS := neg(V);
-		# +THIS THIS #& := THIS;
-
-		# THIS+(rhs: T#&) THIS := add(V, rhs);
-		# THIS-(rhs: T#&) THIS := sub(V, rhs);
-		# THIS*(rhs: T#&) THIS := mul(V, rhs);
-		# THIS/(rhs: T#&) THIS := div(V, rhs);
-		# THIS%(rhs: T#&) THIS := mod(V, rhs);
-
-		THIS+=(rhs: T#&) THIS& := THIS := THIS + rhs;
-		THIS-=(rhs: T#&) THIS& := THIS := THIS - rhs;
-		THIS*=(rhs: T#&) THIS& := THIS := THIS * rhs;
-		THIS/=(rhs: T#&) THIS& := THIS := THIS / rhs;
-		THIS%=(rhs: T#&) THIS& := THIS := THIS % rhs;
-
-		# <T #&> INLINE := V;
-	}
 }

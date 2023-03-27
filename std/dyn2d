@@ -22,7 +22,7 @@ PUBLIC:
 	:gc{data: T *, w: UM, h: UM}: Content(data, w, h);
 
 	:alloc{w: UM, h: UM}:
-		Content(std::heap::[T]alloc(w * h).Data, w, h);
+		Content(std::heap::[T]alloc_array(w * h).Data, w, h);
 
 	:a{w: UM, h: UM} (:alloc(w, h))
 	{

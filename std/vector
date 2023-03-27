@@ -17,20 +17,20 @@ PUBLIC:
 	{BARE} ();
 
 	{size: UM}:
-		Content(heap::[T]alloc(size)),
+		Content(heap::[T]alloc_array(size)),
 		Capacity(size)
 	{
 		range::default_construct(Content.Data, ##Content);
 	}
 	:reserve{capacity: UM}:
-		Content(heap::[T]alloc(capacity)),
+		Content(heap::[T]alloc_array(capacity)),
 		Capacity(capacity)
 	{
 		Content.Size := 0;
 	}
 
 	{#&copy}:
-		Content(heap::clone(copy.Content)),
+		Content(heap::clone_buf(copy.Content)),
 		Capacity(##copy);
 	{&&move}:
 		Content(move.Content),
@@ -56,7 +56,7 @@ PUBLIC:
 	DESTRUCTOR
 	{
 		IF(Content)
-			heap::delete(Content);
+			heap::delete_buf(Content);
 	}
 
 	erase(at: UM) VOID
@@ -66,6 +66,16 @@ PUBLIC:
 		THIS![at].~;
 		--Content.Size;
 		range::move_construct(&THIS!.Data[at], &THIS!.Data[at+1], ##THIS-at);
+	}
+
+	pop_back(dst: T *) VOID
+	{
+		ASSERT(!empty());
+
+		IF(dst)
+			*dst := &&THIS![:ok(##THIS-1)];
+		THIS![:ok(##THIS-1)].~;
+		--Content.Size;
 	}
 
 	append_move(rhs: T!-std::Buffer) VOID
@@ -144,13 +154,13 @@ PUBLIC:
 
 		// Reserve enough space.
 		hasHole ::= at != ##Content;
-		new ::= heap::[T]alloc(cap).cut(##Content + hasHole);
+		new ::= heap::[T]alloc_array(cap).cut(##Content + hasHole);
 
 		range::move_construct(new.Data, Content.Data, at);
 		range::move_construct(new.Data+at+1, Content.Data+at, ##Content-at);
 
 		IF(Content.Data)
-			heap::delete(Content);
+			heap::delete_buf(Content);
 		Content := new;
 		Capacity := cap;
 		= hasHole;
@@ -164,13 +174,15 @@ PUBLIC:
 
 	resize(size: UM) VOID
 	{
-		reserve(size);
-		IF(##Content > size)
-			range::destroy(Content.drop_start(size));
-		ELSE
+		IF(size >= ##Content)
+		{
+			reserve(size);
 			range::default_construct(
 				&THIS[:ok(##THIS)],
 				size - ##Content);
+		}
+		ELSE
+			range::destroy_buf(Content.drop_start(size));
 		Content.Size := size;
 	}
 

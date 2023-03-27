@@ -33,7 +33,7 @@ Derived2 -> BaseClass { }
 ::std TEST "shared cast"
 {
 	s: Derived1-Shared := :a();
-	s2: BaseClass-Shared := s;
+	s2: BaseClass-Shared := :<>(s);
 	ASSERT(s.ptr() == s2.ptr());
 
 	s3: Derived2-Shared := :try(s2);

@@ -8,6 +8,7 @@ INCLUDE 'std/heap'
 	[C: TYPE]
 	View -> std::[C!]Buffer
 	{
+		{};
 		{str: C! *} -> (str, std::str::len(str));
 		:view{str: C! *} -> (str, std::str::len(str));
 		:buf{str: C! *, len: UM} -> (str, len);

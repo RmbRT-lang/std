@@ -94,7 +94,7 @@ INCLUDE 'std/heap'
 		= *Ptr;
 	}
 
-	# THIS<>(rhs: THIS #&) S1
+	# THIS<>(rhs: T! # \) S1
 	{
 		IF(!THIS) = rhs ?? -1 : 0;
 		IF(!rhs) = 1;
@@ -149,5 +149,5 @@ INCLUDE 'std/heap'
 	/// Detect invalid state after moving. If invalid, any operation besides checking validity is forbidden.
 	# valid() BOOL INLINE := THIS;
 
-	# THIS <> (rhs: THIS #&) S1 := THIS() <> rhs();
+	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
 }

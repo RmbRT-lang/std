@@ -19,7 +19,7 @@ INCLUDE 'std/buffer'
 		= 0;
 	}
 
-	::mem [T: TYPE] cmp(
+	::mem [T: TYPE] cmp_buf(
 		lhs: [T!]Buffer #&,
 		rhs: [T!]Buffer #&) SM
 	{
@@ -57,6 +57,7 @@ INCLUDE 'std/buffer'
 		V: T! *;
 		{...};
 
+		# ptr() T! * := V;
 		# <T! *> INLINE := V;
 		# *THIS T!& := *V;
 		# THIS! T!& := *V;

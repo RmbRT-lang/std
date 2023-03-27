@@ -13,7 +13,7 @@
 			p ::= <CHAR#\>(data);
 			WHILE(bytes > 0)
 			{
-				written ::= write_some(p, bytes);
+				written ::= THIS.write_some(p, bytes);
 				bytes -= written;
 				p += written;
 			}
@@ -51,7 +51,7 @@
 			p ::= <U1 \>(o.Data);
 			WHILE(o.Bytes)
 			{
-				n ::= read_some(p, o.Bytes);
+				n ::= THIS.read_some(p, o.Bytes);
 				p += n;
 				o.Bytes -= n;
 			}
@@ -60,7 +60,7 @@
 		read_byte() CHAR
 		{
 			c: CHAR;
-			read_some(&c, 1);
+			THIS.read_some(&c, 1);
 			= c;
 		}
 	}

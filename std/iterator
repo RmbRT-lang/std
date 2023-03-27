@@ -39,6 +39,8 @@ Iterator
 		--Current;
 	}
 
+	# i() UM INLINE := Current;
+
 	# <BOOL> INLINE := Current < ##*Elems;
 }
 

@@ -71,4 +71,14 @@ INCLUDE "../std/memory"
 		ASSERT(cattle);
 		ASSERT(TYPE(*cattle) == TYPE TYPE(Cow));
 	}
+
+	TEST "dynamic <> operator"
+	{
+		a: INT- std::Dyn := 5;
+		b: INT := 6;
+		c: INT := 5;
+	
+		ASSERT((a <> &b) < 0);
+		ASSERT((a <> &c) == 0);
+	}
 }

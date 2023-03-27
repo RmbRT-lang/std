@@ -8,7 +8,7 @@ INCLUDE 'std/buffer'
 	[T: TYPE]
 	clone(data: T! #\, size: UM) [T]Buffer
 	{
-		tmp ::= [T]alloc(size);
+		tmp ::= [T]alloc_array(size);
 		range::copy_construct(tmp.Data, data, size);
 		= (tmp.Data, tmp.Size);
 	}
@@ -21,18 +21,18 @@ INCLUDE 'std/buffer'
 	}
 
 	[T: TYPE]
-	clone(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
+	clone_buf(data: [T!]Buffer#&) [T]Buffer := [T]clone(data.Data, data.Size);
 
 
-	alloc(bytes: UM) VOID* := detail::libc::malloc(bytes);
+	alloc_raw(bytes: UM) VOID* := detail::libc::malloc(bytes);
 	[T: TYPE] alloc() T \ INLINE
 	{
-		ptr ::= alloc(SIZEOF(T));
+		ptr ::= alloc_raw(SIZEOF(T));
 		ASSERT(ptr != NULL);
 		= <T \>(ptr);
 	}
 
-	[T: TYPE] alloc(count: UM) [T]Buffer
+	[T: TYPE] alloc_array(count: UM) [T]Buffer
 	{
 		b: [T]Buffer(<T \>(detail::libc::malloc(count * SIZEOF(T))), count);
 		ASSERT(!count || b.Data);
@@ -54,24 +54,24 @@ INCLUDE 'std/buffer'
 	}
 
 
-	calloc(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
+	calloc_raw(bytes: UM) VOID* := detail::libc::calloc(bytes, 1);
 	[T: TYPE] calloc() T *
 	{
-		v ::= <T \>(alloc(SIZEOF(T)));
+		v ::= <T \>(alloc_raw(SIZEOF(T)));
 		v->{};
 		= v;
 	}
-	[T: TYPE] calloc(count: UM) [T]Buffer
+	[T: TYPE] calloc_array(count: UM) [T]Buffer
 	{
 		v ::= [T]alloc(count);
 		range::default_construct(v, count);
 		= v;
 	}
 
-	[T: TYPE] delete(v: [T!]Buffer) VOID INLINE
+	[T: TYPE] delete_buf(v: [T!]Buffer) VOID INLINE
 	{
 		range::destroy_buf(v);
-		heap::free(v);
+		heap::free_buf(v);
 	}
 
 	[T: TYPE] delete(ptr: T! \) VOID INLINE
@@ -84,7 +84,7 @@ INCLUDE 'std/buffer'
 
 	free(mem: VOID#\) VOID := detail::libc::free(mem);
 
-	[T: TYPE] free(v: [T!]Buffer!#&) VOID INLINE
+	[T: TYPE] free_buf(v: [T!]Buffer!#&) VOID INLINE
 	{ detail::libc::free(v.Data); }
 
 	[T: TYPE] dup(value: T! &&) T \ INLINE := [T]new(<T!&&>(value));

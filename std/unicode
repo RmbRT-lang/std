@@ -22,10 +22,10 @@
 	point(in: CHAR #\) U4
 	{
 		size: UM;
-		= point(in, &size);
+		= point_and_len(in, &size);
 	}
 
-	point(
+	point_and_len(
 		in: CHAR #\,
 		size: UM \
 	) U4

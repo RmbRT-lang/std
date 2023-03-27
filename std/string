@@ -12,8 +12,8 @@ INCLUDE 'std/str'
 	{};
 	{BARE} ();
 
-	{data: str::[C#]View #&}: Content(heap::clone(data));
-	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc(##data+1))
+	{data: str::[C#]View #&}: Content(heap::clone_buf(data));
+	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc_array(##data+1))
 	{
 		range::copy_construct(Content.Data, data.Data, ##data);
 		Content.Data[--Content.Size] := 0;
@@ -21,7 +21,7 @@ INCLUDE 'std/str'
 	:transfer{data: [C!]Buffer #&}: Content(data);
 
 	{#&cpy}:
-		Content(heap::clone(cpy.Content));
+		Content(heap::clone_buf(cpy.Content));
 	{&&mv}:
 		Content(mv.Content)
 	{
@@ -30,7 +30,7 @@ INCLUDE 'std/str'
 	DESTRUCTOR
 	{
 		IF(Content)
-			heap::free(Content);
+			heap::free_buf(Content);
 		Content := NULL;
 	}
 
@@ -49,14 +49,14 @@ INCLUDE 'std/str'
 		sz: UM := ##THIS;
 		(sz += ##v)...;
 
-		new ::= heap::[C]alloc(sz);
+		new ::= heap::[C]alloc_array(sz);
 		start ::= new.Data;
 		start += range::copy_construct(start, Content.Data, ##Content);
 		(start += range::copy_construct(start, v.Data, ##v))...;
 		THIS := :transfer(new);
 	}
 
-	THIS+=(str: str::[C#]View #&) VOID INLINE
+	THIS+=(str: std::str::[C#]View #&) VOID INLINE
 	{ append(str); }
 }
 

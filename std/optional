@@ -16,6 +16,15 @@ PUBLIC:
 	[Args...:TYPE]
 	:a{args: Args!&&...}: Exists(TRUE), Obj(<Args!&&>(args)...);
 
+	[Args...:TYPE]
+	:if{cond: BOOL, args: Args!&&...}:
+		Exists := cond,
+		Obj(NOINIT)
+	{
+		IF(cond)
+			Obj.{<Args!&&>(args)...};
+	}
+
 	DESTRUCTOR { IF(Exists) Obj->~; }
 	
 	
@@ -53,6 +62,11 @@ PUBLIC:
 		ASSERT(Exists);
 		= *Obj;
 	}
+
+	[Ref: TYPE]
+	Ok { V: Ref! *; # <Ref! &> INLINE { ASSERT(V); = <Ref! &>(*V); } }
+
+	#? ok() [T! #?]Ok INLINE := Exists ?? &*Obj : NULL;
 
 	
 	# THIS<>(rhs: THIS #&) S1

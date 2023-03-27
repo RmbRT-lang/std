@@ -21,6 +21,6 @@ INCLUDE 'std/io/streamutil'
 	# OVERRIDE stream(
 		o: io::OStream &) VOID
 	{
-		write(o, "unimplemented: ", What);
+		io::write(o, "unimplemented: ", What);
 	}
 }
