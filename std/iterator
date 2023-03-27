@@ -33,13 +33,20 @@ Iterator
 		= (Elems, Current + offset);
 	}
 
+	# ##THIS UM INLINE := ##*Elems-Current;
+	# THIS() UM INLINE := Current;
+
+	THIS += (offset: UM) VOID
+	{
+		ASSERT(Current + offset <= ##*Elems);
+		Current += offset;
+	}
+
 	prev() VOID
 	{
 		ASSERT(~Current);
 		--Current;
 	}
-
-	# i() UM INLINE := Current;
 
 	# <BOOL> INLINE := Current < ##*Elems;
 }
@@ -49,11 +56,11 @@ OkIterator -> [T!; V!]Iterator
 {
 	{elems: V! \, start: UM} -> (elems, start);
 
-	next() VOID INLINE
-	{ ++THIS.Current; }
-
+	next() VOID INLINE { ++THIS.Current; }
 	++THIS THIS& INLINE { next(); = THIS; }
 	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
+
+	prev() VOID INLINE { --THIS.Current; }
 	--THIS THIS& INLINE { prev(); = THIS; }
 	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
 
@@ -64,6 +71,35 @@ OkIterator -> [T!; V!]Iterator
 	# THIS+(offset: UM) THIS INLINE
 		:= (THIS.Elems, THIS.Current + offset);
 
-	prev() VOID INLINE
-	{ --THIS.Current; }
+	THIS += (offset: UM) VOID INLINE
+		{ THIS.Current += offset; }
 }
+
+(/
+TEST "parallel for" {
+	v: INT-std::Vec(20);
+	FOR||(it ::= v.start().ok())
+		*it := 5;
+
+	FOR(it ::= v.start().ok(); it; it += SIMD)
+	||{ ##it } {
+		*(it + IOTA) := 5;
+	}
+}
+
+
+	(//
+	A := &v;
+	B := v.data;
+	C := v.length
+	D := 0;
+	IF D < C
+		JMP .end_for
+	D := v.length - 0;
+.for:
+	SIMD D
+	E :=  + I
+
+.end_for:
+	/)
+/)
