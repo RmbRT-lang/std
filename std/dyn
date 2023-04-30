@@ -13,6 +13,7 @@ INCLUDE 'std/heap'
 	{BARE} ();
 
 	{&&m}: Ptr(m.release());
+	{#&c}: Ptr := c.Ptr ?? heap::clone_virtual(c.Ptr) : NULL;
 
 	:gc{p: T! *}: Ptr(p);
 
@@ -115,7 +116,7 @@ INCLUDE 'std/heap'
 {
 	{} INLINE -> (:a());
 	{BARE} INLINE -> (NULL);
-	{#&cpy} INLINE -> (:a(cpy!));
+	{#&};
 	{&&};
 
 	[V:TYPE] :<>{m: V!-Dyn! &&} -> (:<>(&&m)) { ASSERT(valid()); }
