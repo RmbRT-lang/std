@@ -3,6 +3,7 @@
 INCLUDE 'std/range'
 INCLUDE 'std/dyn'
 INCLUDE 'std/shared'
+INCLUDE 'std/value'
 INCLUDE 'std/memory'
 INCLUDE 'std/math/limit'
 INCLUDE 'std/iterator'
@@ -279,3 +280,4 @@ PUBLIC:
 
 ::std [T:TYPE] TYPE DynVec := T! - Dyn - Vec;
 ::std [T:TYPE] TYPE SharedVec := T! - Shared - Vec;
+::std [T:TYPE] TYPE ValVec := T! - Val - Vec;
