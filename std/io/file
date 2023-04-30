@@ -35,6 +35,9 @@ INCLUDE 'std/tags'
 				THROW <FileNotFound>(<std::str::CV>(file));
 		}
 
+		:read{file: CHAR#\} := (file, "rb");
+		:write{file: CHAR#\} := (file, "wb");
+
 		print(str: CHAR #\) ? := libc::fputs(str, F);
 	}
 }
