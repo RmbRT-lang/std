@@ -3,7 +3,7 @@
 INCLUDE 'std/memory'
 INCLUDE 'std/dyn'
 
-::std [T: TYPE] Shared
+::std [T: TYPE] SharedOpt
 {
 	PRIVATE Ptr: T! *;
 	PRIVATE Container: detail::SharedAlloc *;
@@ -15,6 +15,21 @@ INCLUDE 'std/dyn'
 
 	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr)
 	{ IF(Container) Container->ref(); }
+
+	# is_unique() BOOL INLINE := !Ptr || Container->Refs == 1 && !Container->Weaks;
+
+	clone_if_shared() VOID
+	{
+		IF(is_unique()) RETURN;
+
+		offset ::= <UM>(Ptr) - <UM>(Container->obj_base_addr());
+
+		Container->Refs--;
+		Container := heap::clone_virtual(Container);
+		Container->Refs := 1;
+		Container->Weaks := 0;
+		Ptr := <T! *>(<UM>(Container->obj_base_addr()) + offset);
+	}
 
 	:gc{p: T! *}: Ptr(p), Container(NOINIT)
 	{
@@ -42,6 +57,8 @@ INCLUDE 'std/dyn'
 		Ptr := &<T-detail::CompactAlloc *>(Container)->Value;
 	}
 
+	[U:TYPE; A...:TYPE] :a.U!{a: A!&&...} := :share(:a.U!(<A!&&>(a)...));
+
 	[U:TYPE] :dup{rhs: U!&&}
 	{
 		alloc: [U-detail::CompactAlloc]Dyn := :a(<U!&&>(rhs));
@@ -49,7 +66,7 @@ INCLUDE 'std/dyn'
 		Container := alloc.release();
 	}
 
-	[U:TYPE] :<>{rhs: U!-Shared} INLINE
+	[U:TYPE] :<>{rhs: U!-SharedOpt} INLINE
 	{
 		IF(rhs.ptr())
 		{
@@ -59,7 +76,7 @@ INCLUDE 'std/dyn'
 		}
 	}
 
-	[U:TYPE] :try{rhs: U!-Shared} INLINE
+	[U:TYPE] :try{rhs: U!-SharedOpt} INLINE
 	{
 		IF(rhs)
 			IF(Ptr := <<T! *>>(rhs))
@@ -86,7 +103,18 @@ INCLUDE 'std/dyn'
 	# THIS() T! & INLINE := *THIS;
 	# container() detail::SharedAlloc * := Container;
 
-	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
+	# THIS<>(rhs: T! # \) S1 := ptr() == rhs ?? 0 : THIS() <> *rhs;
+}
+
+::std [T:TYPE] Shared -> [T!]SharedOpt
+{
+	[A...:TYPE] { a: A!&&... } -> (:a, <A!&&>(a)...);
+	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
+	[U:TYPE] :<>{ rhs: U!-Shared } -> (:<>, &&rhs);
+	:!{ rhs: T!-SharedOpt } -> (&&rhs) { ASSERT(THIS); }
+
+	{#&};
+	{&&};
 }
 
 ::std [T:TYPE] Weak
@@ -108,7 +136,7 @@ INCLUDE 'std/dyn'
 			Container->ref_weak();
 	}
 
-	[U:TYPE] :<>{rhs: U!-Shared #&} INLINE
+	[U:TYPE] :<>{rhs: U!-SharedOpt #&} INLINE
 	{
 		IF(rhs)
 		{
@@ -118,7 +146,7 @@ INCLUDE 'std/dyn'
 		}
 	}
 
-	[U:TYPE] :try{rhs: U!-Shared #&} INLINE
+	[U:TYPE] :try{rhs: U!-SharedOpt #&} INLINE
 	{
 		IF(rhs)
 			IF(Ptr := <<T! *>>(rhs.ptr()))
@@ -150,6 +178,8 @@ INCLUDE 'std/dyn'
 	ref() VOID INLINE { ASSERT(++Refs); }
 	ref_weak() VOID INLINE { ASSERT(++Weaks); }
 
+	# ABSTRACT obj_base_addr() VOID #\;
+
 	/// Destroys and if possible deallocates the payload.
 	PRIVATE ABSTRACT kill_payload() VOID;
 
@@ -179,6 +209,7 @@ INCLUDE 'std/dyn'
 	[A...:TYPE]{a: A!&&...}: Value(<A!&&>(a)...);
 
 	PRIVATE FINAL kill_payload() VOID { Value := BARE; }
+	# FINAL obj_base_addr() VOID #\ := &&&Value;
 }
 
 ::std::detail [T:TYPE] SplitAlloc -> SharedAlloc, PRIVATE [T]Dyn
@@ -187,4 +218,5 @@ INCLUDE 'std/dyn'
 	:share{v: T!-std::Dyn} -> (), (&&v);
 
 	PRIVATE FINAL kill_payload() VOID { <[T]Dyn &>(THIS) := BARE; }
+	# FINAL obj_base_addr() VOID #\ := &&&*THIS;
 }

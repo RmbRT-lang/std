@@ -1,0 +1,56 @@
+(/rl/)
+
+INCLUDE 'std/shared'
+
+/// shared value type with copy-on-write semantics.
+::std [T:TYPE] Val -> PRIVATE [T]Shared
+{
+	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...);
+
+	{#&};
+	{&&};
+
+	# *THIS T #& INLINE  := *<[T]Shared #&>(THIS);
+	# THIS! T #& INLINE := *THIS;
+
+	# +THIS THIS INLINE := THIS;
+
+	mut() T & INLINE := *mut_ptr();
+	mut_ok() T & INLINE := *[T]Shared::ptr();
+
+	mut_ptr() T * INLINE
+	{
+		[T]Shared::clone_if_shared();
+		= [T]Shared::ptr();
+	}
+	mut_ptr_ok() T * INLINE := [T]Shared::ptr();
+}
+
+::std [T:TYPE] ValOpt -> PRIVATE [T]SharedOpt
+{
+
+	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...);
+
+	{#&};
+	{&&};
+
+	# *THIS T #& INLINE  := *<[T]SharedOpt #&>(THIS);
+	# THIS! T #& INLINE := *THIS;
+
+	# ptr() T #* INLINE := [T]SharedOpt::ptr();
+
+	# +THIS THIS INLINE := THIS;
+
+	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+
+	mut() T & INLINE := *mut_ptr();
+	mut_ok() T & INLINE := *[T]SharedOpt::ptr();
+
+	mut_ptr() T * INLINE
+	{
+		ASSERT(THIS);
+		[T]SharedOpt::clone_if_shared();
+		= [T]SharedOpt::ptr();
+	}
+	mut_ptr_ok() T * INLINE := [T]SharedOpt::ptr();
+}
