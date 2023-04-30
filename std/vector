@@ -16,11 +16,19 @@ PUBLIC:
 	{};
 	{BARE} ();
 
-	{size: UM}:
+	:noinit{size: UM}:
 		Content(heap::[T]alloc_array(size)),
 		Capacity(size)
 	{
+	}
+	{size: UM} := :noinit(size)
+	{
 		range::default_construct(Content.Data, ##Content);
+	}
+	:bare{size: UM} := :noinit(size)
+	{
+		FOR(i ::= 0; i != ##Content; i++)
+			Content.Data[i].{BARE};
 	}
 	:reserve{capacity: UM}:
 		Content(heap::[T]alloc_array(capacity)),
@@ -90,7 +98,7 @@ PUBLIC:
 
 		reserve(cap);
 
-		FOR(it ::= rhs.start(); it; it++)
+		FOR(it ::= rhs.start().ok(); it; it++)
 			THIS += &&it!;
 	}
 
@@ -106,7 +114,7 @@ PUBLIC:
 
 		reserve(cap);
 
-		FOR(it ::= rhs.start(); it; it++)
+		FOR(it ::= rhs.start().ok(); it; it++)
 			THIS += it!;
 	}
 
@@ -178,6 +186,20 @@ PUBLIC:
 		{
 			reserve(size);
 			range::default_construct(
+				&THIS[:ok(##THIS)],
+				size - ##Content);
+		}
+		ELSE
+			range::destroy_buf(Content.drop_start(size));
+		Content.Size := size;
+	}
+
+	resize_bare(size: UM) VOID
+	{
+		IF(size >= ##Content)
+		{
+			reserve(size);
+			range::bare_construct(
 				&THIS[:ok(##THIS)],
 				size - ##Content);
 		}
