@@ -69,6 +69,17 @@ INCLUDE 'std/err/indexoutofrange'
 			destroy(range, i);
 	}
 
+	[T: TYPE] bare_construct(
+		range: T! \,
+		count: UM) VOID
+	{
+		i: UM;
+		TRY FOR(i := 0; i<count; i++)
+			range[i].{BARE};
+		FINALLY IF(i != count)
+			destroy(range, i);
+	}
+
 
 	[T: TYPE] copy_construct(
 		dst: T! \,
@@ -116,7 +127,7 @@ INCLUDE 'std/err/indexoutofrange'
 	{
 		Range: T! \;
 		Index: UM;
-		Size: SM;
+		Size: UM;
 
 		{...};
 
