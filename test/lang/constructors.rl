@@ -1,3 +1,5 @@
+INCLUDE 'std/heap'
+
 ::lang::constructors
 {
 	Class {
@@ -89,5 +91,26 @@
 		ASSERT(x.C.V == 4);
 		ASSERT(x.P.X == 5);
 		ASSERT(x.P.Y == 6);
+	}
+
+	Base VIRTUAL {}
+	D1 VIRTUAL -> Base { INT; }
+	D2 -> D1 { x: INT; }
+
+	TEST "Virtual Ctor abstract base object cloning" {
+		d2: D2; d2.x := 25;
+		b: Base& := d2;
+		
+		ASSERT(SIZEOF(#d2) == SIZEOF(#b));
+		
+		clone ::= <Base *>(std::heap::alloc_raw(SIZEOF(#b)));
+		COPY_RTTI(b, clone);
+		clone->VIRTUAL{b};
+		
+		ASSERT(TYPE(clone) == TYPE TYPE (D1));
+		ASSERT(TYPE(<<D1*>>(clone)) == TYPE TYPE(D2));
+		ASSERT(<<D2#*>>(clone)->x == 25);
+		
+		std::heap::delete(clone);
 	}
 }
