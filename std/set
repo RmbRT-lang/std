@@ -2,6 +2,8 @@
 
 INCLUDE 'std/vector'
 INCLUDE 'std/dyn'
+INCLUDE 'std/shared'
+INCLUDE 'std/value'
 
 ::std [T: TYPE] MASK Set
 {
@@ -156,3 +158,5 @@ INCLUDE 'std/dyn'
 }
 
 ::std [T:TYPE] TYPE DynVecSet := [T!-std::Dyn+]VecSet;
+::std [T:TYPE] TYPE SharedVecSet := [T!-std::Shared+]VecSet;
+::std [T:TYPE] TYPE ValVecSet := [T!-std::Val+]VecSet;

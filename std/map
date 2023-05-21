@@ -101,3 +101,5 @@ INCLUDE 'std/set'
 }
 
 ::std [K:TYPE; V:TYPE] TYPE DynMap := [K!; V!-std::Dyn]Map;
+::std [K:TYPE; V:TYPE] TYPE SharedMap := [K!; V!-std::Shared]Map;
+::std [K:TYPE; V:TYPE] TYPE ValMap := [K!; V!-std::Val]Map;

@@ -9,7 +9,7 @@ INCLUDE 'std/dyn'
 	PRIVATE Container: detail::SharedAlloc *;
 
 	{}: Container(NULL), Ptr(NULL);
-	{BARE} ();
+	{BARE} (NULL);
 	{NULL}: Container(NULL), Ptr(NULL);
 	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
 
@@ -25,7 +25,8 @@ INCLUDE 'std/dyn'
 		offset ::= <UM>(Ptr) - <UM>(Container->obj_base_addr());
 
 		Container->Refs--;
-		Container := heap::clone_virtual(Container);
+		Container := heap::clone_virtual_p(Container);
+
 		Container->Refs := 1;
 		Container->Weaks := 0;
 		Ptr := <T! *>(<UM>(Container->obj_base_addr()) + offset);
@@ -50,6 +51,12 @@ INCLUDE 'std/dyn'
 	:make{a: A!&&...} := :share(:make(<A!&&>(a)...));
 
 	[A...:TYPE]
+	:make_if{if: BOOL, a: A!&&...} := :share(:make_if(if, <A!&&>(a)...));
+
+	[A...:TYPE]
+	:if{if: BOOL, a: A!&&...} { IF(if) THIS := :a(<A!&&>(a)...); }
+
+	[A...:TYPE]
 	:a{a: A!&&...}:
 		Container(heap::[T-detail::CompactAlloc]new(<A!&&>(a)...)),
 		Ptr(NOINIT)
@@ -65,7 +72,7 @@ INCLUDE 'std/dyn'
 		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(alloc.ptr())->Value);
 		Container := alloc.release();
 	}
-
+	[U:TYPE] {rhs: U!-SharedOpt} INLINE := :<>(rhs);
 	[U:TYPE] :<>{rhs: U!-SharedOpt} INLINE
 	{
 		IF(rhs.ptr())
@@ -86,7 +93,7 @@ INCLUDE 'std/dyn'
 			}
 	}
 
-	DESTRUCTOR { IF(Container) Container->deref(); }
+	DESTRUCTOR { IF(Container) Container->deref(); Container := NULL; }
 
 	[Args...: TYPE]
 	ensure(args: Args!&&...) T! & INLINE
@@ -109,10 +116,16 @@ INCLUDE 'std/dyn'
 ::std [T:TYPE] Shared -> [T!]SharedOpt
 {
 	[A...:TYPE] { a: A!&&... } -> (:a, <A!&&>(a)...);
+	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...);
+	[A...:TYPE] :make{ a: A!&&... } -> (:make, <A!&&>(a)...);
+	[U:TYPE] :dup{rhs: U!&&} -> (:dup, <U!&&>(rhs));
 	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
-	[U:TYPE] :<>{ rhs: U!-Shared } -> (:<>, &&rhs);
-	:!{ rhs: T!-SharedOpt } -> (&&rhs) { ASSERT(THIS); }
+	[U:TYPE] :<>{ rhs: U!-std::Shared } -> (:<>, &&rhs);
+	[U:TYPE] :!{ rhs: U!-SharedOpt } -> (:<>, &&rhs) { ASSERT(THIS); }
+	:share{v: T!-std::Dyn} -> (:share, &&v);
+	[U:TYPE] :gc{p: U! \} -> (:gc, p);
 
+	{BARE} -> (BARE);
 	{#&};
 	{&&};
 }
@@ -174,23 +187,21 @@ INCLUDE 'std/dyn'
 	Weaks: U2;
 
 	{}: Refs(1);
+	{BARE} ();
 
-	ref() VOID INLINE { ASSERT(++Refs); }
+	ref() VOID INLINE { ASSERT(Refs); ASSERT(++Refs); }
 	ref_weak() VOID INLINE { ASSERT(++Weaks); }
 
 	# ABSTRACT obj_base_addr() VOID #\;
-
-	/// Destroys and if possible deallocates the payload.
-	PRIVATE ABSTRACT kill_payload() VOID;
 
 	deref() VOID
 	{
 		ASSERT(Refs);
 		IF(!--Refs)
 		{
-			kill_payload();
+			THIS.~;
 			IF(!Weaks)
-				heap::delete(&THIS);
+				heap::free(&THIS);
 		}
 	}
 
@@ -198,7 +209,7 @@ INCLUDE 'std/dyn'
 	{
 		ASSERT(Weaks);
 		IF(!--Weaks && !Refs)
-			heap::delete(&THIS);
+			heap::free(&THIS);
 	}
 }
 
@@ -208,7 +219,6 @@ INCLUDE 'std/dyn'
 
 	[A...:TYPE]{a: A!&&...}: Value(<A!&&>(a)...);
 
-	PRIVATE FINAL kill_payload() VOID { Value := BARE; }
 	# FINAL obj_base_addr() VOID #\ := &&&Value;
 }
 
@@ -217,6 +227,5 @@ INCLUDE 'std/dyn'
 	:gc{ptr: T! \}-> (), (:gc(ptr));
 	:share{v: T!-std::Dyn} -> (), (&&v);
 
-	PRIVATE FINAL kill_payload() VOID { <[T]Dyn &>(THIS) := BARE; }
 	# FINAL obj_base_addr() VOID #\ := &&&*THIS;
 }

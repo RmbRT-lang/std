@@ -6,51 +6,95 @@ INCLUDE 'std/shared'
 ::std [T:TYPE] Val -> PRIVATE [T]Shared
 {
 	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...);
+	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...);
+	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
+	[A...:TYPE] :make{ a: A!&&... } -> (&&<<<T>>>(<A!&&>(a)...).shared());
+	[A...:TYPE] :dyn_make{ a: A!&&... } -> (:share, (:make, <A!&&>(a)...));
+	[U:TYPE] :dup{ a: U!&& } -> (:dup, <U!&&>(a));
 
+	[U:TYPE] :<>{v: U!-Val} -> (:<>, &&v.shared());
+	[U:TYPE] :gc{p: U! \} -> (:gc, p);
+
+	{BARE} -> (BARE);
+	{};
 	{#&};
 	{&&};
 
+	[U:TYPE] :!{v: [U!]ValOpt} -> (:!, &&v.shared());
+
 	# *THIS T #& INLINE  := *<[T]Shared #&>(THIS);
 	# THIS! T #& INLINE := *THIS;
+	//# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+	# <T #\> INLINE := ptr();
 
 	# +THIS THIS INLINE := THIS;
 
+	# THIS <>(rhs: T#\) S1 := <[T]Shared#&>(THIS) <> rhs;
+
+	#? shared() [T]Shared #? & INLINE := THIS;
+
+
+	# ptr() T #\ INLINE := <[T]Shared #&>(THIS).ptr();
+
 	mut() T & INLINE := *mut_ptr();
-	mut_ok() T & INLINE := *[T]Shared::ptr();
+	mut_ok() T & INLINE := *<[T]Shared &>(THIS).ptr();
 
 	mut_ptr() T * INLINE
 	{
-		[T]Shared::clone_if_shared();
-		= [T]Shared::ptr();
+		<[T]Shared &>(THIS).clone_if_shared();
+		= <[T]Shared &>(THIS).ptr();
 	}
-	mut_ptr_ok() T * INLINE := [T]Shared::ptr();
+	mut_ptr_ok() T * INLINE := <[T]Shared &>(THIS).ptr();
 }
 
 ::std [T:TYPE] ValOpt -> PRIVATE [T]SharedOpt
 {
+	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...);
+	[A...:TYPE] :if{ if: BOOL, a: A!&&... } -> (:if, if, <A!&&>(a)...);
+	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
+	[A...:TYPE] :make{ a: A!&&... } := <<<T>>>(<A!&&>(a)...);
+	
+	[A...:TYPE] :make_if{ if: BOOL,  a: A!&&... }
+	{ IF(if) THIS := <<<T>>>(<A!&&>(a)...); }
+	
+	[A:TYPE] :dup{ a: A!&& } -> (:dup, <A!&&>(a));
+	[U:TYPE] { v: [U!]ValOpt } -> (&&v.shared());
+	[U:TYPE] :<>{v: U!-ValOpt} -> (:<>, &&v.shared());
+	[U:TYPE] :cast_val{ v: [U!]Val } -> (:<>, &&v.shared());
+	:gc{p: T! *} -> (:gc, p);
+	{NULL} -> (NULL);
 
-	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...);
-
+	{BARE} -> (BARE);
+	{};
 	{#&};
 	{&&};
+
+	{v: [T]Val} -> (&&v.shared());
 
 	# *THIS T #& INLINE  := *<[T]SharedOpt #&>(THIS);
 	# THIS! T #& INLINE := *THIS;
 
-	# ptr() T #* INLINE := [T]SharedOpt::ptr();
+	# ptr() T #* INLINE := <[T]SharedOpt #&>(THIS).ptr();
+	# ok() T #& INLINE := *ptr();
 
 	# +THIS THIS INLINE := THIS;
 
-	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+	# <T #*> INLINE := ptr();
+	//# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+
+	# THIS <>(rhs: T#\) S1 := <[T]SharedOpt#&>(THIS) <> rhs;
+
+	#? shared() [T]SharedOpt#& INLINE := THIS;
+
 
 	mut() T & INLINE := *mut_ptr();
-	mut_ok() T & INLINE := *[T]SharedOpt::ptr();
+	mut_ok() T & INLINE := *<[T]SharedOpt &>(THIS).ptr();
 
 	mut_ptr() T * INLINE
 	{
 		ASSERT(THIS);
-		[T]SharedOpt::clone_if_shared();
-		= [T]SharedOpt::ptr();
+		<[T]SharedOpt &>(THIS).clone_if_shared();
+		= <[T]SharedOpt &>(THIS).ptr();
 	}
-	mut_ptr_ok() T * INLINE := [T]SharedOpt::ptr();
+	mut_ptr_ok() T * INLINE := <[T]SharedOpt &>(THIS).ptr();
 }
