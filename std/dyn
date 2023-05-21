@@ -13,7 +13,7 @@ INCLUDE 'std/heap'
 	{BARE} ();
 
 	{&&m}: Ptr(m.release());
-	{#&c}: Ptr := c.Ptr ?? heap::clone_virtual(c.Ptr) : NULL;
+	{#&c}: Ptr := c.Ptr ?? heap::clone_virtual_p(c.Ptr) : NULL;
 
 	:gc{p: T! *}: Ptr(p);
 
@@ -51,7 +51,7 @@ INCLUDE 'std/heap'
 		Ptr := if ?? <<<T>>>(<Args!&&>(args)...) : NULL;
 
 	[V:TYPE]
-	:dup{v: V!&&} := :a.V!(<V!&&>(v));
+	:dup{v: V!&&} := :gc(>>heap::clone_virtual_v(<V!&&>(v)));
 
 	[V:TYPE] {m: V!-DynOpt! &&}:
 		Ptr := <T *>(m.ptr())
@@ -119,18 +119,18 @@ INCLUDE 'std/heap'
 	{#&};
 	{&&};
 
-	[V:TYPE] :<>{m: V!-Dyn! &&} -> (:<>(&&m)) { ASSERT(valid()); }
+	[V:TYPE] :<>{m: V!-Dyn! &&} -> (:<>, &&m) { ASSERT(valid()); }
 	[V:TYPE] :!{m: V!-DynOpt! &&} -> (&&m) { ASSERT(valid()); }
 
-	[U: TYPE] :gc{p: U! \} -> (:gc(p)) { ASSERT(p); }
+	[U: TYPE] :gc{p: U! \} -> (:gc, p) { ASSERT(p); }
 
 	[Args...: TYPE]
-	:make{args: Args!&&...} -> (:make(<Args!&&>(args)...));
+	:make{args: Args!&&...} -> (:make, <Args!&&>(args)...);
 	[Args...: TYPE]
-	:gcmake{args: Args!&&...} -> (:gcmake(<Args!&&>(args)...));
+	:gcmake{args: Args!&&...} -> (:gcmake, <Args!&&>(args)...);
 
 	[V:TYPE]
-	:dup{v: V!&&} -> (:dup(<V!&&>(v)));
+	:dup{v: V!&&} -> (:dup, <V!&&>(v));
 
 	[U: TYPE; Args...: TYPE]
 	:a.U!{args: Args!&&...} -> (:a.U!(<Args!&&>(args)...));

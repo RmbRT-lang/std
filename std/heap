@@ -21,13 +21,28 @@ INCLUDE 'std/buffer'
 	}
 
 	[T: TYPE]
-	clone_virtual(data: T! #\) T! \
+	clone_virtual_p(data: T! #\) T! \
 	{
 		offset ::= <UM>(data) - <UM>(&&&*data);
-		obj ::= <T! \>(<UM>(heap::alloc_raw(SIZEOF(# *data))) + offset);
+		obj ::= <T! \>(<UM>(heap::alloc_raw(SIZEOF(#*data))) + offset);
 		failed ::= TRUE;
 		COPY_RTTI(*data, obj);
 		TRY { <T \>(obj)->VIRTUAL{*data}; failed := FALSE; }
+		FINALLY IF(failed) heap::free(obj);
+
+		ASSERT(TYPE(*data) == TYPE(*obj));
+
+		= obj;
+	}
+
+	[T: TYPE]
+	clone_virtual_v(data: T! &&) T \
+	{
+		offset ::= <UM>(&data) - <UM>(&&&data);
+		obj ::= <T! \>(<UM>(heap::alloc_raw(SIZEOF(# data))) + offset);
+		failed ::= TRUE;
+		COPY_RTTI(data, obj);
+		TRY { <T \>(obj)->VIRTUAL{<T!&&>(data)}; failed := FALSE; }
 		FINALLY IF(failed) heap::free(obj);
 
 		= obj;
