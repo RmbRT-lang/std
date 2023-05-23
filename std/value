@@ -79,8 +79,8 @@ INCLUDE 'std/shared'
 
 	# +THIS THIS INLINE := THIS;
 
-	# <T #*> INLINE := ptr();
-	//# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+	//# <T #*> INLINE := ptr();
+	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
 
 	# THIS <>(rhs: T#\) S1 := <[T]SharedOpt#&>(THIS) <> rhs;
 
