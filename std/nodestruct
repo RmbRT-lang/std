@@ -10,10 +10,10 @@
 	{BARE} { THIS->{BARE}; }
 
 	[Args...:TYPE]
-	{args: Args!&&...} INLINE
+	{args: Args!&&...} --
 	{
 		THIS->{<Args!&&>(args)...};
 	}
 
-	#? *THIS T! #?& INLINE := V.V;
+	#? *THIS T! #?& -- := V.V;
 }

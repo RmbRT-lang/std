@@ -7,8 +7,8 @@
 		{};
 		{v: T!}: v(v);
 
-		//# THIS! & INLINE ::= v;
-		THIS! ?& INLINE := v;
+		//# THIS! & -- ::= v;
+		THIS! ?& -- := v;
 	}
 
 	TEST "recursive unwrap"
@@ -35,7 +35,7 @@
 	{
 		v: T;
 		{v: T}: v(v);
-		THIS! T-RefWrap INLINE := v;
+		THIS! T-RefWrap -- := v;
 	}
 	TEST "correct temporary values"
 	{

@@ -33,7 +33,7 @@ INCLUDE 'std/memory'
 			= mem::cmp(THIS.Data, find.Data, ##find) == 0;
 		}
 
-		# THIS>=(find: [C!#]View #&) BOOL INLINE := starts_with(find);
+		# THIS>=(find: [C!#]View #&) BOOL -- := starts_with(find);
 
 		# THIS==(rhs: [C!]View #&) BOOL
 		{
@@ -47,7 +47,7 @@ INCLUDE 'std/memory'
 			= TRUE;
 		}
 
-		# THIS!=(rhs: [C!]View #&) BOOL INLINE
+		# THIS!=(rhs: [C!]View #&) BOOL --
 			:= !(THIS == rhs);
 	}
 
@@ -55,7 +55,7 @@ INCLUDE 'std/memory'
 	TYPE V := [CHAR]View;
 
 	[C: TYPE]
-	view(str: C! *) C!-View INLINE := str;
+	view(str: C! *) C!-View -- := str;
 
 	[C: TYPE]
 	len(str: C! #*) UM

@@ -8,8 +8,8 @@
 		{a: INT, b: INT}: A(a), B(b);
 		{};
 
-		# THIS==(rhs: Class#&) BOOL INLINE := A == rhs.A && B == rhs.B;
-		# THIS!=(rhs: Class#&) BOOL INLINE := !(THIS == rhs);
+		# THIS==(rhs: Class#&) BOOL -- := A == rhs.A && B == rhs.B;
+		# THIS!=(rhs: Class#&) BOOL -- := !(THIS == rhs);
 
 		# <{INT, INT}> := (A, B);
 	}

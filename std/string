@@ -36,13 +36,13 @@ INCLUDE 'std/str'
 
 	# THIS <> (rhs: THIS#&) S1 := THIS! <> rhs!;
 
-	# data() ? INLINE := Content.Data;
-	# ##THIS ? INLINE := ##Content;
-	# THIS[i: Index #&] ?#& INLINE := Content[i];
-	# THIS! str::[C#]View INLINE := Content++;
+	# data() ? -- := Content.Data;
+	# ##THIS ? -- := ##Content;
+	# THIS[i: Index #&] ?#& -- := Content[i];
+	# THIS! str::[C#]View -- := Content++;
 
 	[T...: TYPE]
-	append(v: T!&&...) VOID INLINE
+	append(v: T!&&...) VOID --
 	{ append_impl(<str::[C#]View>(<T!&&>(v))...); }
 	[T...: TYPE]
 	PRIVATE append_impl(v: T!&&...) VOID {
@@ -56,7 +56,7 @@ INCLUDE 'std/str'
 		THIS := :transfer(new);
 	}
 
-	THIS+=(str: std::str::[C#]View #&) VOID INLINE
+	THIS+=(str: std::str::[C#]View #&) VOID --
 	{ append(str); }
 }
 

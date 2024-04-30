@@ -13,14 +13,14 @@ INCLUDE 'std/io/streamutil'
 
 ::std::math::safe
 {
-	[T:TYPE] addc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
+	[T:TYPE] addc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T --
 	{
 		ret: T := <UM>(lhs) + <UM>(rhs);
 		carry := <UM>(ret) < lhs;
 		= ret;
 	}
 
-	[T:TYPE] add(lhs: T! #&, rhs: T! #&) T INLINE
+	[T:TYPE] add(lhs: T! #&, rhs: T! #&) T --
 	{
 		carry: BOOL;
 		ret ::= addc(lhs, rhs, carry);
@@ -29,20 +29,20 @@ INCLUDE 'std/io/streamutil'
 		= ret;
 	}
 
-	[T: TYPE] neg(lhs: T! #&) T INLINE
+	[T: TYPE] neg(lhs: T! #&) T --
 	{
 		IF(lhs && (-lhs == lhs))
 			THROW <Overflow>();
 		= -lhs;
 	}
 
-	[T: TYPE] mulc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
+	[T: TYPE] mulc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T --
 	{
 		carry := rhs && <UM>(lhs) > <UM>(~<T>(0)) / <UM>(rhs);
 		= <UM>(lhs) * <UM>(rhs);
 	}
 
-	[T: TYPE] mul(lhs: T! #&, rhs: T! #&) T INLINE
+	[T: TYPE] mul(lhs: T! #&, rhs: T! #&) T --
 	{
 		carry: BOOL;
 		ret ::= mulc(lhs, rhs, carry);

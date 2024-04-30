@@ -2,8 +2,8 @@
 
 ::std::math
 {
-	[T: TYPE] min(a: T! #&, b: T! #&) ? INLINE
+	[T: TYPE] min(a: T! #&, b: T! #&) ? --
 	{ = a < b ?? a : b; }
-	[T: TYPE] max(a: T! #&, b: T! #&) ? INLINE
+	[T: TYPE] max(a: T! #&, b: T! #&) ? --
 	{ = a > b ?? a : b; }
 }

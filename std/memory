@@ -30,7 +30,7 @@ INCLUDE 'std/buffer'
 			= lhs.Size - rhs.Size;
 	}
 
-	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID INLINE
+	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID --
 	{
 		d ::= <U1 \>(dst);
 		s ::= <U1 #\>(src);
@@ -46,7 +46,7 @@ INCLUDE 'std/buffer'
 
 		{BARE} { DIE; }
 
-		# <T! &> INLINE := *V;
+		# <T! &> -- := *V;
 		# *THIS T!& := *V;
 		# THIS! T!& := *V;
 		# THIS() T!& := *V;
@@ -61,7 +61,7 @@ INCLUDE 'std/buffer'
 		{...};
 
 		# ptr() T! * := V;
-		# <T! *> INLINE := V;
+		# <T! *> -- := V;
 		# *THIS T!& := *V;
 		# THIS! T!& := *V;
 		# THIS() T!& := *V;

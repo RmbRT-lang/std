@@ -16,7 +16,7 @@ INCLUDE 'std/dyn'
 	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr)
 	{ IF(Container) Container->ref(); }
 
-	# is_unique() BOOL INLINE := !Ptr || Container->is_unique();
+	# is_unique() BOOL -- := !Ptr || Container->is_unique();
 
 	clone_if_shared() VOID
 	{
@@ -73,8 +73,8 @@ INCLUDE 'std/dyn'
 		Ptr := <<T \>>(&alloc.ptr()->Value);
 		Container := alloc.release();
 	}
-	[U:TYPE] {rhs: U!-SharedOpt} INLINE := :<>(rhs);
-	[U:TYPE] :<>{rhs: U!-SharedOpt} INLINE
+	[U:TYPE] {rhs: U!-SharedOpt} -- := :<>(rhs);
+	[U:TYPE] :<>{rhs: U!-SharedOpt} --
 	{
 		IF(rhs.ptr())
 		{
@@ -84,7 +84,7 @@ INCLUDE 'std/dyn'
 		}
 	}
 
-	[U:TYPE] :try{rhs: U!-SharedOpt} INLINE
+	[U:TYPE] :try{rhs: U!-SharedOpt} --
 	{
 		IF(rhs)
 			IF(Ptr := <<T! *>>(rhs))
@@ -97,18 +97,18 @@ INCLUDE 'std/dyn'
 	DESTRUCTOR { IF(Container) Container->deref(); Container := NULL; }
 
 	[Args...: TYPE]
-	ensure(args: Args!&&...) T! & INLINE
+	ensure(args: Args!&&...) T! & --
 	{
 		IF(!THIS)
 			THIS.{:a(<Args!&&>(args)...)};
 		= *Ptr;
 	}
 
-	# ptr() T! * INLINE := Ptr;
-	# <T! *> INLINE := Ptr;
-	# THIS! T! & INLINE := *THIS;
-	# *THIS T! & INLINE { ASSERT(Ptr); = *Ptr; }
-	# THIS() T! & INLINE := *THIS;
+	# ptr() T! * -- := Ptr;
+	# <T! *> -- := Ptr;
+	# THIS! T! & -- := *THIS;
+	# *THIS T! & -- { ASSERT(Ptr); = *Ptr; }
+	# THIS() T! & -- := *THIS;
 	# container() detail::SharedAlloc * := Container;
 
 	# THIS<>(rhs: T! # \) S1 := ptr() == rhs ?? 0 : *THIS <> *rhs;
@@ -150,7 +150,7 @@ INCLUDE 'std/dyn'
 			Container->ref_weak();
 	}
 
-	[U:TYPE] :<>{rhs: U!-SharedOpt #&} INLINE
+	[U:TYPE] :<>{rhs: U!-SharedOpt #&} --
 	{
 		IF(rhs)
 		{
@@ -160,7 +160,7 @@ INCLUDE 'std/dyn'
 		}
 	}
 
-	[U:TYPE] :try{rhs: U!-SharedOpt #&} INLINE
+	[U:TYPE] :try{rhs: U!-SharedOpt #&} --
 	{
 		IF(rhs)
 			IF(Ptr := <<T! *>>(rhs.ptr()))
@@ -172,11 +172,11 @@ INCLUDE 'std/dyn'
 
 	DESTRUCTOR { IF(Container) Container->deref_weak(); }
 
-	# ptr() T! * INLINE := Container && Container->Refs ?? Ptr : NULL;
+	# ptr() T! * -- := Container && Container->Refs ?? Ptr : NULL;
 
-	# <T! *> INLINE := ptr();
-	# THIS! T! & INLINE := *THIS;
-	# *THIS T! & INLINE { p ::= ptr(); ASSERT(p); = p; }
+	# <T! *> -- := ptr();
+	# THIS! T! & -- := *THIS;
+	# *THIS T! & -- { p ::= ptr(); ASSERT(p); = p; }
 	# container() detail::SharedAlloc * := Container;
 
 	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
@@ -192,14 +192,14 @@ INCLUDE 'std/dyn'
 	{&&} { DIE; }
 	{#&} ();
 
-	ref() VOID INLINE { ASSERT(Refs); ASSERT(++Refs); }
-	ref_weak() VOID INLINE { ASSERT(++Weaks); }
+	ref() VOID -- { ASSERT(Refs); ASSERT(++Refs); }
+	ref_weak() VOID -- { ASSERT(++Weaks); }
 
 	# ABSTRACT clone() SharedAlloc \;
 
 	# ABSTRACT obj_base_addr() VOID #\;
 
-	# is_unique() BOOL INLINE := Refs == 1 && !Weaks;
+	# is_unique() BOOL -- := Refs == 1 && !Weaks;
 
 	deref() VOID
 	{

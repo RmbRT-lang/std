@@ -40,5 +40,5 @@ PUBLIC:
 		}
 	}
 
-	#? THIS! [T!]Buffer2D #? & INLINE := Content;
+	#? THIS! [T!]Buffer2D #? & -- := Content;
 }

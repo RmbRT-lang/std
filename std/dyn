@@ -71,14 +71,14 @@ INCLUDE 'std/heap'
 			Ptr := NULL;
 	}
 
-	# <T! *> INLINE := Ptr;
+	# <T! *> -- := Ptr;
 
-	# *THIS T! & INLINE { ASSERT(Ptr); = *Ptr; }
-	# THIS! T! & INLINE := *THIS;
-	# THIS() T! & INLINE := *THIS;
+	# *THIS T! & -- { ASSERT(Ptr); = *Ptr; }
+	# THIS! T! & -- := *THIS;
+	# THIS() T! & -- := *THIS;
 
-	# ok() T! & INLINE := *Ptr;
-	# ptr() T! * INLINE := Ptr;
+	# ok() T! & -- := *Ptr;
+	# ptr() T! * -- := Ptr;
 
 	release() T! *
 	{
@@ -88,7 +88,7 @@ INCLUDE 'std/heap'
 	}
 
 	[Args...: TYPE]
-	ensure(args: Args!&&...) T! & INLINE
+	ensure(args: Args!&&...) T! & --
 	{
 		IF(!Ptr)
 			Ptr := heap::[T]new(<Args!&&>(args)...);
@@ -114,8 +114,8 @@ INCLUDE 'std/heap'
 	Copying creates an allocated copy, but moving will just transfer ownership of the pointer. After moving, the object's value is invalid until re-initialised. Use `*`, `->`, `!` or `()` to access the object's value. `BARE` initialisation will not allocate an instance. /)
 ::std [T:TYPE] Dyn -> std::[T]DynOpt
 {
-	{} INLINE -> (:a());
-	{BARE} INLINE -> (NULL);
+	{} -- -> (:a());
+	{BARE} -- -> (NULL);
 	{#&};
 	{&&};
 
@@ -136,19 +136,19 @@ INCLUDE 'std/heap'
 	:a.U!{args: Args!&&...} -> (:a.U!(<Args!&&>(args)...));
 
 	[Args...:TYPE]
-	{args: Args!&&...} INLINE -> (:a(<Args!&&>(args)...));
+	{args: Args!&&...} -- -> (:a(<Args!&&>(args)...));
 
 	[Args...:TYPE]
-	:a{args: Args!&&...} INLINE -> (:a(<Args!&&>(args)...));
+	:a{args: Args!&&...} -- -> (:a(<Args!&&>(args)...));
 
-	# <T! *> INLINE := <std::[T]DynOpt#&>(THIS);
+	# <T! *> -- := <std::[T]DynOpt#&>(THIS);
 
-	# *THIS T! & INLINE := THIS.ok();
-	# THIS! T! & INLINE := *THIS;
-	# THIS() T! & INLINE := *THIS;
+	# *THIS T! & -- := THIS.ok();
+	# THIS! T! & -- := *THIS;
+	# THIS() T! & -- := *THIS;
 
 	/// Detect invalid state after moving. If invalid, any operation besides checking validity is forbidden.
-	# valid() BOOL INLINE := THIS;
+	# valid() BOOL -- := THIS;
 
 	# THIS<>(rhs: T! # \) S1 := THIS() <> *rhs;
 }

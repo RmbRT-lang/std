@@ -35,15 +35,15 @@ INCLUDE 'std/value'
 	{};
 	:reserve{cap: UM}: Elems := :reserve(cap);
 
-	#? start() ? INLINE := Elems.start();
-	#? end() ? INLINE := Elems.end();
-	# empty() BOOL INLINE := Elems.empty();
-	#? at_loc(l: Location) T#? * INLINE := l >= ##Elems ?? NULL : &Elems[:ok(l)];
+	#? start() ? -- := Elems.start();
+	#? end() ? -- := Elems.end();
+	# empty() BOOL -- := Elems.empty();
+	#? at_loc(l: Location) T#? * -- := l >= ##Elems ?? NULL : &Elems[:ok(l)];
 
-	# ##THIS UM INLINE := ##Elems;
+	# ##THIS UM -- := ##Elems;
 
 	[V: TYPE]
-	# has (v: V! #&) BOOL INLINE := find(v);
+	# has (v: V! #&) BOOL -- := find(v);
 
 	[V: TYPE]
 	#? find(v: V! #&) T! #? -OptRef
@@ -99,11 +99,11 @@ INCLUDE 'std/value'
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) BOOL INLINE
+	THIS+=(v: A!&&) BOOL --
 		:= THIS.insert(<A!&&>(v));
 
 	remove_at(
-		position: Location) VOID INLINE
+		position: Location) VOID --
 	{
 		Elems.erase(position);
 	}
@@ -129,7 +129,7 @@ INCLUDE 'std/value'
 			= emplace_at(loc, &&v);
 	}
 
-	THIS-=(v: T! #&) BOOL INLINE := THIS.remove(v);
+	THIS-=(v: T! #&) BOOL -- := THIS.remove(v);
 
 	[V: TYPE]
 	pop(v: V! #&, deleted: T! \) BOOL

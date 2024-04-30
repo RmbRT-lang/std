@@ -15,8 +15,8 @@ PRIVATE:
 	Content: [T!]Buffer;
 	Capacity: UM;
 PUBLIC:
-	{} INLINE;
-	{BARE} INLINE ();
+	{} --;
+	{BARE} -- ();
 
 	:noinit{size: UM}:
 		Content := heap::[T]alloc_array(size),
@@ -61,7 +61,7 @@ PUBLIC:
 	:vec{a: A!&&...} := :reserve(SIZEOF...(A!))
 	{ (THIS += <A!&&>(a))...; }
 
-	DESTRUCTOR INLINE
+	DESTRUCTOR --
 	{
 		IF(Content.Data)
 			heap::delete_buf(Content);
@@ -228,7 +228,7 @@ PUBLIC:
 	}
 
 	[A...:TYPE]
-	emplace_at(at: UM, a: A!&&...) T! & INLINE
+	emplace_at(at: UM, a: A!&&...) T! & --
 	{
 		grow_reserve_with_hole_at(at);
 		failed ::= TRUE;
@@ -251,22 +251,22 @@ PUBLIC:
 	}
 
 	[A:TYPE]
-	THIS+=(v: A!&&) T! & INLINE
+	THIS+=(v: A!&&) T! & --
 		:= emplace_at(##THIS, <A!&&>(v));
 
-	#? THIS[i: Index] T!#?& INLINE := Content[i];
+	#? THIS[i: Index] T!#?& -- := Content[i];
 
 	# <BOOL> := Content.Size;
 
-	# ##THIS UM INLINE := Content.Size;
-	# data() T! #* INLINE := Content.Data;
-	# capacity() UM INLINE := Capacity;
-	# empty() BOOL INLINE := ##THIS == 0;
+	# ##THIS UM -- := Content.Size;
+	# data() T! #* -- := Content.Data;
+	# capacity() UM -- := Capacity;
+	# empty() BOOL -- := ##THIS == 0;
 
-	#? THIS! ? #?& INLINE := Content;
+	#? THIS! ? #?& -- := Content;
 
-	#? start() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, 0);
-	#? end() [T!]Vec#?-[T!#?]Iterator INLINE := (&THIS, ##THIS-1);
+	#? start() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, 0);
+	#? end() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, ##THIS-1);
 
 	# THIS <> (rhs: THIS #&) S1
 	{

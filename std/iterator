@@ -10,9 +10,9 @@ Iterator
 		Elems(elems),
 		Current(start);
 
-	# get() T!& INLINE := (*Elems)[Current];
-	# THIS! T!& INLINE := (*Elems)[Current];
-	# ok() [T!; V!]OkIterator INLINE := (Elems, Current);
+	# get() T!& -- := (*Elems)[Current];
+	# THIS! T!& -- := (*Elems)[Current];
+	# ok() [T!; V!]OkIterator -- := (Elems, Current);
 
 	next() VOID
 	{
@@ -20,12 +20,12 @@ Iterator
 		++Current;
 	}
 
-	++THIS THIS& INLINE { next(); = THIS; }
-	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
-	--THIS THIS& INLINE { prev(); = THIS; }
-	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
+	++THIS THIS& -- { next(); = THIS; }
+	THIS++ THIS -- { v ::= THIS; next(); = v; }
+	--THIS THIS& -- { prev(); = THIS; }
+	THIS-- THIS -- { v ::= THIS; prev(); = v; }
 
-	# *THIS T!& INLINE := get();
+	# *THIS T!& -- := get();
 
 	# THIS+(offset: UM) THIS
 	{
@@ -33,8 +33,8 @@ Iterator
 		= (Elems, Current + offset);
 	}
 
-	# ##THIS UM INLINE := ##*Elems-Current;
-	# THIS() UM INLINE := Current;
+	# ##THIS UM -- := ##*Elems-Current;
+	# THIS() UM -- := Current;
 
 	THIS += (offset: UM) VOID
 	{
@@ -48,7 +48,7 @@ Iterator
 		--Current;
 	}
 
-	# <BOOL> INLINE := Current < ##*Elems;
+	# <BOOL> -- := Current < ##*Elems;
 }
 
 ::std [T: TYPE; V: TYPE]
@@ -56,22 +56,22 @@ OkIterator -> [T!; V!]Iterator
 {
 	{elems: V! \, start: UM} -> (elems, start);
 
-	next() VOID INLINE { ++THIS.Current; }
-	++THIS THIS& INLINE { next(); = THIS; }
-	THIS++ THIS INLINE { v ::= THIS; next(); = v; }
+	next() VOID -- { ++THIS.Current; }
+	++THIS THIS& -- { next(); = THIS; }
+	THIS++ THIS -- { v ::= THIS; next(); = v; }
 
-	prev() VOID INLINE { --THIS.Current; }
-	--THIS THIS& INLINE { prev(); = THIS; }
-	THIS-- THIS INLINE { v ::= THIS; prev(); = v; }
+	prev() VOID -- { --THIS.Current; }
+	--THIS THIS& -- { prev(); = THIS; }
+	THIS-- THIS -- { v ::= THIS; prev(); = v; }
 
-	# get() T!& INLINE := (*THIS.Elems)[:ok(THIS.Current)];
-	# THIS! T!& INLINE := (*THIS.Elems)[:ok(THIS.Current)];
-	# *THIS T!& INLINE := get();
+	# get() T!& -- := (*THIS.Elems)[:ok(THIS.Current)];
+	# THIS! T!& -- := (*THIS.Elems)[:ok(THIS.Current)];
+	# *THIS T!& -- := get();
 
-	# THIS+(offset: UM) THIS INLINE
+	# THIS+(offset: UM) THIS --
 		:= (THIS.Elems, THIS.Current + offset);
 
-	THIS += (offset: UM) VOID INLINE
+	THIS += (offset: UM) VOID --
 		{ THIS.Current += offset; }
 }
 

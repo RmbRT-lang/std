@@ -25,27 +25,27 @@ INCLUDE 'std/hash'
 
 	[U:TYPE] :!{v: [U!]ValOpt} -> (:!, &&v.shared()), ();
 
-	# *THIS T #& INLINE  := *<[T]Shared #&>(THIS);
-	# THIS! T #& INLINE := *THIS;
-	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
-	# <T #\> INLINE := ptr();
+	# *THIS T #& --  := *<[T]Shared #&>(THIS);
+	# THIS! T #& -- := *THIS;
+	# <BOOL> -- := <[T]SharedOpt#&>(THIS);
+	# <T #\> -- := ptr();
 
 	# THIS <>(rhs: T#\) S1 := ptr() <> rhs;
 
-	#? shared() [T]Shared #? & INLINE := ->([T]Shared);
+	#? shared() [T]Shared #? & -- := ->([T]Shared);
 
 
-	# ptr() T #\ INLINE := <[T]Shared #&>(THIS).ptr();
+	# ptr() T #\ -- := <[T]Shared #&>(THIS).ptr();
 
-	mut() T & INLINE := *mut_ptr();
-	mut_ok() T & INLINE := *<[T]Shared &>(THIS).ptr();
+	mut() T & -- := *mut_ptr();
+	mut_ok() T & -- := *<[T]Shared &>(THIS).ptr();
 
-	mut_ptr() T * INLINE
+	mut_ptr() T * --
 	{
 		<[T]Shared &>(THIS).clone_if_shared();
 		= <[T]Shared &>(THIS).ptr();
 	}
-	mut_ptr_ok() T * INLINE := <[T]Shared &>(THIS).ptr();
+	mut_ptr_ok() T * -- := <[T]Shared &>(THIS).ptr();
 
 	# hash(h: std::Hasher &) VOID { h(<UM>(ptr())); }
 }
@@ -74,30 +74,30 @@ INCLUDE 'std/hash'
 
 	{v: [T]Val} -> (&&v.shared()), ();
 
-	# *THIS T #& INLINE  := *<[T]SharedOpt #&>(THIS);
-	# THIS! T #& INLINE := *THIS;
+	# *THIS T #& --  := *<[T]SharedOpt #&>(THIS);
+	# THIS! T #& -- := *THIS;
 
-	# ptr() T #* INLINE := <[T]SharedOpt #&>(THIS).ptr();
-	# ok() T #& INLINE := *ptr();
+	# ptr() T #* -- := <[T]SharedOpt #&>(THIS).ptr();
+	# ok() T #& -- := *ptr();
 
-	# <T #*> INLINE := ptr();
-	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+	# <T #*> -- := ptr();
+	# <BOOL> -- := <[T]SharedOpt#&>(THIS);
 
 	# THIS <>(rhs: T#\) S1 := ptr() <> rhs;
 
-	#? shared() [T]SharedOpt #? & INLINE := ->([T]SharedOpt);
+	#? shared() [T]SharedOpt #? & -- := ->([T]SharedOpt);
 
 
-	mut() T & INLINE := *mut_ptr();
-	mut_ok() T & INLINE := *<[T]SharedOpt &>(THIS).ptr();
+	mut() T & -- := *mut_ptr();
+	mut_ok() T & -- := *<[T]SharedOpt &>(THIS).ptr();
 
-	mut_ptr() T * INLINE
+	mut_ptr() T * --
 	{
 		ASSERT(THIS);
 		<[T]SharedOpt &>(THIS).clone_if_shared();
 		= <[T]SharedOpt &>(THIS).ptr();
 	}
-	mut_ptr_ok() T * INLINE := <[T]SharedOpt &>(THIS).ptr();
+	mut_ptr_ok() T * -- := <[T]SharedOpt &>(THIS).ptr();
 
 	# hash(h: std::Hasher &) VOID { h(<UM>(ptr())); }
 }

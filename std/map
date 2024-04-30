@@ -53,7 +53,7 @@ INCLUDE 'std/set'
 	}
 
 	[T:TYPE]
-	#? THIS[k: T! #&] V! #?-OptRef INLINE := find(k);
+	#? THIS[k: T! #&] V! #?-OptRef -- := find(k);
 
 	# find_entry(k: K#&) [K!;V!]Pair# -OptRef
 	{
@@ -97,7 +97,7 @@ INCLUDE 'std/set'
 		:= Set.emplace_at(loc, <Key!&&>(k), <Value!&&>(v));
 
 	[T:TYPE]
-	remove(k: T! #&) BOOL INLINE := Set.remove(k);
+	remove(k: T! #&) BOOL -- := Set.remove(k);
 	[T:TYPE]
 	pop(k: T! #&, deleted: V! \) BOOL
 	{
@@ -111,16 +111,16 @@ INCLUDE 'std/set'
 		= FALSE;
 	}
 
-	remove_at(l: Location) VOID INLINE { Set.remove_at(l); }
+	remove_at(l: Location) VOID -- { Set.remove_at(l); }
 
-	#? start() ? INLINE := Set.start();
-	#? end() ? INLINE := Set.end();
-	# empty() BOOL INLINE := Set.empty();
-	#? at_loc(l: Location) {K!,V!}#? * INLINE := Set.at_loc(l);
+	#? start() ? -- := Set.start();
+	#? end() ? -- := Set.end();
+	# empty() BOOL -- := Set.empty();
+	#? at_loc(l: Location) {K!,V!}#? * -- := Set.at_loc(l);
 
 	# THIS <> (rhs: THIS #&) S1 := Set <> rhs.Set;
 
-	# ## THIS ? INLINE := ##Set;
+	# ## THIS ? -- := ##Set;
 }
 
 ::std [K:TYPE; V:TYPE] TYPE DynMap := [K!; V!-std::Dyn]Map;

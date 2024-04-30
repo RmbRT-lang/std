@@ -9,13 +9,13 @@ INCLUDE 'std/hash'
 
 	TYPE Location := std::[Hash, V]Map::Location;
 
-	#? find(k: K! #&) V! #?* INLINE := find_h(hash(k));
-	#? find_loc(k: K! #&) {V! #?*, Location} INLINE := find_loc_h(hash(k));
-	#? find_loc2(k: K! #&, loc: Location \) V! #?* INLINE := find_loc2_h(hash(k), loc);
+	#? find(k: K! #&) V! #?* -- := find_h(hash(k));
+	#? find_loc(k: K! #&) {V! #?*, Location} -- := find_loc_h(hash(k));
+	#? find_loc2(k: K! #&, loc: Location \) V! #?* -- := find_loc2_h(hash(k), loc);
 
-	#? find_h(k: Hash #&) V! #?* INLINE := Map.find(k);
-	#? find_loc_h(k: Hash #&) {V! #?*, Location} INLINE := Map.find_loc(k);
-	#? find_loc2_h(k: Hash #&, loc: Location \) V! #?* INLINE := Map.find_loc2(k, loc);
+	#? find_h(k: Hash #&) V! #?* -- := Map.find(k);
+	#? find_loc_h(k: Hash #&) {V! #?*, Location} -- := Map.find_loc(k);
+	#? find_loc2_h(k: Hash #&, loc: Location \) V! #?* -- := Map.find_loc2(k, loc);
 
 	[Value: TYPE]
 	insert(k: K! #&, v: Value!&&) BOOL := Map.insert(hash(k), <Value!&&>(v));
@@ -23,15 +23,15 @@ INCLUDE 'std/hash'
 	[Value: TYPE]
 	insert_h(k: Hash #&, v: Value!&&) BOOL := Map.insert(k, <Value!&&>(v));
 
-	remove(k: K! #&) BOOL INLINE := remove_h(hash(k));
+	remove(k: K! #&) BOOL -- := remove_h(hash(k));
 	pop(k: K! #&, deleted: V! \) BOOL := pop_h(hash(k), deleted);
 
-	remove_h(k: Hash #&) BOOL INLINE := Map.remove(k);
-	pop_h(k: Hash #&, deleted: V! \) BOOL INLINE := Map.pop(k, deleted);
+	remove_h(k: Hash #&) BOOL -- := Map.remove(k);
+	pop_h(k: Hash #&, deleted: V! \) BOOL -- := Map.pop(k, deleted);
 
-	#? start() ? INLINE := Map.start();
-	#? end() ? INLINE := Map.end();
-	# empty() BOOL INLINE := Map.empty();
+	#? start() ? -- := Map.start();
+	#? end() ? -- := Map.end();
+	# empty() BOOL -- := Map.empty();
 }
 
 ::std [K:TYPE; V:TYPE] TYPE DynHashMap := [K!; V!-std::Dyn]HashMap;

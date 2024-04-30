@@ -35,7 +35,7 @@ INCLUDE 'std/hashable'
 					= FALSE;
 			= TRUE;
 		}
-		# THIS!=(rhs: Hash#&) BOOL INLINE := !(THIS == rhs);
+		# THIS!=(rhs: Hash#&) BOOL -- := !(THIS == rhs);
 
 		# THIS<>(rhs: Hash#&) S1
 		{
@@ -65,7 +65,7 @@ INCLUDE 'std/hashable'
 	}
 
 	[T...: TYPE]
-	hash(v: T! &&...) Hash! INLINE
+	hash(v: T! &&...) Hash! --
 	{
 		h: Hasher;
 		h(<T!&&>(v))...;
@@ -82,7 +82,7 @@ INCLUDE 'std/hashable'
 
 		{}: Accum(:seed), WordAccSize(0), Current(0), Digested(FALSE);
 
-		THIS++ Hash #& INLINE
+		THIS++ Hash #& --
 		{
 			IF(!Digested)
 			{
@@ -96,14 +96,14 @@ INCLUDE 'std/hashable'
 			= Accum;
 		}
 
-		[T:TYPE; T_...:TYPE] THIS(v:T! #&, v_: T_!#&...) Hasher& INLINE
+		[T:TYPE; T_...:TYPE] THIS(v:T! #&, v_: T_!#&...) Hasher& --
 		{
 			_hash(v);
 			_hash(v_)...;
 			= THIS;
 		}
 
-		[T:TYPE] PRIVATE _hash(v: T!#&) VOID INLINE
+		[T:TYPE] PRIVATE _hash(v: T!#&) VOID --
 		{
 			TYPE SWITCH STATIC(v)
 			{
@@ -133,7 +133,7 @@ INCLUDE 'std/hashable'
 			}
 		}
 
-		PRIVATE accum(v: Hash::Word, bits: U1) VOID INLINE
+		PRIVATE accum(v: Hash::Word, bits: U1) VOID --
 		{
 			WordAcc[Current & (##WordAcc-1)] ^= v << WordAccSize;
 			WordAccSize += bits;
@@ -150,7 +150,7 @@ INCLUDE 'std/hashable'
 			}
 		}
 
-		PRIVATE applyWords() VOID INLINE
+		PRIVATE applyWords() VOID --
 		{
 			STATIC off0: Hash::Word# := 0xb9ca57f290b356cb;
 			STATIC off1: Hash::Word# := 0x3eb8ad5945662260;

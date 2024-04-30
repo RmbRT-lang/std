@@ -23,13 +23,13 @@ INCLUDE 'std/hash'
 	:buf{s: T! *, c: UM} (s, c);
 	[V:TYPE] :array{v: V! &&} := :buf(&v[0], ##v);
 
-	# THIS++ {:buf, T! *, UM} INLINE := :buf(Data, Size);
-	# <BOOL> INLINE := Size != 0;
+	# THIS++ {:buf, T! *, UM} -- := :buf(Data, Size);
+	# <BOOL> -- := Size != 0;
 
-	#? THIS[i: Index #&] T!#?& INLINE := Data[i(Size)];
+	#? THIS[i: Index #&] T!#?& -- := Data[i(Size)];
 
 	# range(
-		r: Range #&) [T!]Buffer INLINE
+		r: Range #&) [T!]Buffer --
 	{
 		r(Size);
 		= (Data + r.Start, r.Size);
@@ -44,15 +44,15 @@ INCLUDE 'std/hash'
 	# cut_start(size: Index) [T!]Buffer
 		:= range((Size-size[Size], size[Size]));
 
-	# ##THIS UM INLINE := Size;
+	# ##THIS UM -- := Size;
 
-	#? front() T!#?& INLINE := THIS[0];
-	#? start() [T!]Buffer#?-[T!#?]Iterator INLINE := (&THIS, 0);
+	#? front() T!#?& -- := THIS[0];
+	#? start() [T!]Buffer#?-[T!#?]Iterator -- := (&THIS, 0);
 
-	#? back() T!#?& INLINE:= THIS[Size-1];
-	#? end() [T!]Buffer#?-[T!#?]Iterator INLINE := (&THIS, Size-1);
+	#? back() T!#?& --:= THIS[Size-1];
+	#? end() [T!]Buffer#?-[T!#?]Iterator -- := (&THIS, Size-1);
 
-	# empty() BOOL INLINE := !Size;
+	# empty() BOOL -- := !Size;
 
 	# THIS<>(rhs: THIS#&) S1
 	{
@@ -82,5 +82,5 @@ INCLUDE 'std/hash'
 	}
 }
 
-::std::range [T: TYPE] destroy_buf(v: [T!]Buffer) VOID INLINE
+::std::range [T: TYPE] destroy_buf(v: [T!]Buffer) VOID --
 	:= destroy(v.Data, v.Size);

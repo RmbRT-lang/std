@@ -46,7 +46,7 @@ PUBLIC:
 	}
 
 	[Args...: TYPE]
-	ensure(args: Args!&&...) T!& INLINE
+	ensure(args: Args!&&...) T!& --
 	{
 		IF(!Exists)
 		{
@@ -56,19 +56,19 @@ PUBLIC:
 		= *THIS;
 	}
 
-	# <BOOL> INLINE := Exists;
+	# <BOOL> -- := Exists;
 
-	#? THIS! T! #?& INLINE := *THIS;
-	#? *THIS T! #?& INLINE
+	#? THIS! T! #?& -- := *THIS;
+	#? *THIS T! #?& --
 	{
 		ASSERT(Exists);
 		= *Obj;
 	}
 
 	[Ref: TYPE]
-	Ok { V: Ref! *; # <Ref! &> INLINE { ASSERT(V); = <Ref! &>(*V); } }
+	Ok { V: Ref! *; # <Ref! &> -- { ASSERT(V); = <Ref! &>(*V); } }
 
-	#? ok() [T! #?]Ok INLINE := Exists ?? &*Obj : NULL;
+	#? ok() [T! #?]Ok -- := Exists ?? &*Obj : NULL;
 
 	#? ptr() T #? * := Exists ?? &*Obj : NULL;
 

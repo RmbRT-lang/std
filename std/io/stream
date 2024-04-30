@@ -36,11 +36,11 @@
 		{
 			slice: T! \,
 			count: UM
-		} INLINE:
+		} --:
 			Data(slice),
 			Bytes(count * SIZEOF(T));
 
-		:ch{c: CHAR &} INLINE: Data(&c), Bytes(1);
+		:ch{c: CHAR &} --: Data(&c), Bytes(1);
 
 		{data: VOID *, bytes: UM}:
 			Data(data), Bytes(bytes);

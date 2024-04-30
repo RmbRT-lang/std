@@ -16,7 +16,7 @@ INCLUDE 'std/err/indexoutofrange'
 	{
 		start: UM,
 		size: UM
-	} INLINE :
+	} -- :
 		Start(start),
 		Size(size),
 		Checked(FALSE);
@@ -24,13 +24,13 @@ INCLUDE 'std/err/indexoutofrange'
 	:ok{
 		start: UM,
 		size: UM
-	} INLINE :
+	} -- :
 		Start(start),
 		Size(size),
 		Checked(TRUE);
 
 	/// Throws if the range is outside the supplied bounds.
-	# THIS(bounds: UM) VOID INLINE
+	# THIS(bounds: UM) VOID --
 	{
 		IF(!Checked)
 			IF(math::safe::add(Start, Size) > bounds)
@@ -117,7 +117,7 @@ INCLUDE 'std/err/indexoutofrange'
 
 	[T: TYPE] destroy(
 		range: T! \,
-		count: UM) VOID INLINE
+		count: UM) VOID --
 	{
 		FOR(i ::= 0; i<count; i++)
 			range[i].~;
@@ -131,14 +131,14 @@ INCLUDE 'std/err/indexoutofrange'
 
 		{...};
 
-		# <BOOL> INLINE := Index < Size;
-		# *THIS T!& INLINE := Range[Index];
-		# THIS! T!& INLINE := *THIS;
+		# <BOOL> -- := Index < Size;
+		# *THIS T!& -- := Range[Index];
+		# THIS! T!& -- := *THIS;
 
-		THIS++ THIS INLINE { t ::= THIS; ++Index; = t; }
-		++THIS THIS& INLINE { ++Index; = THIS; }
-		THIS-- THIS INLINE { t ::= THIS; --Index; = t; }
-		--THIS THIS& INLINE { --Index; = THIS; }
+		THIS++ THIS -- { t ::= THIS; ++Index; = t; }
+		++THIS THIS& -- { ++Index; = THIS; }
+		THIS-- THIS -- { t ::= THIS; --Index; = t; }
+		--THIS THIS& -- { --Index; = THIS; }
 
 		# THIS() UM := Index;
 	}

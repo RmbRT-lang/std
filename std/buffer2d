@@ -39,6 +39,6 @@ INCLUDE 'std/index'
 			y.Size, RowDist);
 	}
 
-	#? row(i: Index) [T!#?]Buffer INLINE := (&Data[i(H)*RowDist], W);
-	#? THIS[x: Index, y: Index] T #?& INLINE := Data[y(H) * RowDist + x(W)];
+	#? row(i: Index) [T!#?]Buffer -- := (&Data[i(H)*RowDist], W);
+	#? THIS[x: Index, y: Index] T #?& -- := Data[y(H) * RowDist + x(W)];
 }
