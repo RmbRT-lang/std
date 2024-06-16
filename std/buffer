@@ -10,20 +10,23 @@ INCLUDE 'std/hash'
 ::std [T: TYPE] Buffer -> CustomHashable0Cost
 {
 	Data: T! *;
-	Size: UM;
+	Size: U4;
+	Unused: U4;
 
-	{};
-	{NULL};
-	{s: T! *, c: UM}: Data(s), Size(c)
+	//{#&cpy}: Data := cpy.Data, Size := cpy.Size, Unused := cpy.Unused;
+	//{&&};
+	{}--: Unused(NOINIT);
+	{NULL}--: Unused(NOINIT);
+	{s: T! *, c: U4}: Data(s), Size(c), Unused(NOINIT)
 	{
 		ASSERT(!Size || Data);
 	}
 	{BARE} (NULL);
 
-	:buf{s: T! *, c: UM} (s, c);
+	:buf{s: T! *, c: U4} (s, c);
 	[V:TYPE] :array{v: V! &&} := :buf(&v[0], ##v);
 
-	# THIS++ {:buf, T! *, UM} -- := :buf(Data, Size);
+	# THIS++ {:buf, T! *, U4} -- := :buf(Data, Size);
 	# <BOOL> -- := Size != 0;
 
 	#? THIS[i: Index #&] T!#?& -- := Data[i(Size)];
@@ -44,7 +47,7 @@ INCLUDE 'std/hash'
 	# cut_start(size: Index) [T!]Buffer
 		:= range((Size-size[Size], size[Size]));
 
-	# ##THIS UM -- := Size;
+	# ##THIS U4 -- := Size;
 
 	#? front() T!#?& -- := THIS[0];
 	#? start() [T!]Buffer#?-[T!#?]Iterator -- := (&THIS, 0);

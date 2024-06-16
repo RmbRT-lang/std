@@ -13,47 +13,49 @@ INCLUDE 'std/hash'
 {
 PRIVATE:
 	Content: [T!]Buffer;
-	Capacity: UM;
+	PRIVATE #? Capacity() U4 #? & -- := Content.Unused;
 PUBLIC:
-	{} --;
+	{} -- { Capacity() := 0; }
 	{BARE} -- ();
 
-	:noinit{size: UM}:
-		Content := heap::[T]alloc_array(size),
-		Capacity := size;
-	{size: UM} := :noinit(size)
+	:noinit{size: U4}:
+		Content := heap::[T]alloc_array(size)
+	{
+		Capacity() := size;
+	}
+
+	{size: U4} := :noinit(size)
 	{
 		range::default_construct(Content.Data, ##Content);
 	}
-	:bare{size: UM} := :noinit(size)
+	:bare{size: U4} := :noinit(size)
 	{
 		FOR(i ::= 0; i < size; i++)
 			Content.Data[i].{BARE};
 	}
-	:reserve{capacity: UM}:
-		Content(heap::[T]alloc_array(capacity)),
-		Capacity(capacity)
+	:reserve{capacity: U4}:
+		Content(heap::[T]alloc_array(capacity))
 	{
+		Capacity() := capacity;
 		Content.Size := 0;
 	}
 
 	{#&copy}:
-		Content(heap::clone_buf(copy.Content)),
-		Capacity(##copy);
+		Content(heap::clone_buf(copy.Content))
+		{ Capacity() := ##copy; }
 	{&&move}:
-		Content(move.Content),
-		Capacity(move.Capacity)
+		Content(move.Content)
 	{
 		move.{};
 	}
 
 	:copy{content: [T#]Buffer #&}:
-		Content(heap::clone(content)),
-		Capacity(##content);
+		Content(heap::clone_buf(content))
+		{ Capacity() := ##content; }
 	:move{content: [T!]Buffer &&}:
-		Content(content),
-		Capacity(##content)
+		Content(content)
 	{
+		Capacity() := ##content;
 		content := NULL;
 	}
 
@@ -67,11 +69,11 @@ PUBLIC:
 			heap::delete_buf(Content);
 	}
 
-	erase(at: UM) VOID
+	erase(at: U4) VOID
 	{
 		ASSERT(at < ##THIS);
 
-		THIS![at].~;
+		THIS![:ok(at)].~;
 		--Content.Size;
 		range::move_construct(&THIS!.Data[at], &THIS!.Data[at+1], ##THIS-at);
 	}
@@ -88,13 +90,13 @@ PUBLIC:
 
 	append_move(rhs: T!-std::Buffer) VOID
 	{
-		cap: UM;
-		IF(!Capacity)
+		cap: U4;
+		IF(!Capacity())
 			cap := ##rhs;
-		ELSE IF(Capacity > ##THIS + ##rhs)
-			cap := Capacity;
+		ELSE IF(Capacity() > ##THIS + ##rhs)
+			cap := Capacity();
 		ELSE
-			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
+			cap := (##THIS + ##rhs + (Capacity() >> 4)) | 3;
 
 		reserve(cap);
 
@@ -104,13 +106,13 @@ PUBLIC:
 
 	append(rhs: T!#-std::Buffer) VOID
 	{
-		cap: UM;
-		IF(!Capacity)
+		cap: U4;
+		IF(!Capacity())
 			cap := ##rhs;
-		ELSE IF(Capacity > ##THIS + ##rhs)
-			cap := Capacity;
+		ELSE IF(Capacity() > ##THIS + ##rhs)
+			cap := Capacity();
 		ELSE
-			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
+			cap := (##THIS + ##rhs + (Capacity() >> 4)) | 3;
 
 		reserve(cap);
 
@@ -123,7 +125,7 @@ PUBLIC:
 		in the contents at the requested location. If the hole is within the
 		contents, increases the container size to accomodate the hole.
 	/)
-	PRIVATE reserve_with_hole_at(cap: UM, at: UM) BOOL
+	PRIVATE reserve_with_hole_at(cap: U4, at: U4) BOOL
 	{
 		ASSERT(at <= ##Content);
 		ASSERT(at <= cap);
@@ -133,7 +135,7 @@ PUBLIC:
 			++cap;
 
 		/// Is the container already large enough?
-		IF(Capacity >= cap)
+		IF(Capacity() >= cap)
 			/// Grow hole if required.
 			IF(at < ##Content)
 			{
@@ -170,17 +172,17 @@ PUBLIC:
 		IF(Content.Data)
 			heap::delete_buf(Content);
 		Content := new;
-		Capacity := cap;
+		Capacity() := cap;
 		= hasHole;
 	}
 
 	(// Reserve space for the requested capacity, without shrinking. /)
-	reserve(cap: UM) VOID
+	reserve(cap: U4) VOID
 	{
 		reserve_with_hole_at(cap, ##Content);
 	}
 
-	resize(size: UM) VOID
+	resize(size: U4) VOID
 	{
 		IF(size >= ##Content)
 		{
@@ -194,7 +196,7 @@ PUBLIC:
 		Content.Size := size;
 	}
 
-	resize_bare(size: UM) VOID
+	resize_bare(size: U4) VOID
 	{
 		IF(size >= ##Content)
 		{
@@ -213,22 +215,22 @@ PUBLIC:
 		Increases ##Content. Leaves an uninitialised hole at the requested
 		location.
 	/)
-	PRIVATE grow_reserve_with_hole_at(at: UM) VOID
+	PRIVATE grow_reserve_with_hole_at(at: U4) VOID
 	{
-		cap: UM;
-		IF(!Capacity)
+		cap: U4;
+		IF(!Capacity())
 			cap := 1;
-		ELSE IF(Capacity > ##THIS)
-			cap := Capacity;
+		ELSE IF(Capacity() > ##THIS)
+			cap := Capacity();
 		ELSE
-			cap := (Capacity+1 + (Capacity >> 4)) | 3;
+			cap := (Capacity()+1 + (Capacity() >> 4)) | 3;
 
 		/// Increase content if appending.
 		Content.Size += !reserve_with_hole_at(cap, at);
 	}
 
 	[A...:TYPE]
-	emplace_at(at: UM, a: A!&&...) T! & --
+	emplace_at(at: U4, a: A!&&...) T! & --
 	{
 		grow_reserve_with_hole_at(at);
 		failed ::= TRUE;
@@ -258,15 +260,17 @@ PUBLIC:
 
 	# <BOOL> := Content.Size;
 
-	# ##THIS UM -- := Content.Size;
+	# ##THIS U4 -- := Content.Size;
 	# data() T! #* -- := Content.Data;
-	# capacity() UM -- := Capacity;
+	# capacity() U4 -- := Capacity();
 	# empty() BOOL -- := ##THIS == 0;
 
 	#? THIS! ? #?& -- := Content;
 
 	#? start() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, 0);
 	#? end() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, ##THIS-1);
+
+	# index_of(ptr: T! #\) U4 -- := ptr - Content.Data;
 
 	# THIS <> (rhs: THIS #&) S1
 	{
