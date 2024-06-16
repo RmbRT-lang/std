@@ -1,9 +1,7 @@
 (/rl/)
 
 INCLUDE 'std/range'
-INCLUDE 'std/index'
 INCLUDE 'std/math/limit'
-INCLUDE 'std/iterator'
 INCLUDE 'std/buffer'
 
 ::std
@@ -42,28 +40,28 @@ INCLUDE 'std/buffer'
 	[T: TYPE] Ref
 	{
 		V: T! \;
-		{...};
+		{...}--;
 
 		{BARE} { DIE; }
 
 		# <T! &> -- := *V;
-		# *THIS T!& := *V;
-		# THIS! T!& := *V;
-		# THIS() T!& := *V;
-		# |THIS T! \ := V;
+		# *THIS T!& -- := *V;
+		# THIS! T!& -- := *V;
+		# THIS() T!& -- := *V;
+		# |THIS T! \ -- := V;
 
-		# THIS <>(rhs: THIS) S1 := *V <> *rhs;
+		# THIS <>(rhs: THIS) S1 -- := *V <> *rhs;
 	}
 
 	[T: TYPE] OptRef
 	{
 		V: T! *;
-		{...};
+		{...}--;
 
-		# ptr() T! * := V;
+		# ptr() T! * -- := V;
 		# <T! *> -- := V;
-		# *THIS T!& := *V;
-		# THIS! T!& := *V;
-		# THIS() T!& := *V;
+		# *THIS T!& -- := *V;
+		# THIS! T!& -- := *V;
+		# THIS() T!& -- := *V;
 	}
 }

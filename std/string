@@ -12,7 +12,7 @@ INCLUDE 'std/str'
 	{};
 	{BARE} ();
 
-	{data: str::[C#]View #&}: Content(heap::clone_buf(data));
+	{data: str::[C#]View} --: Content(heap::clone_buf(data));
 	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc_array(##data+1))
 	{
 		range::copy_construct(Content.Data, data.Data, ##data);
