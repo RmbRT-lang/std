@@ -35,6 +35,15 @@
 		}
 	}
 
+	TEST "COMMON intro"
+	{
+		SWITCH(x ::= 4) {
+		COMMON: { y ::= x * x; }
+		4: ASSERT(y == 16);
+		5: ASSERT(y == 25);
+		}
+	}
+
 	ENUM E
 	{
 		a,b
