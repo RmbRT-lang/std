@@ -1,37 +1,38 @@
 (/rl/)
 
 INCLUDE 'std/shared'
+INCLUDE 'std/hash'
 
 /// shared value type with copy-on-write semantics.
-::std [T:TYPE] Val -> PRIVATE [T]Shared
+::std [T:TYPE] Val -> PRIVATE [T]Shared, CustomHashable0Cost
 {
-	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...);
-	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...);
-	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
-	[A...:TYPE] :make{ a: A!&&... } -> (&&<<<T>>>(<A!&&>(a)...).shared());
-	[A...:TYPE] :dyn_make{ a: A!&&... } -> (:share, (:make, <A!&&>(a)...));
-	[U:TYPE] :dup{ a: U!&& } -> (:dup, <U!&&>(a));
+	[A...:TYPE] { a: A!&&... } -> (<A!&&>(a)...), ();
+	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...), ();
+	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...), ();
+	[A...:TYPE] :make{ a: A!&&... } -> (&&<<<T>>>(<A!&&>(a)...).shared()), ();
+	[A...:TYPE] :dyn_make{ a: A!&&... } -> (:share, (:make, <A!&&>(a)...)), ();
+	[U:TYPE] :dup{ a: U!&& } -> (:dup, <U!&&>(a)), ();
 
-	[U:TYPE] :<>{v: U!-Val} -> (:<>, &&v.shared());
-	[U:TYPE] :gc{p: U! \} -> (:gc, p);
+	[U:TYPE] :<>{v: U!-Val} -> (:<>, &&v.shared()), ();
+	[U:TYPE] :gc{p: U! \} -> (:gc, p), ();
 
-	{BARE} -> (BARE);
+	:from_shared{s: [T]Shared} -> (&&s), ();
+
+	{BARE} -> (BARE), ();
 	{};
-	{#&};
-	{&&};
+	{#&cpy} -> (cpy.shared()), ();
+	{&&mv} -> (&&mv.shared()), ();
 
-	[U:TYPE] :!{v: [U!]ValOpt} -> (:!, &&v.shared());
+	[U:TYPE] :!{v: [U!]ValOpt} -> (:!, &&v.shared()), ();
 
 	# *THIS T #& INLINE  := *<[T]Shared #&>(THIS);
 	# THIS! T #& INLINE := *THIS;
-	//# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
+	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
 	# <T #\> INLINE := ptr();
 
-	# +THIS THIS INLINE := THIS;
+	# THIS <>(rhs: T#\) S1 := ptr() <> rhs;
 
-	# THIS <>(rhs: T#\) S1 := <[T]Shared#&>(THIS) <> rhs;
-
-	#? shared() [T]Shared #? & INLINE := THIS;
+	#? shared() [T]Shared #? & INLINE := ->([T]Shared);
 
 
 	# ptr() T #\ INLINE := <[T]Shared #&>(THIS).ptr();
@@ -45,31 +46,33 @@ INCLUDE 'std/shared'
 		= <[T]Shared &>(THIS).ptr();
 	}
 	mut_ptr_ok() T * INLINE := <[T]Shared &>(THIS).ptr();
+
+	# hash(h: std::Hasher &) VOID { h(<UM>(ptr())); }
 }
 
-::std [T:TYPE] ValOpt -> PRIVATE [T]SharedOpt
+::std [T:TYPE] ValOpt -> PRIVATE [T]SharedOpt, CustomHashable0Cost
 {
-	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...);
-	[A...:TYPE] :if{ if: BOOL, a: A!&&... } -> (:if, if, <A!&&>(a)...);
-	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...);
+	[A...:TYPE] :a{ a: A!&&... } -> (:a, <A!&&>(a)...), ();
+	[A...:TYPE] :if{ if: BOOL, a: A!&&... } -> (:if, if, <A!&&>(a)...), ();
+	[U:TYPE; A...:TYPE] :a.U!{ a: A!&&... } -> (:a.U!, <A!&&>(a)...), ();
 	[A...:TYPE] :make{ a: A!&&... } := <<<T>>>(<A!&&>(a)...);
 	
 	[A...:TYPE] :make_if{ if: BOOL,  a: A!&&... }
 	{ IF(if) THIS := <<<T>>>(<A!&&>(a)...); }
 	
-	[A:TYPE] :dup{ a: A!&& } -> (:dup, <A!&&>(a));
-	[U:TYPE] { v: [U!]ValOpt } -> (&&v.shared());
-	[U:TYPE] :<>{v: U!-ValOpt} -> (:<>, &&v.shared());
-	[U:TYPE] :cast_val{ v: [U!]Val } -> (:<>, &&v.shared());
-	:gc{p: T! *} -> (:gc, p);
-	{NULL} -> (NULL);
+	[A:TYPE] :dup{ a: A!&& } -> (:dup, <A!&&>(a)), ();
+	[U:TYPE] { v: [U!]ValOpt } -> (&&v.shared()), ();
+	[U:TYPE] :<>{v: U!-ValOpt} -> (:<>, &&v.shared()), ();
+	[U:TYPE] :cast_val{ v: [U!]Val } -> (:<>, &&v.shared()), ();
+	:gc{p: T! *} -> (:gc, p), ();
+	{NULL} -> (NULL), ();
 
-	{BARE} -> (BARE);
+	{BARE} -> (BARE), ();
 	{};
-	{#&};
-	{&&};
+	{#&cpy} -> (cpy), ();
+	{&&mv} -> (&&mv), ();
 
-	{v: [T]Val} -> (&&v.shared());
+	{v: [T]Val} -> (&&v.shared()), ();
 
 	# *THIS T #& INLINE  := *<[T]SharedOpt #&>(THIS);
 	# THIS! T #& INLINE := *THIS;
@@ -77,14 +80,12 @@ INCLUDE 'std/shared'
 	# ptr() T #* INLINE := <[T]SharedOpt #&>(THIS).ptr();
 	# ok() T #& INLINE := *ptr();
 
-	# +THIS THIS INLINE := THIS;
-
-	//# <T #*> INLINE := ptr();
+	# <T #*> INLINE := ptr();
 	# <BOOL> INLINE := <[T]SharedOpt#&>(THIS);
 
-	# THIS <>(rhs: T#\) S1 := <[T]SharedOpt#&>(THIS) <> rhs;
+	# THIS <>(rhs: T#\) S1 := ptr() <> rhs;
 
-	#? shared() [T]SharedOpt#& INLINE := THIS;
+	#? shared() [T]SharedOpt #? & INLINE := ->([T]SharedOpt);
 
 
 	mut() T & INLINE := *mut_ptr();
@@ -97,4 +98,6 @@ INCLUDE 'std/shared'
 		= <[T]SharedOpt &>(THIS).ptr();
 	}
 	mut_ptr_ok() T * INLINE := <[T]SharedOpt &>(THIS).ptr();
+
+	# hash(h: std::Hasher &) VOID { h(<UM>(ptr())); }
 }

@@ -37,7 +37,7 @@
 
 		# THIS/(rhs: INT) ? := V/rhs;
 		# THIS%(rhs: INT) ? := V%rhs;
-		# THIS/(rhs: {:divmod, INT}) ? := (V/rhs.(1), V%rhs.(1));
+		# THIS/(rhs: {:divmod, INT}) ? := +(V/rhs.(1), V%rhs.(1));
 	}
 
 	TEST "tuple arguments and returns"
@@ -107,5 +107,14 @@
 		v VISIT*(x);
 		ASSERT(v.Index == 1);
 		ASSERT(v.Address == &x.(1).(1));
+	}
+
+	TEST "comparison" {
+		ASSERT(((4,6) <> (4,7)) < 0);
+		ASSERT(((4,6) <> (4,5)) > 0);
+		ASSERT(((4,6) <> (4,6)) == 0);
+		ASSERT(((3,6) <> (4,6)) < 0);
+		ASSERT(((3,6) <> (4,5)) < 0);
+		ASSERT(((5,6) <> (4,6)) > 0);
 	}
 }

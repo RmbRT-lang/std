@@ -139,6 +139,8 @@ INCLUDE 'std/err/indexoutofrange'
 		++THIS THIS& INLINE { ++Index; = THIS; }
 		THIS-- THIS INLINE { t ::= THIS; --Index; = t; }
 		--THIS THIS& INLINE { --Index; = THIS; }
+
+		# THIS() UM := Index;
 	}
 	::detail [T: TYPE] array_iter(arr: T! *, i: UM, sz: UM) [T!]ArrayIter
 		:= (arr, i, sz);

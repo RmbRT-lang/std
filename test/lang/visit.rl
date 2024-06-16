@@ -1,5 +1,6 @@
 INCLUDE 'std/memory'
 INCLUDE 'std/optional'
+INCLUDE 'std/range'
 
 ::lang::visit
 {
@@ -50,5 +51,30 @@ INCLUDE 'std/optional'
 		ASSERT(std::str::view(result[2].(0)) == "B");
 		ASSERT(result[2].(1));
 		ASSERT(result[2].(1)! == 5);
+	}
+
+	copy_into_array(i: INT, v: INT, out: INT *) VOID
+	{ out[i] := v; }
+
+	TEST "reflect visit tuple"
+	{
+		dst: INT[3];
+
+		copy_into_array VISIT* ((1,2,3), &dst[0]);
+		FOR(x ::= std::range::start(dst))
+			ASSERT(x! == x() +1);
+	}
+
+	copy_into_array_iter(v: INT, out: INT **) VOID
+	{ *(*out)++ := v; }
+
+	TEST "visit tuple"
+	{
+		dst: INT[3];
+		it ::= &dst[0];
+		copy_into_array_iter VISIT ((1,2,3), &it);
+
+		FOR(x ::= std::range::start(dst))
+			ASSERT(x! == x() +1);
 	}
 }

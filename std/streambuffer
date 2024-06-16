@@ -3,9 +3,12 @@
 INCLUDE 'std/string'
 INCLUDE 'std/io/stream'
 
-::std StreamBuffer -> std::[CHAR]Vec, io::OStream
+::std StreamBuffer -> std::[CHAR]Vec
 {
-	FINAL write_some(data: VOID #\, size: UM) UM
+	{};
+	{&&};
+
+	write_some(data: VOID #\, size: UM) UM
 	{
 		THIS.append((<CHAR #\>(data), size));
 		RETURN size;

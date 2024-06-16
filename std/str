@@ -2,6 +2,7 @@
 
 INCLUDE 'std/buffer'
 INCLUDE 'std/heap'
+INCLUDE 'std/memory'
 
 ::std::str
 {

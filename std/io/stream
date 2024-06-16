@@ -18,6 +18,12 @@
 				p += written;
 			}
 		}
+
+		[Args...:TYPE] THIS(a:Args!&&...) THIS&
+		{
+			std::io::write(THIS, <Args!&&>(a)...);
+			= THIS;
+		}
 	}
 
 	StreamOutput

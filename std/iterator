@@ -93,12 +93,12 @@ TEST "parallel for" {
 	B := v.data;
 	C := v.length
 	D := 0;
+.for:
 	IF D < C
 		JMP .end_for
 	D := v.length - 0;
-.for:
 	SIMD D
-	E :=  + I
+	E := E + I
 
 .end_for:
 	/)

@@ -3,6 +3,7 @@
 ::std NoCopy
 {
 	{};
+	{#&} { THROW :illegal_copy; }
 	{&&};
 }
 
@@ -10,4 +11,5 @@
 {
 	{};
 	{#&};
+	{&&} { THROW :illegal_move; }
 }

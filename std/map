@@ -2,24 +2,26 @@
 
 INCLUDE 'std/set'
 
+
+::std [K:TYPE; V:TYPE] Pair
+{
+	Key: K;
+	Value: V;
+
+	{...};
+
+	# |THIS ? := (Key, Value);
+
+	[T:TYPE]
+	# THIS <>(rhs: T!&&) S1 := Key <> <T!&&>(rhs);
+}
+
 ::std [K:TYPE; V:TYPE] Map
 {
-	PRIVATE Pair
-	{
-		Key: K;
-		Value: V;
 
-		{...};
+	PRIVATE Set: [[K!;V!]Pair]VecSet;
 
-		# |THIS ? := (Key, Value);
-
-		[T:TYPE]
-		# THIS <>(rhs: T!&&) S1 := Key <> <T!&&>(rhs);
-	}
-
-	PRIVATE Set: [Pair]VecSet;
-
-	TYPE Location := [Pair]VecSet::Location;
+	TYPE Location := [[K!;V!]Pair]VecSet::Location;
 
 	{};
 	:reserve{cap: UM}: Set := :reserve(cap);
@@ -50,6 +52,19 @@ INCLUDE 'std/set'
 		= find_loc2(k, &dummy);
 	}
 
+	[T:TYPE]
+	#? THIS[k: T! #&] V! #?-OptRef INLINE := find(k);
+
+	# find_entry(k: K#&) [K!;V!]Pair# -OptRef
+	{
+		dummy: Location;
+		= Set.find_loc2(k, &dummy);
+	}
+
+	[Key:TYPE]
+	#? find_entry_loc2(k: Key!&&, loc: Location \) [K!;V!]Pair#? -OptRef
+		:= Set.find_loc2(<Key!&&>(k), loc);
+
 	[Key: TYPE; Value: TYPE]
 	insert(k: Key!&&, v: Value!&&) BOOL
 	{
@@ -61,19 +76,25 @@ INCLUDE 'std/set'
 	}
 
 	[Key: TYPE; Val...: TYPE]
-	ensure(k: Key!, v: Val!&&...) V! &
+	ensure_entry(k: Key!&&, v: Val!&&...) [K!;V!]Pair &
 	{
 		loc: Location;
-		IF(exists ::= find_loc2(k, &loc))
+		IF(exists ::= Set.find_loc2(k, &loc))
 			= *exists;
-		= Set.emplace_at(loc, <Key!&&>(k), (<Val!&&>(v)...)).Value;
+		= Set.emplace_at(loc, <Key!&&>(k), <Val!&&>(v)...);
 	}
 
+	[Key: TYPE; Val...: TYPE]
+	ensure(k: Key!&&, v: Val!&&...) V! &
+		:= ensure_entry(<Key!&&>(k), (<Val!&&>(v)...)).Value;
+
 	[Key: TYPE; Value: TYPE]
-	insert_at(loc: Location, k: Key!&&, v: Value!&&) VOID
-	{
-		Set.emplace_at(loc, <Key!&&>(k), <Value!&&>(v));
-	}
+	insert_at(loc: Location, k: Key!&&, v: Value!&&) V! &
+		:= insert_entry_at(loc, <Key!&&>(k), <Value!&&>(v)).Value;
+
+	[Key: TYPE; Value: TYPE]
+	insert_entry_at(loc: Location, k: Key!&&, v: Value!&&) [K!;V!]Pair &
+		:= Set.emplace_at(loc, <Key!&&>(k), <Value!&&>(v));
 
 	[T:TYPE]
 	remove(k: T! #&) BOOL INLINE := Set.remove(k);
@@ -89,6 +110,8 @@ INCLUDE 'std/set'
 		}
 		= FALSE;
 	}
+
+	remove_at(l: Location) VOID INLINE { Set.remove_at(l); }
 
 	#? start() ? INLINE := Set.start();
 	#? end() ? INLINE := Set.end();

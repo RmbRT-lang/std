@@ -113,4 +113,18 @@ INCLUDE 'std/heap'
 		
 		std::heap::delete(clone);
 	}
+
+	NoDefaultCtor {
+		Member: UM;
+
+		{x: INT *} {
+			std::io::write(&std::io::out, "ctor(x: ", :addr(x), ")\n");
+		}
+	}
+
+	Y -> NoDefaultCtor {}
+
+	TEST "No Default CTOR" {
+		x: Y;
+	}
 }

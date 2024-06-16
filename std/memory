@@ -44,10 +44,13 @@ INCLUDE 'std/buffer'
 		V: T! \;
 		{...};
 
+		{BARE} { DIE; }
+
 		# <T! &> INLINE := *V;
 		# *THIS T!& := *V;
 		# THIS! T!& := *V;
 		# THIS() T!& := *V;
+		# |THIS T! \ := V;
 
 		# THIS <>(rhs: THIS) S1 := *V <> *rhs;
 	}

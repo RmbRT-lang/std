@@ -26,10 +26,10 @@ INCLUDE "../std/shared"
 	ASSERT(*share == 32);
 }
 
-BaseClass VIRTUAL { INT; }
-BaseClass2 { INT; }
-Derived1 -> BaseClass2, BaseClass { INT; }
-Derived2 -> BaseClass, BaseClass2 { INT; }
+BaseClass VIRTUAL { B: INT; }
+BaseClass2 { B2: INT; }
+Derived1 -> BaseClass2, BaseClass { D: INT; }
+Derived2 -> BaseClass, BaseClass2 { D: INT; }
 
 ::std TEST "shared cast"
 {
@@ -71,4 +71,34 @@ Derived2 -> BaseClass, BaseClass2 { INT; }
 	/// Previously, std::Shared :a(BARE) called CompactAlloc(BARE), which called SharedAlloc(BARE), leading to invalid reference tracking.
 
 	x: INT-std::Shared := :a(BARE);
+}
+::std::test::shared [T:TYPE]clone_if_shared() VOID {
+	x: BaseClass-std::Shared := :a.T;
+	y ::= x;
+
+	x!.B := 5;
+	<<T &>>(x!).B2 := 6;
+	<<T &>>(x!).D := 7;
+
+	y.clone_if_shared();
+
+	ASSERT(TYPE(x!) == TYPE(y!));
+	ASSERT(TYPE(x!) == TYPE TYPE(T));
+	ASSERT(x.ptr() != y.ptr());
+
+	xd ::= <<T *>>(x.ptr());
+	yd ::= <<T *>>(y.ptr());
+	ASSERT(xd->B == 5);
+	ASSERT(yd->B == 5);
+	ASSERT(xd->B2 == 6);
+	ASSERT(yd->B2 == 6);
+	ASSERT(xd->D == 7);
+	ASSERT(yd->D == 7);
+
+	ASSERT(SIZEOF(#x) == SIZEOF(#y));
+	ASSERT(0 == std::mem::cmp(<U1#*>(&&&x!), <U1#*>(&&&y!), SIZEOF(#x)));
+}
+::std TEST "Shared::clone()" {
+	test::shared::[Derived1]clone_if_shared();
+	test::shared::[Derived2]clone_if_shared();
 }

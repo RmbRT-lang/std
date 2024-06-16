@@ -30,8 +30,6 @@ INCLUDE 'std/buffer'
 		TRY { <T \>(obj)->VIRTUAL{*data}; failed := FALSE; }
 		FINALLY IF(failed) heap::free(obj);
 
-		ASSERT(TYPE(*data) == TYPE(*obj));
-
 		= obj;
 	}
 
@@ -39,7 +37,7 @@ INCLUDE 'std/buffer'
 	clone_virtual_v(data: T! &&) T \
 	{
 		offset ::= <UM>(&data) - <UM>(&&&data);
-		obj ::= <T! \>(<UM>(heap::alloc_raw(SIZEOF(# data))) + offset);
+		obj ::= <T \>(<UM>(heap::alloc_raw(SIZEOF(# data))) + offset);
 		failed ::= TRUE;
 		COPY_RTTI(data, obj);
 		TRY { <T \>(obj)->VIRTUAL{<T!&&>(data)}; failed := FALSE; }
@@ -53,6 +51,7 @@ INCLUDE 'std/buffer'
 
 
 	alloc_raw(bytes: UM) VOID* := detail::libc::malloc(bytes);
+	
 	[T: TYPE] alloc() T \ INLINE
 	{
 		ptr ::= alloc_raw(SIZEOF(T));

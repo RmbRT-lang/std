@@ -29,7 +29,7 @@ INCLUDE 'std/str'
 	}
 	DESTRUCTOR
 	{
-		IF(Content)
+		IF(Content.Data)
 			heap::free_buf(Content);
 		Content := NULL;
 	}

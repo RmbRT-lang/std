@@ -28,9 +28,11 @@ INCLUDE 'std/io/streamutil'
 	TEST "OStream"
 	{
 		buf: StreamToVec;
-		o ::= <<<std::io::OStream>>>(&buf);
 
-		io::write(o, "hello", "world", :dec(25), :dec(-40), :hex(-0x23));
-		ASSERT(buf == :vec("hello", "world", "25", "-40", "-0x23"));
+		x: VOID #* := <VOID #*>(<UM>(0x6432f46));
+
+		io::write(&buf, "hello", "world", :dec(25), :dec(-40), :hex(-0x23), :addr(x), :hexm(<UM>(x)));
+
+		ASSERT(buf == :vec("hello", "world", "25", "-40", "-0x23", "0x6432f46", "0x0000000006432f46"));
 	}
 }

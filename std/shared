@@ -11,12 +11,12 @@ INCLUDE 'std/dyn'
 	{}: Container(NULL), Ptr(NULL);
 	{BARE} (NULL);
 	{NULL}: Container(NULL), Ptr(NULL);
-	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{}; }
+	{&&mv}: Container(mv.Container), Ptr(mv.Ptr) { mv.{NULL}; }
 
 	{#&cpy}: Container(cpy.Container), Ptr(cpy.Ptr)
 	{ IF(Container) Container->ref(); }
 
-	# is_unique() BOOL INLINE := !Ptr || Container->Refs == 1 && !Container->Weaks;
+	# is_unique() BOOL INLINE := !Ptr || Container->is_unique();
 
 	clone_if_shared() VOID
 	{
@@ -24,11 +24,7 @@ INCLUDE 'std/dyn'
 
 		offset ::= <UM>(Ptr) - <UM>(Container->obj_base_addr());
 
-		Container->Refs--;
-		Container := heap::clone_virtual_p(Container);
-
-		Container->Refs := 1;
-		Container->Weaks := 0;
+		Container := Container->clone();
 		Ptr := <T! *>(<UM>(Container->obj_base_addr()) + offset);
 	}
 
@@ -64,12 +60,17 @@ INCLUDE 'std/dyn'
 		Ptr := &<T-detail::CompactAlloc *>(Container)->Value;
 	}
 
-	[U:TYPE; A...:TYPE] :a.U!{a: A!&&...} := :share(:a.U!(<A!&&>(a)...));
+	[U:TYPE; A...:TYPE] :a.U!{a: A!&&...}:
+		Container := heap::[U-detail::CompactAlloc]new(<A!&&>(a)...),
+		Ptr (NOINIT)
+	{
+		Ptr := &<U-detail::CompactAlloc *>(Container)->Value;
+	}
 
 	[U:TYPE] :dup{rhs: U!&&}
 	{
 		alloc: [U-detail::CompactAlloc]Dyn := :a(<U!&&>(rhs));
-		Ptr := <<T \>>(&<U-detail::CompactAlloc *>(alloc.ptr())->Value);
+		Ptr := <<T \>>(&alloc.ptr()->Value);
 		Container := alloc.release();
 	}
 	[U:TYPE] {rhs: U!-SharedOpt} INLINE := :<>(rhs);
@@ -110,7 +111,7 @@ INCLUDE 'std/dyn'
 	# THIS() T! & INLINE := *THIS;
 	# container() detail::SharedAlloc * := Container;
 
-	# THIS<>(rhs: T! # \) S1 := ptr() == rhs ?? 0 : THIS() <> *rhs;
+	# THIS<>(rhs: T! # \) S1 := ptr() == rhs ?? 0 : *THIS <> *rhs;
 }
 
 ::std [T:TYPE] Shared -> [T!]SharedOpt
@@ -188,11 +189,17 @@ INCLUDE 'std/dyn'
 
 	{}: Refs(1);
 	{BARE} ();
+	{&&} { DIE; }
+	{#&} ();
 
 	ref() VOID INLINE { ASSERT(Refs); ASSERT(++Refs); }
 	ref_weak() VOID INLINE { ASSERT(++Weaks); }
 
+	# ABSTRACT clone() SharedAlloc \;
+
 	# ABSTRACT obj_base_addr() VOID #\;
+
+	# is_unique() BOOL INLINE := Refs == 1 && !Weaks;
 
 	deref() VOID
 	{
@@ -216,10 +223,13 @@ INCLUDE 'std/dyn'
 ::std::detail [T:TYPE] CompactAlloc -> SharedAlloc
 {
 	Value: T;
+	PRIVATE {#&} (BARE) { DIE; }
+	PRIVATE {&&} (BARE) { DIE; }
 
 	[A...:TYPE]{a: A!&&...}: Value(<A!&&>(a)...);
 
 	# FINAL obj_base_addr() VOID #\ := &&&Value;
+	# FINAL clone() THIS \ := std::heap::[THIS]new(Value);
 }
 
 ::std::detail [T:TYPE] SplitAlloc -> SharedAlloc, PRIVATE [T]Dyn
@@ -228,4 +238,35 @@ INCLUDE 'std/dyn'
 	:share{v: T!-std::Dyn} -> (), (&&v);
 
 	# FINAL obj_base_addr() VOID #\ := &&&*THIS;
+	# FINAL clone() [T]VirtuallyClonedAlloc \
+		:= [T]VirtuallyClonedAlloc::from(THIS.ptr());
+}
+
+::std::detail [T:TYPE] VirtuallyClonedAlloc -> SharedAlloc
+{
+	Offset: U2;
+
+	DESTRUCTOR { THIS->~; }
+
+	:offset{offset: U2} : Offset := offset;
+
+	#? *THIS T! #? & := *ptr();
+
+	STATIC from(p: T #\) THIS \
+	{
+		sz ::= SIZEOF(# *p);
+		container ::= <[T]VirtuallyClonedAlloc \>(
+			std::heap::alloc_raw(
+				SIZEOF([T]VirtuallyClonedAlloc)
+				+ sz));
+		container->{:offset(<UM>(p) - <UM>(&&&*p))};
+		COPY_RTTI(*p, container->ptr());
+		container->ptr()->VIRTUAL{*p};
+		= container;
+	}
+
+	#? ptr() T! #? \ := <T #?\>(<UM>(&(&THIS)[1]) + Offset);
+
+	# FINAL obj_base_addr() VOID #\ := <T #\>(<UM>(&(&THIS)[1]));
+	# FINAL clone() [T]VirtuallyClonedAlloc \ := from(ptr());
 }

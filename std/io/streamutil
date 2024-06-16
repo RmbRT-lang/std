@@ -31,7 +31,7 @@ INCLUDE 'std/str'
 		Buf: RawBuffer;
 		Char: CHAR;
 		Streamable: std::io::Streamable #\;
-		DecNumber: {BOOL, UM}; // (sign, bits)
+		DecNumber: {BOOL, UM, U1}; // (sign, bits, minDigits)
 		HexNumber: {BOOL, UM, U1}; // (sign, bits, minDigits)
 	}
 	ValueType: Type;
@@ -56,17 +56,35 @@ INCLUDE 'std/str'
 	:ch{c: CHAR} INLINE: ValueType(:char)
 	{ Value.Char := c; }
 
-	:stream {s: Streamable #&} INLINE: ValueType(:streamable)
-	{ Value.Streamable := &s; }
+	[T: TYPE]
+	:stream {s: T! #&} INLINE: ValueType(:streamable)
+	{
+		Value.Streamable := heap::dup(<<<io::Streamable>>>(&s));
+	}
 
-	[T:TYPE] :dec{v: T!} INLINE: ValueType(:dec)
+	{#&cpy}: ValueType := cpy.ValueType, Value := cpy.Value {
+		IF(cpy.ValueType == :streamable)
+			Value.Streamable := heap::clone_virtual_p(cpy.Value.Streamable);
+	}
+	{&&mv}: ValueType := mv.ValueType, Value := mv.Value {
+		mv.ValueType := :dec;
+	}
+	DESTRUCTOR {
+		IF(ValueType == :streamable)
+			heap::delete(Value.Streamable);
+	}
+
+	[T:TYPE] :dec{v:T!} INLINE (:decn, v, 0);
+	[T:TYPE] :decn{v: T!, minDigits: U1} INLINE: ValueType(:dec)
 	{
 		TYPE SWITCH STATIC(v)
 		{
-		U1, U2, U4, U8: Value.DecNumber := (FALSE, v);
-		S1, S2, S4, S8: Value.DecNumber := (v < 0, <SM>(v));
+		U1, U2, U4, U8: Value.DecNumber := (FALSE, v, minDigits);
+		S1, S2, S4, S8: Value.DecNumber := (v < 0, <SM>(v), minDigits);
 		}
 	}
+
+	:addr{v: VOID #*} INLINE := :hex(<UM>(v));
 	[T:TYPE] :hexm {v: T!} INLINE (:hexn(v, 2 * SIZEOF(T)));
 	[T:TYPE] :hex {v: T!} INLINE (:hexn(v, 0));
 	[T:TYPE] :hexn {v: T!, minDigits: U1} INLINE: ValueType(:hex)
@@ -85,8 +103,8 @@ INCLUDE 'std/str'
 		:buffer: o.write(Value.Buf.Data, Value.Buf.Bytes);
 		:streamable: Value.Streamable->stream(o);
 		:dec: Value.DecNumber.(0)
-			?? format::[SM]dec(o, Value.DecNumber.(1))
-			: format::[UM]dec(o, Value.DecNumber.(1));
+			?? format::[SM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2))
+			: format::[UM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2));
 		:hex: Value.HexNumber.(0)
 			?? format::[SM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
 			: format::[UM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE);

@@ -51,7 +51,7 @@ INCLUDE 'std/buffer'
 		o.write(write.Data, write.Size);
 	}
 
-	[T:TYPE] dec(o: OStream &, n: T! #&) VOID
+	[T:TYPE] dec(o: OStream &, n: T! #&, minDigits: U1) VOID
 	{
 		v: UM := n;
 		neg: BOOL;
@@ -61,6 +61,8 @@ INCLUDE 'std/buffer'
 			IF(~n)
 				v := -n;
 		}
+		IF(minDigits >= 30)
+			minDigits := 30;
 
 		buffer: CHAR[32] (NOINIT);
 		buf: CHAR-Buffer(buffer!, ##buffer);
@@ -72,6 +74,12 @@ INCLUDE 'std/buffer'
 
 			buf[i] := '0'+d;
 		} FOR(v; i--)
+		digits ::= (buf.Size) - i;
+		WHILE(digits < minDigits)
+		{
+			buf[--i] := '0';
+			++digits;
+		}
 
 		IF(neg)
 			buf[--i] := '-';

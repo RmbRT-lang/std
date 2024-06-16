@@ -11,12 +11,6 @@ INCLUDE 'std/io/streamutil'
 	}
 }
 
-::std::math ZeroDiv -> Error
-{
-	# OVERRIDE stream(o: io::OStream &) VOID
-		:= io::write(o, "division by 0");
-}
-
 ::std::math::safe
 {
 	[T:TYPE] addc(lhs: T! #&, rhs: T! #&, carry: BOOL &) T INLINE
@@ -37,7 +31,7 @@ INCLUDE 'std/io/streamutil'
 
 	[T: TYPE] neg(lhs: T! #&) T INLINE
 	{
-		IF(-lhs == lhs)
+		IF(lhs && (-lhs == lhs))
 			THROW <Overflow>();
 		= -lhs;
 	}
