@@ -3,7 +3,7 @@
 INCLUDE 'std/memory'
 INCLUDE 'std/dyn'
 
-::std [T: TYPE] SharedOpt
+::std [T: TYPE] SharedOpt -> std::CustomHashable0Cost
 {
 	PRIVATE Ptr: T! *;
 	PRIVATE Container: detail::SharedAlloc *;
@@ -24,6 +24,7 @@ INCLUDE 'std/dyn'
 
 		offset ::= <UM>(Ptr) - <UM>(Container->obj_base_addr());
 
+		Container->deref();
 		Container := Container->clone();
 		Ptr := <T! *>(<UM>(Container->obj_base_addr()) + offset);
 	}
@@ -111,6 +112,8 @@ INCLUDE 'std/dyn'
 	# THIS() T! & -- := *THIS;
 	# container() detail::SharedAlloc * := Container;
 
+	# hash(h: std::Hasher&) VOID { h(Ptr != NULL); IF(Ptr) h(*Ptr); }
+
 	# THIS<>(rhs: T! # \) S1 := ptr() == rhs ?? 0 : *THIS <> *rhs;
 }
 
@@ -129,6 +132,8 @@ INCLUDE 'std/dyn'
 	{BARE} -> (BARE);
 	{#&};
 	{&&};
+
+	# hash(h: std::Hasher&) VOID { h(*THIS); }
 }
 
 ::std [T:TYPE] Weak

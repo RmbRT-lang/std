@@ -42,8 +42,8 @@ INCLUDE 'std/hash'
 
 	mut_ptr() T * --
 	{
-		<[T]Shared &>(THIS).clone_if_shared();
-		= <[T]Shared &>(THIS).ptr();
+		->([T]Shared).clone_if_shared();
+		= ->([T]Shared).ptr();
 	}
 	mut_ptr_ok() T * -- := <[T]Shared &>(THIS).ptr();
 
