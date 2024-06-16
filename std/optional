@@ -1,8 +1,10 @@
 (/rl/)
 
 INCLUDE 'std/nodestruct'
+INCLUDE 'std/hashable'
+INCLUDE 'std/hash'
 
-::std [T: TYPE] Opt
+::std [T: TYPE] Opt -> std::CustomHashable0Cost
 {
 PRIVATE:
 	Exists: BOOL;
@@ -68,6 +70,8 @@ PUBLIC:
 
 	#? ok() [T! #?]Ok INLINE := Exists ?? &*Obj : NULL;
 
+	#? ptr() T #? * := Exists ?? &*Obj : NULL;
+
 	
 	# THIS<>(rhs: THIS #&) S1
 	{
@@ -75,5 +79,11 @@ PUBLIC:
 		IF(!rhs) = 1;
 
 		= *THIS <> *rhs;
+	}
+
+	# hash(h: std::Hasher &) VOID
+	{
+		IF(!THIS) h(FALSE);
+		ELSE h(TRUE, *THIS);
 	}
 }

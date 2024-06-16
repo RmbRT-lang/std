@@ -3,9 +3,11 @@
 INCLUDE 'std/iterator'
 INCLUDE 'std/range'
 INCLUDE 'std/index'
+INCLUDE 'std/hashable'
+INCLUDE 'std/hash'
 
 (// A buffer keeps track of allocated memory but does not own it. /)
-::std [T: TYPE] Buffer
+::std [T: TYPE] Buffer -> CustomHashable0Cost
 {
 	Data: T! *;
 	Size: UM;
@@ -16,11 +18,13 @@ INCLUDE 'std/index'
 	{
 		ASSERT(!Size || Data);
 	}
+	{BARE} (NULL);
 
 	:buf{s: T! *, c: UM} (s, c);
+	[V:TYPE] :array{v: V! &&} := :buf(&v[0], ##v);
 
 	# THIS++ {:buf, T! *, UM} INLINE := :buf(Data, Size);
-	# <BOOL> INLINE := Data != NULL;
+	# <BOOL> INLINE := Size != 0;
 
 	#? THIS[i: Index #&] T!#?& INLINE := Data[i(Size)];
 
@@ -49,6 +53,33 @@ INCLUDE 'std/index'
 	#? end() [T!]Buffer#?-[T!#?]Iterator INLINE := (&THIS, Size-1);
 
 	# empty() BOOL INLINE := !Size;
+
+	# THIS<>(rhs: THIS#&) S1
+	{
+		IF(s ::= Size <> rhs.Size)
+			= s;
+		FOR(it ::= start().ok())
+			IF(s ::= *it <> rhs[:ok(it())])
+				= s;
+		= 0;
+	}
+
+	# THIS==(rhs: THIS#&) BOOL
+	{
+		IF(Size != rhs.Size)
+			= FALSE;
+		FOR(it ::= start().ok())
+			IF(*it != rhs[:ok(it())])
+				= FALSE;
+		= TRUE;
+	}
+
+	# hash(h: Hasher &) VOID
+	{
+		h(##THIS);
+		FOR(i ::= start().ok())
+			h(*i);
+	}
 }
 
 ::std::range [T: TYPE] destroy_buf(v: [T!]Buffer) VOID INLINE
