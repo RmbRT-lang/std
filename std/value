@@ -25,6 +25,7 @@ INCLUDE 'std/hash'
 
 	[U:TYPE] :!{v: [U!]ValOpt} -> (:!, &&v.shared()), ();
 
+	# |THIS T!-Ptr := ptr();
 	# *THIS T #& --  := *<[T]Shared #&>(THIS);
 	# THIS! T #& -- := *THIS;
 	# <BOOL> -- := <[T]SharedOpt#&>(THIS);

@@ -1,0 +1,64 @@
+(/rl/)
+INCLUDE 'std/value'
+INCLUDE 'std/ptrhashmap'
+INCLUDE 'std/ptr'
+
+::std [T:TYPE] ValPool
+{
+	PRIVATE Cache: [T-std::Shared; :void]HashTable;
+
+	:buckets{buckets: UM}: Cache := :buckets(buckets);
+
+	dedup(v: T-std::Val) T -std::Val
+		:= :from_shared(
+				Cache.ensure_entry(&&v.shared(), :void).Key.(1)
+			);
+
+	[T_: TYPE]
+	dedup_instance(v: T_! &&) T-std::Val
+	{
+		loc: [T-std::Shared; :void]HashTable::EntryLocation;
+		h ::= hash(v);
+		IF(entry ::= Cache.find_entry_loc2_h(h, &v, &loc))
+			= entry->Key.(1);
+		= :from_shared(
+			loc.Bucket->insert_entry_at(
+				loc.Location,
+				(h.Words[0], :gc(heap::clone_virtual_v(<T_!&&>(v)))),
+				:void
+			).Key.(1));
+	}
+
+	gc_all() VOID
+	{
+		FOR(bucket ::= Cache.start().ok())
+			FOR(entry ::= bucket!.start().ok())
+				IF(entry->Key.(1).is_unique())
+				{
+					bucket->remove_at(entry());
+					entry := bucket!.start().ok() + entry();
+				}
+	}
+
+	gc(v: [T]Val &&) BOOL
+	{
+		ptr ::= v.ptr();
+		container ::= v.shared().container();
+		IF(container->is_unique())
+		{
+			v := BARE;
+			= TRUE;
+		}
+
+		v := BARE;
+
+		IF!(container->is_unique())
+			= FALSE;
+
+		loc: [T-std::Shared; :void]HashTable::EntryLocation;
+		IF!(Cache.find_entry_loc2_h(std::hash(*ptr), ptr, &loc))
+			= FALSE;
+		loc.Bucket->remove_at(loc.Location);
+		= TRUE;
+	}
+}

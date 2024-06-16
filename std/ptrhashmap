@@ -1,0 +1,128 @@
+(/rl/)
+
+INCLUDE 'std/map'
+
+::std::hashmap_help
+{
+	log(x: U4) U1 --
+	{
+		ret: U1;
+		WHILE(x >>= 1)
+			ret++;
+		= ret;
+	}
+
+	[K1: TYPE; K2: TYPE]
+	ptr_hash(p1: K1 #*, p2: K2 #*) U4 --
+	{
+		STATIC shr1: U1 # := log(SIZEOF(K1));
+		STATIC shr2: U2 # := log(SIZEOF(K2));
+
+		v1: U4 := (<UM>(p1) >> shr1) ^ (<UM>(p1) >> 12); // 4KiB
+		v2: U4 := (<UM>(p2) >> shr2) ^ (<UM>(p2) >> 12);
+
+		x: U8 := (v1 <<< 16) * v2 + ( (v1*13) ^ (v2*43) ); // scramble bits
+		x_ : U4 := <U4>(x) ^ <U4>(x >> 32); // reuse high bits
+		= x ^ (x >> 16); // reuse high bits
+	}
+}
+
+::std [K: TYPE; V: TYPE] HashTable
+{
+	PRIVATE Buckets: std::[{Hash::Word, K}; V]Map - std::Vec;
+	PRIVATE bucket(h: std::Hash #&) std::[{Hash::Word, K}; V]Map & --
+		:= Buckets[:ok(h.Words[0] % ##Buckets)];
+
+	:buckets{buckets: UM}:
+		Buckets := buckets
+	{ ASSERT(buckets != 0); }
+
+	#? start() ? := Buckets.start();
+
+	#? find(key: K #&) V #? -std::OptRef
+		:= find_h(hash(key), key);
+	#? find_h(h: Hash #&, key: K #&) V #? -std::OptRef --
+		:= bucket(h).find((h.Words[0], key));
+
+	# find_entry(key: K#&) std::[{Hash::Word, K}; V]Pair#&
+		:= find_entry_h(hash(key), key);
+	# find_entry_h(h: Hash #&, key: K#&) std::[{Hash::Word, K}; V]Pair#& --
+		:= bucket(h).find_entry((h.Words[0], key));
+
+	EntryLocation {
+		Bucket: std::[{Hash::Word, K}; V]Map \;
+		Location: std::[{Hash::Word, K}; V]Map::Location;
+	}
+
+	[Key:TYPE]
+	#? find_entry_loc2_h(
+		h: Hash #&,
+		key: Key!&&,
+		location: EntryLocation \
+	) std::[{Hash::Word, K}; V]Pair #? -std::OptRef
+	{
+		location->Bucket := &bucket(h);
+		= location->Bucket->find_entry_loc2(
+			(h.Words[0], <Key!&&>(key)),
+			&location->Location);
+	}
+
+	[Value: TYPE]
+	insert(key: K#&, v: Value! &&) BOOL --
+		:= insert_h(hash(<K#&>(key)), <K#&>(key), <Value!&&>(v));
+	[Key: TYPE; Value: TYPE]
+	insert_h(h: Hash#&, key: Key!&&, v: Value! &&) BOOL --
+		:= bucket(h).insert((h, <Key!&&>(key)), <Value!&&>(v));
+
+	[Val...: TYPE]
+	ensure(key: K#&, v: Val!&&...) V! &
+		:= ensure_h(hash(key), key, <Val!&&>(v)...);
+	[Key: TYPE; Val...: TYPE]
+	ensure_h(h: Hash#&, key: Key!&&, v: Val!&&...) V! & --
+		:= bucket(h).ensure((h.Words[0], <Key!&&>(key)), <Val!&&>(v)...);
+
+	[Key: TYPE; Val...: TYPE]
+	ensure_entry(
+		key: Key!&&,
+		v: Val!&&...
+	) std::[{Hash::Word, K}; V]Pair &
+		:= ensure_entry_h(
+			hash(<K#&>(key)),
+			<Key!&&>(key),
+			<Val!&&>(v)...);
+
+	[Key: TYPE; Val...: TYPE]
+	ensure_entry_h(
+		h: Hash#&,
+		key: Key!&&,
+		v: Val!&&...
+	) std::[{Hash::Word, K}; V]Pair& --
+	{
+		x:?& := bucket(h).ensure_entry(
+			(h.Words[0], <Key!&&>(key)),
+			<Val!&&>(v)...);
+		= x;
+	}
+}
+
+::std [K1:TYPE; K2: TYPE; V:TYPE] PtrPairHashMap
+{
+	PRIVATE Buckets: std::[{U4, K1 #*, K2 #*}; V]Map - std::Vec;
+	PRIVATE bucket(key1: K1 #*, key2: K2 #*) std::[{K1#*, K2#*}; V]Map & --
+		:= Buckets[:ok(hashmap_help::[K1;K2]ptr_hash(key1, key2) % ##Buckets)];
+
+	:buckets{buckets: UM}:
+		Buckets := buckets
+	{ ASSERT(buckets != 0); }
+
+	#? find(key1: K1 #*, key2: K2 #*) V #? -std::OptRef
+		:= bucket(key1, key2).find((key1, key2));
+
+	[Value: TYPE]
+	insert(key1: K1 #*, key2: K2 #*, v: Value! &&) BOOL
+		:= bucket(key1, key2).insert((key1, key2), <Value!&&>(v));
+
+	[Val...: TYPE]
+	ensure(key1: K1 #*, key2: K2 #*, v: Val!&&...) V! &
+		:= bucket(key1, key2).ensure((key1, key2), <Val!&&>(v)...);
+}
