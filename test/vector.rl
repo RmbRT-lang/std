@@ -24,4 +24,11 @@ INCLUDE "../std/vector"
 		ASSERT(!##v);
 		ASSERT(!v.data());
 	}
+
+	TEST "copy"
+	{
+		v: INT-Vec #:= :vec(1,2,3,4,5);
+		v2: INT := v;
+		v2 := v;
+	}
 }
