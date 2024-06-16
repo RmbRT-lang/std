@@ -2,22 +2,19 @@
 
 INCLUDE 'std/io/format'
 INCLUDE 'std/io/stream'
+INCLUDE 'std/hashable'
 
 ::std
 {
 	MASK CustomHashable { # hash(Hasher &) VOID; }
 
-	Hash -> CustomHashable
+	Hash -> CustomHashable0Cost
 	{
 		TYPE Word := U8;
 		TYPE WordAsSigned := S8;
-		Words: Word[2];
+		Words: Word[1];
 
-		{}: Words(NOINIT)
-		{
-			FOR(i ::= 0; i < ##Words; i++)
-				Words[i] := 0;
-		}
+		{};
 
 		:seed{}: Words(NOINIT)
 		{
@@ -78,94 +75,115 @@ INCLUDE 'std/io/stream'
 	Hasher
 	{
 		PRIVATE Accum: Hash;
-		PRIVATE WordAcc: Hash::Word;
+		PRIVATE WordAcc: Hash::Word[4];
 		PRIVATE WordAccSize: U1;
-		PRIVATE Current: U1;
+		PRIVATE Current: U4;
 		PRIVATE Digested: BOOL;
 
-		{}: Accum(:seed), WordAcc(0), WordAccSize(0), Current(0), Digested(FALSE);
+		{}: Accum(:seed), WordAccSize(0), Current(0), Digested(FALSE);
 
-		THIS++ Hash #&
+		THIS++ Hash #& INLINE
 		{
 			IF(!Digested)
 			{
 				Digested := TRUE;
-				IF(WordAccSize)
+				IF(Current | WordAccSize)
 				{
-					applyWord(WordAcc, (WordAccSize+7) >> 3);
-					WordAccSize := 0;
-				}
-				IF(Current) {
-					applyWord(Current, SIZEOF(#Current));
+					WordAcc[##WordAcc-1] ^= Current | (WordAccSize<<8);
+					applyWords();
 				}
 			}
 			= Accum;
 		}
 
-		[T:TYPE] THIS(v:T! #&) Hasher&
+		[T:TYPE; T_...:TYPE] THIS(v:T! #&, v_: T_!#&...) Hasher& INLINE
 		{
-			IF(h ::= <<CustomHashable #*>>(&v))
-				h->hash(THIS);
-			ELSE
-				_hash(v!);
+			_hash(v);
+			_hash(v_)...;
 			= THIS;
 		}
 
-		[T:TYPE] PRIVATE _hash(v: T!#&) VOID
+		[T:TYPE] PRIVATE _hash(v: T!#&) VOID INLINE
 		{
 			TYPE SWITCH STATIC(v)
 			{
 			BOOL:
-				accum(v ?? 1 : 0, 8);
+				accum(v ?? 1 : 0, 1);
 			U1, S1, U2, S2, U4, S4, U8, S8, CHAR:
-				accum(v, 8*SIZEOF(T));
+				accum(v, 8 * SIZEOF(T));
 			DEFAULT:
 			{
-				IF(h ::= <<CustomHashable #*>>(&v))
-					h->hash(THIS);
+				IF(h ::= <<CustomHashable0Cost #*>>(&v))
+					<<<CustomHashable>>>(&v).hash(THIS);
 				ELSE
-					THIS VISIT(v!);
+				{
+					x: ?#& := v!;
+					TYPE SWITCH STATIC(x)
+					{
+					BOOL, U1, S1, U2, S2, U4, S4, U8, S8, CHAR:
+						_hash(v!);
+					DEFAULT:
+						IF(h ::= <<CustomHashable0Cost #*>>(&x))
+							<<<CustomHashable>>>(&x).hash(THIS);
+						ELSE
+							THIS VISIT(x);
+					}
+				}
 			}
 			}
 		}
 
-		PRIVATE accum(v: Hash::Word, bits: U1) Hasher &
+		PRIVATE accum(v: Hash::Word, bits: U1) VOID INLINE
 		{
-			WordAcc ^= <Hash::Word>(v) << WordAccSize;
+			WordAcc[Current & (##WordAcc-1)] ^= v << WordAccSize;
 			WordAccSize += bits;
-			IF(WordAccSize >= 8 * SIZEOF(Hash::Word))
+			IF(WordAccSize >= 8*SIZEOF(Hash::Word))
 			{
-				applyWord(WordAcc, (SIZEOF(Hash::Word)));
-				WordAccSize -= 8 * SIZEOF(Hash::Word);
-				WordAcc := v >> (bits - WordAccSize);
+				++Current;
+				IF!(Current& (##WordAcc-1))
+				{
+					applyWords();
+				}
+
+				WordAcc[Current & (##WordAcc-1)] := v >> (WordAccSize - 8*SIZEOF(Hash::Word));
+				WordAccSize -= 8*SIZEOF(Hash::Word);
 			}
-			= THIS;
 		}
 
-		PRIVATE applyWord(v: Hash::Word, size: U1) Hasher&
+		PRIVATE applyWords() VOID INLINE
 		{
-			STATIC WordBits # ::= SIZEOF(Hash::Word) * 8;
-			STATIC WordMask # ::= WordBits-1;
-			shl # ::= v & (SIZEOF(Hash::Word) * 8 - 1);
-			shr # ::= SIZEOF(Hash::Word) * 8 - shl;
-			currentTwist #::= Current ^ (Current >> (Current &7));
-			target: U1 := <U1>(Current) & <U1>(##Accum.Words-1);
-			prev: U1 := <U1>(Current-1) & <U1>(##Accum.Words-1);
-			FOR(i ::= 0; i < ##Accum.Words; i++)
+			STATIC off0: Hash::Word# := 0xb9ca57f290b356cb;
+			STATIC off1: Hash::Word# := 0x3eb8ad5945662260;
+			STATIC offsets: Hash::Word #[] (
+				off0,
+				off0 * off1 ^ 0x324567,
+				off0 ^ off1 + 0x69f58509,
+				off1
+			);
+
+			FOR(i ::= 0; i < ##WordAcc; i++)
 			{
-				next: U1 # := <U1>(Current+i+1) & <U1>(##Accum.Words-1);
-				vSwitch # ::= -<Hash::WordAsSigned>((currentTwist ^ v) &1);
+				w: ?#& := Accum.Words[i & (##Accum.Words-1)];
+				acc: ?& := WordAcc[i];
 
-				Accum.Words[target] ^= (v ^ <Hash::Word>(vSwitch))
-					^ (Accum.Words[next] << shl)
-					^ ~(Accum.Words[prev] >> shr);
-				v += Accum.Words[target];
-
-				prev := target;
-				target := next;
+				acc += offsets[i];
+				acc := acc * (
+					(acc << (SIZEOF(Hash::Word) * 4))
+					| (acc >> (SIZEOF(Hash::Word) * 4))
+				);
+				acc := (acc << (SIZEOF(Hash::Word) * 4))
+					| (acc >> (SIZEOF(Hash::Word) * 4));
+				rotlW ::= w <<< (acc & (SIZEOF(Hash::Word)*8-1));
+				acc := acc * rotlW ^ acc;
 			}
-			Current += size;
-			= THIS;
+			FOR(i ::= 0; i < ##WordAcc; i++)
+			{
+				w: ?& := Accum.Words[i & (##Accum.Words-1)];
+				acc: ?& := WordAcc[i];
+
+				w ^= acc;
+				acc := 0;
+			}
 		}
 	}
 }
