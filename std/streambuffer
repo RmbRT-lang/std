@@ -13,4 +13,7 @@ INCLUDE 'std/io/stream'
 		THIS.append((<CHAR #\>(data), size));
 		RETURN size;
 	}
+
+	# stream(o: std::io::OStream &) VOID --
+	{ o.write(THIS!.Data, THIS!.Size); }
 }
