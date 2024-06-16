@@ -1,0 +1,14 @@
+(/rl/)
+
+::std [Words: NUMBER] RawStorage {
+	W: VOID * [Words];
+
+	{}: W(NOINIT);
+	[T: TYPE] {v: T!&&}: W(NOINIT) { THIS.[T]to()->{<T!&&>(v)}; }
+
+	[T: TYPE] #? to() T! #? *
+	{
+		ASSERT(SIZEOF(THIS) >= SIZEOF(T));
+		= <T! #?*>(&W);
+	}
+}

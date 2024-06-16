@@ -3,6 +3,7 @@
 INCLUDE 'std/io/format'
 INCLUDE 'std/io/stream'
 INCLUDE 'std/str'
+INCLUDE 'std/rawstorage'
 
 ::std::io [O: TYPE; T...:TYPE] write(o: O!&&, args: T!&&...) VOID --
 {
@@ -30,9 +31,9 @@ INCLUDE 'std/str'
 	{
 		Buf: RawBuffer;
 		Char: CHAR;
-		Streamable: std::io::Streamable #\;
 		DecNumber: {BOOL, UM, U1}; // (sign, bits, minDigits)
 		HexNumber: {BOOL, UM, U1}; // (sign, bits, minDigits)
+		StreamableStorage: std::[#2]RawStorage;
 	}
 	ValueType: Type;
 	Value: RawBufferOrStreamable;
@@ -59,19 +60,7 @@ INCLUDE 'std/str'
 	[T: TYPE]
 	:stream {s: T! #&} --: ValueType(:streamable)
 	{
-		Value.Streamable := heap::dup(<<<io::Streamable>>>(&s));
-	}
-
-	{#&cpy}: ValueType := cpy.ValueType, Value := cpy.Value {
-		IF(cpy.ValueType == :streamable)
-			Value.Streamable := heap::clone_virtual_p(cpy.Value.Streamable);
-	}
-	{&&mv}: ValueType := mv.ValueType, Value := mv.Value {
-		mv.ValueType := :dec;
-	}
-	DESTRUCTOR {
-		IF(ValueType == :streamable)
-			heap::delete(Value.Streamable);
+		Value.StreamableStorage := <<<io::Streamable>>>(&s);
 	}
 
 	[T:TYPE] :dec{v:T!} -- (:decn, v, 0);
@@ -101,7 +90,7 @@ INCLUDE 'std/str'
 		SWITCH(ValueType)
 		{
 		:buffer: o.write(Value.Buf.Data, Value.Buf.Bytes);
-		:streamable: Value.Streamable->stream(o);
+		:streamable: Value.StreamableStorage.[Streamable#]to()->stream(o);
 		:dec: Value.DecNumber.(0)
 			?? format::[SM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2))
 			: format::[UM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2));
