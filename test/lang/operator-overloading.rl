@@ -35,4 +35,21 @@
 		ASSERT((*t).x == 5);
 		ASSERT(t->x == 5);
 	}
+
+	U4Wrap {
+		X: U4;
+		{x:U4}--: X := x;
+
+		# BSWAP THIS U4 := BSWAP X;
+		# POPCNT THIS U1 := POPCNT X;
+	}
+
+	TEST "BSWAP" {
+		x: U4Wrap := 0x01020304;
+		ASSERT(BSWAP x == 0x04030201);
+	}
+	TEST "POPCNT" {
+		x: U4Wrap := 0x1234567;
+		ASSERT(POPCNT x == 12);
+	}
 }

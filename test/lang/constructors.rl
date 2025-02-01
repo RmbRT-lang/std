@@ -127,4 +127,20 @@ INCLUDE 'std/heap'
 	TEST "No Default CTOR" {
 		x: Y;
 	}
+
+	UNION CtorUnion {
+		Field1: INT;
+		Field2: BOOL;
+		Field3: Point2;
+	}
+	TEST "UNION field ctors" {
+		u: CtorUnion;
+		u.{:Field1(5)};
+		ASSERT(u.Field1 == 5);
+		u.{:Field2(FALSE)};
+		ASSERT(u.Field2 == FALSE);
+		u.{:Field3(:f(7))};
+		ASSERT(u.Field3.X == 7);
+		ASSERT(u.Field3.Y == 5*7);
+	}
 }
