@@ -1,21 +1,66 @@
 (/rl/)
-INCLUDE 'std/dyn'
 INCLUDE 'std/map'
 INCLUDE 'std/hash'
 
-::std [K:TYPE; V:TYPE] HashMap
+/// kCachedHashTiers: how many steps of the binary search to cache (exp2 hashes are cached).
+::std [Alloc; Cmp; VHot; VCold; kCachedHashTiers: NUMBER] HashBucketT
 {
-	PRIVATE Map: std::[Hash, V]Map;
+	PRIVATE Values: VCold[];
+	PRIVATE Hashes: {Hash, VHot}[];
+	PRIVATE Count: U4;
 
-	TYPE Location := std::[Hash, V]Map::Location;
+	// for fast lookups without pointer chasing.
+	PRIVATE HashCache: {Hash, VHot}[(1<<kCachedHashTiers) - 1];
 
-	#? find(k: K! #&) V! #?* -- := find_h(hash(k));
-	#? find_loc(k: K! #&) {V! #?*, Location} -- := find_loc_h(hash(k));
-	#? find_loc2(k: K! #&, loc: Location \) V! #?* -- := find_loc2_h(hash(k), loc);
+	[kN:NUMBER] # multi_lookup(hashes: Hash[kN] #&, pointers: {VHot *, VCold *}[kN] &) VOID --
+	{
+		idxs: U4[kN] := ~0; // The found indices.
 
-	#? find_h(k: Hash #&) V! #?* -- := Map.find(k);
-	#? find_loc_h(k: Hash #&) {V! #?*, Location} -- := Map.find_loc(k);
-	#? find_loc2_h(k: Hash #&, loc: Location \) V! #?* -- := Map.find_loc2(k, loc);
+		// If we have more items than cache entries, the cache contains the first few steps of the binary search.
+		IF(Count > kCachedHashTiers)
+		{
+			lefts: U4[kN] (NOINIT);
+			rights: U4[kN] (NOINIT);
+
+			FOR(lefts) IT.{0};
+			FOR(rights) IT.{##Count};
+
+			FOR(HashCache)
+			{
+				hash ::= IT;
+				hash_index ::= IOTA * Count >> kCachedHashTiers;
+				FOR(kN)
+				{
+					diff: S8 := hash - hashes[IOTA].(0);
+
+					lefts[IOTA] := (diff < 0) ?? hash_index+1 : lefts[IOTA];
+					rights[IOTA] := (diff > 0) ?? hash_index : rights[IOTA];
+					idxs[IOTA] := (diff == 0) ?? hash_index : idxs[IOTA];
+				}
+			}
+		} ELSE {
+			// Otherwise, the cache directly contains the hashes of the elements, and we just do a linear search.
+			FOR(HashCache[FOR Count])
+			{
+				hash ::= IT;
+				hash_index ::= IOTA;
+
+				FOR(kN)
+				{
+					diff: S8 := HashCache[idxs[IOTA]] - hash;
+					lefts[IOTA] := (diff < 0) ?? hash_index+1 : lefts[IOTA];
+					rights[IOTA] := (diff > 0) ?? hash_index : rights[IOTA];
+					idxs[IOTA] := (diff == 0) ?? hash_index : idxs[IOTA];
+				}
+			}
+		}
+
+		FOR(Pointers)
+		{
+			IT.(0) := idxs[IOTA] ?? &Hashes[IOTA].(1) : NULL;
+			IT.(1) := idxs[IOTA] ?? &Values[IOTA] : NULL;
+		}
+	}
 
 	[Value: TYPE]
 	insert(k: K! #&, v: Value!&&) BOOL := Map.insert(hash(k), <Value!&&>(v));
@@ -33,5 +78,4 @@ INCLUDE 'std/hash'
 	#? end() ? -- := Map.end();
 	# empty() BOOL -- := Map.empty();
 }
-
-::std [K:TYPE; V:TYPE] TYPE DynHashMap := [K!; V!-std::Dyn]HashMap;
+//::std [K; V] TYPE HashMap := [heap::Alloc; K!; V!]HashMapT;

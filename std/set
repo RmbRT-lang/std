@@ -1,34 +1,10 @@
 (/rl/)
 
 INCLUDE 'std/vector'
-INCLUDE 'std/dyn'
-INCLUDE 'std/shared'
-INCLUDE 'std/value'
 
-::std [T: TYPE] MASK Set
+::std [Alloc; T] VecSetT
 {
-	(// Queries whether a value is in the set. /)
-	# has(key: T! #&) BOOL;
-
-	(// Inserts a value into the set.
-	@return
-		Whether the value was not in the set yet. /)
-	insert(v: T! #&) BOOL;
-
-	(// Inserts a value into the set.
-	@return
-		Whether the value was not in the set yet. /)
-	insert(v: T! &&) BOOL;
-
-	(// Removes a value from the set.
-	@return
-		Whether the value was in the set. /)
-	remove(v: T! #&) BOOL;
-}
-
-::std [T: TYPE] VecSet
-{
-	PRIVATE Elems: [T!]Vec;
+	PRIVATE Elems: [Alloc; T!]VecT;
 
 	TYPE Location := UM;
 
@@ -41,6 +17,8 @@ INCLUDE 'std/value'
 	#? at_loc(l: Location) T#? * -- := l >= ##Elems ?? NULL : &Elems[:ok(l)];
 
 	# ##THIS UM -- := ##Elems;
+
+	# data() VOID #* -- := Elems.data();
 
 	[V: TYPE]
 	# has (v: V! #&) BOOL -- := find(v);
@@ -156,7 +134,4 @@ INCLUDE 'std/value'
 
 	# THIS <> (rhs: THIS #&) S1 := Elems <> rhs.Elems;
 }
-
-::std [T:TYPE] TYPE DynVecSet := [T!-std::Dyn+]VecSet;
-::std [T:TYPE] TYPE SharedVecSet := [T!-std::Shared+]VecSet;
-::std [T:TYPE] TYPE ValVecSet := [T!-std::Val+]VecSet;
+::std [T] TYPE VecSet := [heap::Alloc; T!]VecSetT;

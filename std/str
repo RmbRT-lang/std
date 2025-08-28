@@ -1,64 +1,40 @@
 (/rl/)
 
-INCLUDE 'std/buffer'
 INCLUDE 'std/heap'
 INCLUDE 'std/memory'
 
 ::std::str
 {
-	[C: TYPE]
-	View -> std::[C!]Buffer
-	{
-		{};
-		{str: C! *} -> (str, std::str::len(str));
-		:view{str: C! *} -> (str, std::str::len(str));
-		:buf{str: C! *, len: UM} -> (str, len);
-		:ch{ch: C! &} -> (&ch, 1);
+	c(str: CHAR#[]) CHAR#[#] := str[FOR std::str::len(str)];
+	ch(ch: CHAR#&) CHAR#[#] := (&ch)[FOR 1];
 
-		# THIS <> (rhs: [C!]View #&) S1
-		{
-			minSz #::= ##THIS > ##rhs ?? ##rhs : ##THIS;
+	order(lhs: CHAR#[#], rhs: CHAR#[#]) S1 {
+		IF(s ::= ##lhs <> ##rhs) = s;
 
-			FOR(i:UM := 0; i < minSz; i++)
-				IF(s ::= THIS[:ok(i)] <> rhs[:ok(i)])
-					= s;
-
-			= ##THIS <> ##rhs;
-		}
-
-		# starts_with(find: [C!#]View #&) BOOL
-		{
-			IF(##find > ##THIS)
-				= FALSE;
-			= mem::cmp(THIS.Data, find.Data, ##find) == 0;
-		}
-
-		# THIS>=(find: [C!#]View #&) BOOL -- := starts_with(find);
-
-		# THIS==(rhs: [C!]View #&) BOOL
-		{
-			IF(##THIS != ##rhs)
-				= FALSE;
-
-			FOR(i:UM := 0; i < ##THIS; i++)
-				IF(THIS[:ok(i)] != rhs[:ok(i)])
-					= FALSE;
-
-			= TRUE;
-		}
-
-		# THIS!=(rhs: [C!]View #&) BOOL --
-			:= !(THIS == rhs);
+		FOR(##lhs)
+			IF(s ::= lhs[IOTA] <> rhs[IOTA])
+				= s;
+		= 0;
 	}
 
-	TYPE CV := [CHAR#]View;
-	TYPE V := [CHAR]View;
+	eq(lhs: CHAR#[#], rhs: CHAR#[#]) BOOL {
+		IF(##lhs != ##rhs) = FALSE;
 
-	[C: TYPE]
-	view(str: C! *) C!-View -- := str;
+		FOR(##lhs)
+			IF(lhs[IOTA] != rhs[IOTA])
+				= FALSE;
 
-	[C: TYPE]
-	len(str: C! #*) UM
+		= TRUE;
+	}
+
+	starts_with(lhs: CHAR#[#], find: CHAR#[#]) BOOL
+	{
+		IF(##find > ##lhs)
+			= FALSE;
+		= mem::[CHAR]cmp(lhs, find, ##find) == 0;
+	}
+
+	len(str: CHAR#[]) UM
 	{
 		IF(!str)
 			= 0;

@@ -4,6 +4,7 @@
 
 	Fail { # test() BOOL := FALSE; }
 	Success { # test() BOOL := TRUE; }
+	Other { #test() INT := 5; }
 
 	TEST "FROM"
 	{
@@ -13,5 +14,7 @@
 		s: Success;
 		ASSERT(<<<Testable>>>(s).test());
 		ASSERT(<<<Testable>>>(&s).test());
+		o: Other;
+		ASSERT(<<<Testable>>>(o).test());
 	}
 }

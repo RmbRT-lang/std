@@ -1,77 +1,61 @@
 (/rl/)
 
-INCLUDE 'std/nodestruct'
+INCLUDE 'std/io/streamutil'
 INCLUDE 'std/hashable'
 INCLUDE 'std/hash'
 
-::std [T: TYPE] Opt -> std::CustomHashable0Cost
+::std [T]Opt -> std::CustomHashable0Cost
 {
 PRIVATE:
-	Exists: BOOL;
-	Obj: T-NoDestruct;
+	UNION U
+	{
+	*	none;
+	!?	a: T;
+	}
+	V: TAGGED U;
 PUBLIC:
 
-	{} (NULL);
-	{BARE} ();
-	{NULL}: Obj(NOINIT);
+	{}--;
+	{BARE}--();
+	{NULL}--;
 
 	[Args...:TYPE]
-	:a{args: Args!&&...}: Exists(TRUE), Obj(<Args!&&>(args)...);
+	:a{args: Args!&&...} --: V := :a(<Args!&&>(args)...);
 
 	[Args...:TYPE]
-	:if{cond: BOOL, args: Args!&&...}:
-		Exists := cond,
-		Obj(NOINIT)
+	:if{cond: BOOL, args: Args!&&...} --:
+		V(NOINIT)
 	{
+		V.(0).{<ENUM U>(cond)};
 		IF(cond)
-			Obj.{<Args!&&>(args)...};
+			V!.{<Args!&&>(args)...};
 	}
 
-	DESTRUCTOR { IF(Exists) Obj->~; }
-	
-	
-	{#&rhs}: Exists(rhs.Exists), Obj(NOINIT)
+	{#&};
+	{&&rhs}: V(NOINIT)
 	{
-		IF(Exists)
-			Obj->{*rhs};
-	}
-	
-	{&&rhs}: Exists(rhs.Exists), Obj(NOINIT)
-	{
-		IF(Exists)
-		{
-			Obj->{&&*rhs};
-			rhs := NULL;
-		}
+		V.{&&rhs.V};
+		rhs.{NULL};
 	}
 
 	[Args...: TYPE]
 	ensure(args: Args!&&...) T!& --
 	{
-		IF(!Exists)
-		{
-			Obj.{<Args!&&>(args)...};
-			Exists := TRUE;
-		}
+		IF(!V) V.{ :a(<Args!&&>(args)...) };
 		= *THIS;
 	}
 
-	# <BOOL> -- := Exists;
+	# <BOOL> -- := V;
 
 	#? THIS! T! #?& -- := *THIS;
 	#? *THIS T! #?& --
 	{
-		ASSERT(Exists);
-		= *Obj;
+		ASSERT(V);
+		= *V;
 	}
 
-	[Ref: TYPE]
-	Ok { V: Ref! *; # <Ref! &> -- { ASSERT(V); = <Ref! &>(*V); } }
-
-	#? ok() [T! #?]Ok -- := Exists ?? &*Obj : NULL;
-
-	#? ptr() T #? * := Exists ?? &*Obj : NULL;
-
+	#? ok() T! #? -- := *V;
+	#? ptr() T #? * := V ?? &*V : NULL;
 	
 	# THIS<>(rhs: THIS #&) S1
 	{

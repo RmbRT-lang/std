@@ -47,7 +47,7 @@ INCLUDE 'std/optional'
 		y := NULL;
 		ASSERT(!y);
 
-		a: TestStruct (5, 6, :a("hello"));
+		a: TestStruct (5, 6, :a("hello"[]));
 		b: TestStruct := a;
 
 

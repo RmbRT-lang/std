@@ -52,8 +52,8 @@ INCLUDE 'std/rawstorage'
 	} --: ValueType(:buffer)
 	{ Value.Buf := (slice, bytes); }
 
-	{string: CHAR#\} --: ValueType(:buffer)
-	{ Value.Buf := (string, str::len(string)); }
+	{string: CHAR#[#]} --: ValueType(:buffer)
+	{ Value.Buf := (string[], ##string); }
 	:ch{c: CHAR} --: ValueType(:char)
 	{ Value.Char := c; }
 

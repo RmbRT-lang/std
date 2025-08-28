@@ -3,7 +3,7 @@
 INCLUDE 'std/set'
 
 
-::std [K:TYPE; V:TYPE] Pair
+::std [K; V] Pair
 {
 	Key: K;
 	Value: V;
@@ -16,12 +16,12 @@ INCLUDE 'std/set'
 	# THIS <>(rhs: T!&&) S1 := Key <> <T!&&>(rhs);
 }
 
-::std [K:TYPE; V:TYPE] Map
+::std [Alloc; K; V] MapT
 {
 
-	PRIVATE Set: [[K!;V!]Pair]VecSet;
+	PRIVATE Set: [Alloc; [K!;V!]Pair]VecSetT;
 
-	TYPE Location := [[K!;V!]Pair]VecSet::Location;
+	TYPE Location := [Alloc; [K!;V!]Pair]VecSetT::Location;
 
 	{};
 	:reserve{cap: UM}: Set := :reserve(cap);
@@ -113,6 +113,8 @@ INCLUDE 'std/set'
 
 	remove_at(l: Location) VOID -- { Set.remove_at(l); }
 
+	# data() VOID #* -- := Set.data();
+
 	#? start() ? -- := Set.start();
 	#? end() ? -- := Set.end();
 	# empty() BOOL -- := Set.empty();
@@ -122,7 +124,4 @@ INCLUDE 'std/set'
 
 	# ## THIS ? -- := ##Set;
 }
-
-::std [K:TYPE; V:TYPE] TYPE DynMap := [K!; V!-std::Dyn]Map;
-::std [K:TYPE; V:TYPE] TYPE SharedMap := [K!; V!-std::Shared]Map;
-::std [K:TYPE; V:TYPE] TYPE ValMap := [K!; V!-std::Val]Map;
+::std [K;V] TYPE Map := [heap::Alloc; K; V]MapT;

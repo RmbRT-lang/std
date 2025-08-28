@@ -27,6 +27,100 @@ INCLUDE 'std/map'
 	}
 }
 
+/// For use as globals, to eliminate one indirection (usually a cache miss) when looking up values.
+::std [K; V; kBuckets: NUMBER] FixedHashTable
+{
+	TYPE Bucket := std::[{Hash::Word, K}; V]Map;
+	PRIVATE TYPE Bucket_ := std::[{Hash::Word, K}; V]Map;
+	PRIVATE Buckets: Bucket[kBuckets];
+	PRIVATE #? bucket(h: std::Hash #&) Bucket #? & --
+		:= Buckets[h.Words[0] & (kBuckets-1)];
+
+	#? start() ? := Buckets.start();
+
+	#? find(key: K #&) V #? -std::OptRef
+		:= find_h(hash(key), key);
+	#? find_h(h: Hash #&, key: K #&) V #? -std::OptRef --
+		:= bucket(h).find((h.Words[0], key));
+
+
+	[V; kN: NUMBER] MultiFinder {
+		Keys: {Hash::Word; K}[kN];
+		Buckets: Bucket::[V!]Finder[kN];
+
+		hash() VOID { FOR(Keys) IT.(0) := std::hash(IT.(1)); }
+	}
+
+	[kN: NUMBER]
+	// Look up multiple values in parallel, properly making use of the latency of the cache misses.
+	# multi_find(f: [V#?; kN]MultiFinder &) VOID
+	{
+		FOR(f.Keys) PREFETCH_READ(bucket(IT.(0)).
+		FOR(f.Keys) f.Buckets[IOTA] := bucket(IT.(0)).finders();
+	}
+
+
+	# find_entry(key: K#&) std::[{Hash::Word, K}; V]Pair#&
+		:= find_entry_h(hash(key), key);
+	# find_entry_h(h: Hash #&, key: K#&) std::[{Hash::Word, K}; V]Pair#& --
+		:= bucket(h).find_entry((h.Words[0], key));
+
+	EntryLocation {
+		Bucket: Bucket_ \;
+		Location: Bucket_::Location;
+	}
+
+	[Key:TYPE]
+	#? find_entry_loc2_h(
+		h: Hash #&,
+		key: Key!&&,
+		location: EntryLocation \
+	) std::[{Hash::Word, K}; V]Pair #? -std::OptRef
+	{
+		location->Bucket := &bucket(h);
+		= location->Bucket->find_entry_loc2(
+			(h.Words[0], <Key!&&>(key)),
+			&location->Location);
+	}
+
+	[Value: TYPE]
+	insert(key: K#&, v: Value! &&) BOOL --
+		:= insert_h(hash(<K#&>(key)), <K#&>(key), <Value!&&>(v));
+	[Key: TYPE; Value: TYPE]
+	insert_h(h: Hash#&, key: Key!&&, v: Value! &&) BOOL --
+		:= bucket(h).insert((h, <Key!&&>(key)), <Value!&&>(v));
+
+	[Val...: TYPE]
+	ensure(key: K#&, v: Val!&&...) V! &
+		:= ensure_h(hash(key), key, <Val!&&>(v)...);
+	[Key: TYPE; Val...: TYPE]
+	ensure_h(h: Hash#&, key: Key!&&, v: Val!&&...) V! & --
+		:= bucket(h).ensure((h.Words[0], <Key!&&>(key)), <Val!&&>(v)...);
+
+	[Key: TYPE; Val...: TYPE]
+	ensure_entry(
+		key: Key!&&,
+		v: Val!&&...
+	) std::[{Hash::Word, K}; V]Pair &
+		:= ensure_entry_h(
+			hash(<K#&>(key)),
+			<Key!&&>(key),
+			<Val!&&>(v)...);
+
+	[Key: TYPE; Val...: TYPE]
+	ensure_entry_h(
+		h: Hash#&,
+		key: Key!&&,
+		v: Val!&&...
+	) std::[{Hash::Word, K}; V]Pair& --
+	{
+		x:?& := bucket(h).ensure_entry(
+			(h.Words[0], <Key!&&>(key)),
+			<Val!&&>(v)...);
+		= x;
+	}
+}
+
 ::std [K: TYPE; V: TYPE] HashTable
 {
 	PRIVATE Buckets: std::[{Hash::Word, K}; V]Map - std::Vec;

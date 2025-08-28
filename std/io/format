@@ -1,7 +1,6 @@
 (/rl/)
 
 INCLUDE 'std/io/stream'
-INCLUDE 'std/buffer'
 
 ::std::io::format
 {
@@ -23,7 +22,7 @@ INCLUDE 'std/buffer'
 		}
 
 		buffer: CHAR[32] (NOINIT);
-		buf: CHAR-Buffer(buffer!, ##buffer);
+		buf ::= buffer[#];
 
 		len ::= 0;
 		IF(neg)
@@ -47,8 +46,8 @@ INCLUDE 'std/buffer'
 		IF(!printed)
 			buf[len++] := '0';
 
-		write ::= buf.cut(len);
-		o.write(write.Data, write.Size);
+		write ::= buf[FOR len];
+		o.write(&*write[], ##write);
 	}
 
 	[T:TYPE] dec(o: OStream &, n: T! #&, minDigits: U1) VOID
@@ -64,9 +63,8 @@ INCLUDE 'std/buffer'
 		IF(minDigits >= 30)
 			minDigits := 30;
 
-		buffer: CHAR[32] (NOINIT);
-		buf: CHAR-Buffer(buffer!, ##buffer);
-		i ::= buf.Size-1;
+		buf: CHAR[32] (NOINIT);
+		i ::= ##buf-1;
 		DO()
 		{
 			d ::= v % 10;
@@ -74,7 +72,7 @@ INCLUDE 'std/buffer'
 
 			buf[i] := '0'+d;
 		} FOR(v; i--)
-		digits ::= (buf.Size) - i;
+		digits ::= ##buf - i;
 		WHILE(digits < minDigits)
 		{
 			buf[--i] := '0';
@@ -84,7 +82,7 @@ INCLUDE 'std/buffer'
 		IF(neg)
 			buf[--i] := '-';
 
-		write ::= buf.drop_start(i);
-		o.write(write.Data, write.Size);
+		write ::= buf[FROM i];
+		o.write(&*write[], ##write);
 	}
 }

@@ -2,30 +2,35 @@
 
 INCLUDE 'std/range'
 INCLUDE 'std/math/limit'
-INCLUDE 'std/buffer'
 
 ::std
 {
-	::mem [T: TYPE] cmp(
-		lhs: T! #\,
-		rhs: T! #\,
-		elements: UM) SM
+	::mem [T] eq(lhs: T!#[], rhs: T!#[], count: UM) BOOL --
 	{
-		FOR(i ::= 0; i<elements; i++)
-			IF(lhs[i] != rhs[i])
-				= lhs[i] - rhs[i];
+		FOR(count)
+			IF(lhs[IOTA] != rhs[IOTA])
+				= FALSE;
+		= TRUE;
+	}
+
+	::mem [T] cmp(
+		lhs: T! #[],
+		rhs: T! #[],
+		elements: UM) S1
+	{
+		FOR(elements)
+			IF(s ::= lhs[IOTA] <> rhs[IOTA])
+				= s;
 		= 0;
 	}
 
-	::mem [T: TYPE] cmp_buf(
-		lhs: [T!]Buffer #&,
-		rhs: [T!]Buffer #&) SM
+	::mem [T] cmp_array(
+		lhs: T![#],
+		rhs: T![#]) S1
 	{
-		minSz ::= math::min(lhs.Size, rhs.Size);
-		IF(sign ::= mem::cmp(lhs.Data, rhs.Data, minSz))
-			= sign;
-		ELSE
-			= lhs.Size - rhs.Size;
+		IF(s ::= ##lhs <> ##rhs)
+			= s;
+		= mem::cmp(lhs.Data, rhs.Data, ##lhs);
 	}
 
 	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID --
@@ -37,7 +42,7 @@ INCLUDE 'std/buffer'
 	}
 
 	/// Simple non-null reference type with value-comparison behaviour.
-	[T: TYPE] Ref
+	[T] Ref
 	{
 		V: T! \;
 		{...}--;
@@ -53,7 +58,7 @@ INCLUDE 'std/buffer'
 		# THIS <>(rhs: THIS) S1 -- := *V <> *rhs;
 	}
 
-	[T: TYPE] OptRef
+	[T] OptRef
 	{
 		V: T! *;
 		{...}--;

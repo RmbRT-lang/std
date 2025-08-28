@@ -1,123 +1,137 @@
 (/rl/)
 
-INCLUDE 'std/range'
-INCLUDE 'std/dyn'
-INCLUDE 'std/shared'
-INCLUDE 'std/value'
-INCLUDE 'std/memory'
-INCLUDE 'std/math/limit'
+//INCLUDE 'std/hash'
+INCLUDE 'std/heap'
+INCLUDE 'std/index'
 INCLUDE 'std/iterator'
-INCLUDE 'std/hash'
 
-::std [T: TYPE] Vec -> CustomHashable0Cost
+::std [Allocator; T] VecT
 {
 PRIVATE:
-	Content: [T!]Buffer;
-	PRIVATE #? Capacity() U4 #? & -- := Content.Unused;
+	Alloc: Allocator; // Must be the first member, because we might want to access its value in member initialisers.
+	Content: T[#];
+	Capacity: U4;
 PUBLIC:
-	{} -- { Capacity() := 0; }
+	{} --;
 	{BARE} -- ();
 
-	:noinit{size: U4}:
-		Content := heap::[T]alloc_array(size)
-	{
-		Capacity() := size;
-	}
+	[AllocArgs...]
+	:noinit{size: U4, a: AllocArgs!&&...}:
+		Alloc(<AllocArgs!&&>(a)...),
+		Content := Alloc.[T]alloc_array(size),
+		Capacity := size;
 
-	{size: U4} := :noinit(size)
-	{
-		range::default_construct(Content.Data, ##Content);
-	}
-	:bare{size: U4} := :noinit(size)
-	{
-		FOR(i ::= 0; i < size; i++)
-			Content.Data[i].{BARE};
-	}
-	:reserve{capacity: U4}:
-		Content(heap::[T]alloc_array(capacity))
-	{
-		Capacity() := capacity;
-		Content.Size := 0;
-	}
+	[AllocArgs...]
+	{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs!&&>(a)...)
+		{ FOR(Content) IT.{}; }
+
+	[AllocArgs...]
+	:bare{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs!&&>(a)...)
+		{ FOR(Content) IT.{BARE}; }
+
+	[AllocArgs...]
+	:reserve{capacity: U4, a: AllocArgs!&&...}:
+		Alloc(<AllocArgs!&&>(a)...),
+		Content := Alloc.[T]alloc_array(capacity)[FOR 0],
+		Capacity := capacity;
 
 	{#&copy}:
-		Content(heap::clone_buf(copy.Content))
-		{ Capacity() := ##copy; }
+		Alloc := copy.Alloc,
+		Content := Alloc.clone(copy.Content),
+		Capacity := ##copy;
+
 	{&&move}:
-		Content(move.Content)
+		Alloc := &&move.Alloc,
+		Content := move.Content,
+		Capacity := move.Capacity
+	{ move.{}; }
+
+	[AllocArgs...]
+	:copy{content: T#[#], a: AllocArgs!&&...}:
+		Alloc(<AllocArgs!&&>(a)...),
+		Content := Alloc.clone(content),
+		Capacity := ##content;
+
+	[AllocArgs...]
+	:move{content: T[#], a: AllocArgs!&&...}:
+		Alloc(<AllocArgs!&&>(a)...),
+		Content := content;
+
+	[A...]
+	:vec{a: A!&&...} := :noinit(SIZEOF...(A!))
 	{
-		move.{};
+		i ::= 0;
+		(THIS[:ok(i++)].{<A!&&>(a)})...; // TODO: IOTA in variadics expansions.
 	}
 
-	:copy{content: [T#]Buffer #&}:
-		Content(heap::clone_buf(content))
-		{ Capacity() := ##content; }
-	:move{content: [T!]Buffer &&}:
-		Content(content)
+	[AllocArg; A...]
+	:vec_a{arg: AllocArg!&&, a: A!&&...} := :noinit(SIZEOF...(A!), <AllocArg!&&>(arg))
 	{
-		Capacity() := ##content;
-		content := NULL;
+		i ::= 0;
+		(THIS[:ok(i++)].{<A!&&>(a)})...; // TODO: IOTA in variadics expansions.
 	}
-
-	[A...:TYPE]
-	:vec{a: A!&&...} := :reserve(SIZEOF...(A!))
-	{ (THIS += <A!&&>(a))...; }
 
 	DESTRUCTOR --
 	{
-		IF(Content.Data)
-			heap::delete_buf(Content);
+		IF(Content[])
+			Alloc.delete_array(Content[FOR Capacity]);
 	}
 
 	erase(at: U4) VOID
 	{
 		ASSERT(at < ##THIS);
 
-		THIS![:ok(at)].~;
-		--Content.Size;
-		range::move_construct(&THIS!.Data[at], &THIS!.Data[at+1], ##THIS-at);
+		THIS[:ok(at)].~;
+		--##Content;
+		FOR(Content[FROM at]) IT.{&&SIMD[IOTA+1]};
 	}
 
-	pop_back(dst: T *) VOID
+	drop_back() VOID --
+	{
+		ASSERT(!empty());
+		Content[--##Content].~;
+	}
+	pop_back(dst: T \) VOID
 	{
 		ASSERT(!empty());
 
-		IF(dst)
-			*dst := &&THIS![:ok(##THIS-1)];
-		THIS![:ok(##THIS-1)].~;
-		--Content.Size;
+		*dst := &&THIS![:ok(##THIS-1)];
+		THIS[:ok(##THIS-1)].~;
+		--##Content;
 	}
 
-	append_move(rhs: T!-std::Buffer) VOID
+	append_move(rhs: T![#]) VOID
 	{
 		cap: U4;
-		IF(!Capacity())
+		IF(!Capacity)
 			cap := ##rhs;
-		ELSE IF(Capacity() > ##THIS + ##rhs)
-			cap := Capacity();
+		ELSE IF(Capacity > ##THIS + ##rhs)
+			cap := Capacity;
 		ELSE
-			cap := (##THIS + ##rhs + (Capacity() >> 4)) | 3;
+			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
 
 		reserve(cap);
 
-		FOR(it ::= rhs.start().ok(); it; it++)
-			THIS += &&it!;
+		new ::= Content[][FROM ##Content];
+		FOR(rhs) new[IOTA].{&&IT};
+		##Content += ##rhs;
 	}
 
-	append(rhs: T!#-std::Buffer) VOID
+	append(rhs: T!#[#]) VOID
 	{
 		cap: U4;
-		IF(!Capacity())
+		IF(!Capacity)
 			cap := ##rhs;
-		ELSE IF(Capacity() > ##THIS + ##rhs)
-			cap := Capacity();
+		ELSE IF(Capacity > ##THIS + ##rhs)
+			cap := Capacity;
 		ELSE
-			cap := (##THIS + ##rhs + (Capacity() >> 4)) | 3;
+			cap := (##THIS + ##rhs + (Capacity >> 4)) | 3;
 
 		reserve(cap);
 
-		FOR(it ::= rhs.start().ok(); it; it++)
-			THIS += it!;
+		new ::= Content[][FROM ##Content];
+		FOR(rhs) new[IOTA].{IT};
+		##Content += ##rhs;
 	}
 
 	(//
@@ -135,28 +149,30 @@ PUBLIC:
 			++cap;
 
 		/// Is the container already large enough?
-		IF(Capacity() >= cap)
+		IF(Capacity >= cap)
 			/// Grow hole if required.
 			IF(at < ##Content)
 			{
-				Content.Data[##Content].{&&Content.back()};
-				failed ::= TRUE;
 				/// Shift contents right.
-				TRY
-				{
-					range::move_assign_r(
-						Content.Data+at+1,
-						Content.Data+at,
-						##Content-(at+1));
-					failed := FALSE;
-				} FINALLY IF(failed)
-				{
-					Content.back() := &&Content.Data[##Content];
-					Content.Data[##Content].~;
-				}
+				FOR(Content[FROM at]; --)
+					SIMD[IOTA+1].{&&SIMD[IOTA]}; // This sucks because it overrides the moved-out-of memory with a dummy value, and then overrides it again. Should we have a special instruction to move out of memory without modifying it? We could have a move out of a const value, which then {BARE} constructs it if it's not const. Make BARE constructing an implicit part of moving, and if you move out of a cref, then it doesn't modify it. But also, we do not want to accidentally move out of actual const objects. How can we prevent this while fitting it into the type system?
+					// Make anything that got moved out of simply not get destroyed. If something got moved out of, it is left in a potentially invalid state. If you want to continue using it, manually construct it with BARE again.
+					// Although this also sucks because then we have a borrow checker and it would depend on the compiler to recognise or track what values had been destroyed. Although again, we usually don't want to destroy values anyway.
+					// Maybe we can make it so that certain types of objects simply force tracking? But it would be an opt-in. But if we never really destroy objects anyway, what is it to us?
+					// If we do not destroy, then what is constructing even trying to do exactly? Especially move constructing... When do you *actually* want to have ownership and automatic individual destruction?
+						// - dynamically allocated things do not get destroyed.
+						// - pure stack allocations do not need destroying.
+						// - dynamic memory managed by stack variables should just go on the temp alloc, and does not need destroying. In fact, we can just emit a checkpoint automatically if we know that we use local allocations. Maybe turning them off manually is cooler than using them manually. But then we need language-level integration of the temp allocator.
+						// - dynamic memory that lives on the return stack also doesn't need destructors.
+						// - only memory that has unknown lifetimes actually even has destructors, but actually also only for releasing memory. The only ever thing we would need to manually close would be OS resources like files and network connections. Which means we do not want destructors for memory, only for external resource handles. Which means even string and vector etc. should not have a destructor that takes care of memory. Instead, it should have an allocator that it uses, and that should get bulk-freed once the lifetime of the allocator is over. So the only things with destructors are OS handles, and allocators. Containers are not like that.
+						// - however, sometimes, we do want to manually free some memory. So we still do need the potential for things to destroy themselves, but only if it holds an OS handle, or if it holds memory and the allocator demands individual frees.
 
-				Content[at].~; /// Destroy hole.
-				++Content.Size; /// Adjust size.
+					// Destructors do not modify state, they should be read-only.
+					// Moving an object is rather relocating it via memcpy, and then telling it to make adjustments to the destination. A moved-out-of object is considered NOINIT or BARE. Move ctors could therefore only require readonly source arguments. Simply forbid moving out of const objects?
+						// -> Decouple moving from ownership transfer maybe? Example: structure with backpointers needs move logic to adjust pointers to new parent, but a string container does not need to adjust anything because the contents do not need to know about the container. All we need to make sure is that the moved-out-of string container is no longer accessible. But that's the same as the noinit problem, actually. We do not want to allow reading noinit. -> We might need the ability to annotate values as initialised or uninitialised, and only initialised values get their destructor called. We can allow the temporary breaking of this, but need to restore it afterwards. Moving out of a value breaks this. If the compiler cannot track the state of a value, it demands you annotate it before use, and maybe afterwards, too. Example T NOINIT * pointer, if you want to read from it, you gotta say INIT(*pointer). If you want to call a constructor on it, you gotta say NOINIT(*pointer) to mark it as uninitialised. By default, values are tagged INIT. Creating a NOINIT variable tags it as NOINIT. Maybe we also need a BARE tag to differentiate between initialised and well-formed. The ordering is NOINIT < BARE < INIT. A value always has the worst possible tag if multiple are possible. If a pointer is tagged BARE, all its contents are guaranteed to be initialised, and must be left in an initialised state after modification. INIT pointers must be left in a well-formed state after modifications. If the compiler cannot track this, you have to tag it manually. In a special debug mode, one can check for these constraints maybe. It could track whether bytes are initialised, and one can specify debug-time validation predicates (maybe VALID operator? also good for enums. Actually, we could call INIT VALID instead, to match the operator. Then we have NOINIT, BARE, VALID). We do not want to extend these tags to runtime outside of slow debug validation simulation builds. NOINIT -> no destructor called. Not VALID -> cannot be returned as anything but BARE. Partially initialised -> needs to be tagged as either NOINIT or BARE, not sure if we should allow VALID with uninitialised fields (although it makes sense for option types). You cannot have partially NOINIT values unless they are POD structs and you don't return them or pass them elsewhere. Whenever an object passes a visibility boundary, it needs to be fully in one state (NOINIT, BARE, VALID). Also add NOINIT/BARE/VALID to slice operator: FOR(data[VALID FROM x TO y]) to override a subrange's tag (does not affect other accesses to data, even to the same range. The tag is per temporary subrange). We could also have overloads for indexes for example: THIS[U4 VALID] and THIS[U4 BARE]. Actually, OK would be a better keyword. THIS[U4 OK]. Normal numbers are then BARE, maybe, until you tag them as OK? Or we say that literals are always OK, and that everything else is BARE. But then it's not clear when a number turns from OK to BARE. After each calculation? Also, we may want to be able to say THIS[i:U4 OK(i < ##THIS)]. This then also tells the compiler what OK means, and how to detect OK values. Maybe builtin types are always BARE except for literals. Then native types automatically are BARE, while user types automatically are OK unless specified otherwise. Maybe it also varies per type and we might need a manual OK predicate operator on the user type to make it default to BARE instead. A type without predicates would always hold OK values, or never hold OK values unless tagged. A function can then note that it transforms a value's state, maybe. Although that would usually happen via &&, which indicates it goes into NOINIT. Maybe & indicates that it goes into BARE? We might need a way to specify whether we expect OK or BARE input, and whether the value will come out as OK or BARE. But maybe that's up to the caller, and he might have to retag it as OK. But since OK is short to write, it may be not much of an issue to do this. Also, we might want to specify a contract based on the return status. Like do_x(v:T & -> BARE(RETURN)) BOOL, which would indicate whether the inout parameter becomes bare. We also want to be able to query knowledge like that. For example do_x(v: T BARE? &) VOID { IF#(BARE?(v)) ... }. Same with constness etc. Since this is compile-time available, we can then make use of the mandatory internal static code analysis directly in the code, allowing us to make better decisions, allowing the compiler to be dumber and still produce exactly the code we want. The next step is to turn that system into something as non-intrusive as possible. Most program logic should not have to ever come near it, except maybe tagging indices as OK or something. And if we do not tag them as OK, they simply get runtime-checked. And since NOINIT is an explicit feature, most code always has at least BARE values. And values that never get passed into something expecting OK, and don't have a destructor, also need no tracking. This way, we get default initialisiation safety for everything, and we can add value validation into the type system, but we can keep it all at 0-cost by simply writing OK and/or NOINIT whenever we want to skip validation or default-initialisation. And we can skip over destructors during move assignments.
+						// -> Stack values / fixed size arrays can have this, although then the question is: how powerful should this annotation system be? We do not want to become overbearing like rust, but we also want to allow the programmer to not produce instructions that are unnecessary. The optimiser should not be there to infer intent from roundabout code, but to simply optimise already well-written code. This way, even unoptimised compilation should be fast, just with maybe worse assembly. But we would also like to keep the concept of containers and automatic destructors, I think. Although maybe containers would be less of a self-contained value, and more of a utility that lets us allocate and manage memory in some parent pool. So that we can create dynamic objects (with bulk freeing etc.).
+
+				++##Content; /// Adjust size.
 
 				= TRUE;
 			} ELSE
@@ -164,22 +180,30 @@ PUBLIC:
 
 		/// Reserve enough space.
 		hasHole ::= at != ##Content;
-		new ::= heap::[T]alloc_array(cap).cut(##Content + hasHole);
+		new ::= Alloc.[T]alloc_array(cap)[];
 
-		range::move_construct(new.Data, Content.Data, at);
-		range::move_construct(new.Data+at+1, Content.Data+at, ##Content-at);
+		FOR(Content[UNTIL at]) new          [IOTA].{&&IT};
+		FOR(Content[FROM at])  new[AFTER at][IOTA].{&&IT}; // ^_^
 
-		IF(Content.Data)
-			heap::delete_buf(Content);
-		Content := new;
-		Capacity() := cap;
+		IF(Content[])
+			Alloc.delete_array(Content[FOR Capacity]);
+		Content := new[FOR (##Content + hasHole)];
+		Capacity := cap;
 		= hasHole;
 	}
 
 	(// Reserve space for the requested capacity, without shrinking. /)
 	reserve(cap: U4) VOID
 	{
-		reserve_with_hole_at(cap, ##Content);
+		IF(Capacity < cap
+		&& !Alloc.[T]resize_array_in_place(Content[FOR Capacity], cap))
+		{
+			new ::= Alloc.[T]alloc_array(cap);
+			FOR(Content) new[IOTA].{&&IT};
+			Alloc.[T]free_array(Content[FOR Capacity]);
+			Content := new[FOR ##Content];
+			Capacity := cap;
+		}
 	}
 
 	resize(size: U4) VOID
@@ -187,13 +211,13 @@ PUBLIC:
 		IF(size >= ##Content)
 		{
 			reserve(size);
-			range::default_construct(
-				&THIS[:ok(##THIS)],
-				size - ##Content);
+			FOR(Content[FROM ##Content UNTIL size])
+				IT.{};
 		}
 		ELSE
-			range::destroy_buf(Content.drop_start(size));
-		Content.Size := size;
+			FOR(Content[FROM size])
+				IT.~;
+		##Content := size;
 	}
 
 	resize_bare(size: U4) VOID
@@ -201,13 +225,13 @@ PUBLIC:
 		IF(size >= ##Content)
 		{
 			reserve(size);
-			range::bare_construct(
-				&THIS[:ok(##THIS)],
-				size - ##Content);
+			FOR(Content[FROM ##Content UNTIL size])
+				IT.{BARE};
 		}
 		ELSE
-			range::destroy_buf(Content.drop_start(size));
-		Content.Size := size;
+			FOR(Content[FROM size])
+				IT.~;
+		##Content := size;
 	}
 
 	(//
@@ -218,77 +242,71 @@ PUBLIC:
 	PRIVATE grow_reserve_with_hole_at(at: U4) VOID
 	{
 		cap: U4;
-		IF(!Capacity())
+		IF(!Capacity)
 			cap := 1;
-		ELSE IF(Capacity() > ##THIS)
-			cap := Capacity();
+		ELSE IF(Capacity > ##THIS)
+			cap := Capacity;
 		ELSE
-			cap := (Capacity()+1 + (Capacity() >> 4)) | 3;
+			cap := (Capacity+1 + (Capacity >> 4)) | 3;
 
 		/// Increase content if appending.
-		Content.Size += !reserve_with_hole_at(cap, at);
+		##Content += !reserve_with_hole_at(cap, at);
 	}
 
-	[A...:TYPE]
+	[A...]
 	emplace_at(at: U4, a: A!&&...) T! & --
 	{
 		grow_reserve_with_hole_at(at);
-		failed ::= TRUE;
-		TRY
-		{
-			elem:?& := THIS[at];
-			elem.{<A!&&>(a)...};
-			failed := FALSE;
-			= elem;
-		} FINALLY IF(failed)
-		{
-			IF(at != ##THIS-1)
-			{
-				THIS[at].{&&THIS[at+1]};
-				range::move_assign(&THIS[at+1], &THIS[at+2], ##THIS-(at+2));
-				THIS!.back().~;
-			}
-			Content.Size--;
-		}
+		elem:?& := THIS[at];
+		elem.{<A!&&>(a)...};
+		= elem;
 	}
 
-	[A:TYPE]
+	[A]
 	THIS+=(v: A!&&) T! & --
-		:= emplace_at(##THIS, <A!&&>(v));
+	{
+		IF(Capacity == ##Content)
+		{
+			new_cap ::= Capacity + 1 + (Capacity >> 4) | 3;
+			reserve(new_cap);
+		}
+		last ::= ##Content;
+		Content[##Content].{<A!&&>(v)};
+		++##Content;
+		= Content[last];
+	}
 
-	#? THIS[i: Index] T!#?& -- := Content[i];
+	#? THIS[i: Index] T!#?& -- := Content[i(##Content)];
 
-	# <BOOL> := Content.Size;
+	# <BOOL> := ##Content;
 
-	# ##THIS U4 -- := Content.Size;
-	# data() T! #* -- := Content.Data;
-	# capacity() U4 -- := Capacity();
+	# ##THIS U4 -- := ##Content;
+	# data() T! #* -- := Content[]!;
+	# capacity() U4 -- := Capacity;
 	# empty() BOOL -- := ##THIS == 0;
 
 	#? THIS! ? #?& -- := Content;
 
 	#? start() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, 0);
 	#? end() [T!]Vec#?-[T!#?]Iterator -- := (&THIS, ##THIS-1);
+	#? last() T! & -- := THIS[##THIS-1];
 
 	# index_of(ptr: T! #\) U4 -- := ptr - Content.Data;
 
 	# THIS <> (rhs: THIS #&) S1
 	{
 		len # ::= math::min(##THIS, ##rhs);
-		FOR(i ::= 0; i < len; i++)
-			IF(sign ::= THIS[:ok(i)] <> rhs[:ok(i)])
+		FOR(len)
+			IF(sign ::= THIS[:ok(IOTA)] <> rhs[:ok(IOTA)])
 				= sign;
 		= ##THIS <> ##rhs;
 	}
 
-	# hash(h: std::Hasher &) VOID
+	(/# hash(h: std::Hasher &) VOID
 	{
 		h(##THIS);
-		FOR(elem ::= start())
-			h(*elem);
-	}
+		FOR(Content)
+			h(IT);
+	}/)
 }
-
-::std [T:TYPE] TYPE DynVec := T! - Dyn - Vec;
-::std [T:TYPE] TYPE SharedVec := T! - Shared - Vec;
-::std [T:TYPE] TYPE ValVec := T! - Val - Vec;
+::std [T] TYPE Vec := [heap::Alloc; T!]VecT;

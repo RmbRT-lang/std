@@ -16,7 +16,7 @@ INCLUDE 'std/range'
 		[T: TYPE] THIS(
 			name: CHAR #\,
 			value: T! #&,
-			out: {CHAR #\, INT-std::Opt}-std::Buffer,
+			out: {CHAR #\, INT-std::Opt}[#],
 			index: INT &
 		) VOID
 		{
@@ -30,9 +30,7 @@ INCLUDE 'std/range'
 
 	TEST "visit"
 	{
-		result: {CHAR #\, INT-std::Opt}[3] (NOINIT);
-		FOR(it ::= std::range::start(result))
-			it!.{};
+		result: {CHAR #\, INT-std::Opt}[3];
 
 		index: INT := 0;
 
@@ -40,15 +38,15 @@ INCLUDE 'std/range'
 		x.Member1 := 1;
 		x.B := 5;
 		visit: Visitor;
-		visit VISIT*(x, (result!, ##result), index);
+		visit VISIT*(x, result, index);
 
 		ASSERT(index == ##result);
-		ASSERT(std::str::view(result[0].(0)) == "lang::visit::Base");
+		ASSERT(std::str::eq(std::str::c(result[0].(0)[]), "lang::visit::Base"));
 		ASSERT(!result[0].(1));
-		ASSERT(std::str::view(result[1].(0)) == "Member1");
+		ASSERT(std::str::eq(std::str::c(result[1].(0)[]),  "Member1"));
 		ASSERT(result[1].(1));
 		ASSERT(result[1].(1)! == 1);
-		ASSERT(std::str::view(result[2].(0)) == "B");
+		ASSERT(std::str::eq(std::str::c(result[2].(0)[]), "B"));
 		ASSERT(result[2].(1));
 		ASSERT(result[2].(1)! == 5);
 	}
@@ -61,8 +59,8 @@ INCLUDE 'std/range'
 		dst: INT[3];
 
 		copy_into_array VISIT* ((1,2,3), &dst[0]);
-		FOR(x ::= std::range::start(dst))
-			ASSERT(x! == x() +1);
+		FOR(dst)
+			ASSERT(IT == IOTA +1);
 	}
 
 	copy_into_array_iter(v: INT, out: INT **) VOID
@@ -74,7 +72,7 @@ INCLUDE 'std/range'
 		it ::= &dst[0];
 		copy_into_array_iter VISIT ((1,2,3), &it);
 
-		FOR(x ::= std::range::start(dst))
-			ASSERT(x! == x() +1);
+		FOR(dst)
+			ASSERT(IT == IOTA +1);
 	}
 }

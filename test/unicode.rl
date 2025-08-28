@@ -32,11 +32,11 @@ INCLUDE "../std/memory"
 		ASSERT(test::encode(0x00B4, "´"));
 		ASSERT(test::encode(0x20AC, "€"));
 	}
-	::test encode(c: U4, str: CHAR#\) BOOL
+	::test encode(c: U4, str: CHAR#[]) BOOL
 	{
 		buf: CHAR[4] (NOINIT);
 		len ::= utf8::encode(c, buf!);
 		= size(buf[0]) == len
-			&& mem::cmp(buf!, str, len) == 0;
+			&& mem::[CHAR]cmp(buf, str, len) == 0;
 	}
 }

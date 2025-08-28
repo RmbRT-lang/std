@@ -1,7 +1,10 @@
 INCLUDE "../std/vector"
-
+INCLUDE "../os/file"
 ::std
 {
+	TEST "tmp" {
+		ASSERT(os::fs::ReadFile(<os::fs::FilePath>(), NULL).(0) == :NotFound);
+	}
 	TEST "emplace"
 	{
 		v: {INT, INT}-Vec := :vec((0,1), (2,3), (4,5));

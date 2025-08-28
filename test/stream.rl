@@ -2,7 +2,6 @@ INCLUDE "../std/io/stream"
 INCLUDE "../std/vector"
 INCLUDE "../std/string"
 INCLUDE "../std/streambuffer"
-INCLUDE 'std/io/file'
 INCLUDE 'std/io/streamutil'
 
 ::std::io
@@ -11,24 +10,23 @@ INCLUDE 'std/io/streamutil'
 	{
 		Data: std::Str - std::Vec;
 		write_some(data: VOID #\, size: UM) UM {
-			Data += <Str>(:buf(<CHAR#\>(data), size));
+			Data += <Str>(<CHAR#\>(data)[FOR size]);
 			= size;
 		}
 
-		# THIS==(expect: str::CV - std::Vec #&) BOOL
+		# THIS==(expect: CHAR#[#]-std::Vec#&) BOOL
 		{
 			IF(##expect != ##Data)
 				= FALSE;
-			FOR(i ::= 0; i < ##Data; i++)
-				IF(expect[i] != Data[i]!)
+			FOR(Data!)
+				IF(str::order(expect[IOTA], IT!) != 0)
 					= FALSE;
 			= TRUE;
 		}
 
 		# stream(o: std::io::OStream &) VOID
 		{
-			FOR(s ::= Data.start())
-				std::io::write(o, s!++);
+			FOR(Data!) std::io::write(o, IT!);
 		}
 	}
 
@@ -48,15 +46,15 @@ INCLUDE 'std/io/streamutil'
 			ASSERT((buf2.Data <> buf.Data) == 0);
 		} CATCH(t: {CHAR #*, CHAR#*}) {
 			msg: StreamBuffer;
-			std::io::write(&msg, t.(0), " (", t.(1), ")", :ch(0));
-			THROW msg!.Data;
+			std::io::write(&msg, std::str::c(t.(0)[]), " (", std::str::c(t.(1)[]), ")", :ch(0));
+			THROW &msg![0];
 		}
 
 		text: StreamBuffer;
 		io::write(&text, "Hello,", :ch(' '), "world!\n", :dec(255));
 		text2: StreamBuffer;
 		io::write(&text2, :stream(&text), "\n", :stream(&text));
-		ASSERT(<std::str::CV>(text!++) == "Hello, world!\n255");
-		ASSERT(<std::str::CV>(text2!++) == "Hello, world!\n255\nHello, world!\n255");
+		ASSERT(std::str::order(text!, "Hello, world!\n255") == 0);
+		ASSERT(std::str::order(text2!, "Hello, world!\n255\nHello, world!\n255") == 0);
 	}
 }

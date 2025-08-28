@@ -1,6 +1,5 @@
 INCLUDE 'std/hash'
 INCLUDE 'std/io/stream'
-INCLUDE 'std/io/file'
 
 ::std::hash_test
 {
@@ -32,9 +31,9 @@ INCLUDE 'std/io/file'
 		ASSERT(hash(0) != hash(1));
 		ASSERT(<Hash>().Words[0] == 0);
 
-		val: INT -Vec- std::Val := :vec();
+		(/val: INT -Vec- std::Val := :vec();
 		s: INT - Vec-std::Shared := val.shared();
-		ASSERT(hash(s) == hash(<INT-Buffer>()));
+		ASSERT(hash(s) == hash(<INT-Buffer>()));/)
 
 		(/ {
 			last: Hash;

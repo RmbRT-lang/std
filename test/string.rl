@@ -5,9 +5,9 @@ INCLUDE "../std/string"
 	TEST "str::view"
 	{
 		str ::= "123456";
-		buf ::= str::view(str);
-		ASSERT(buf.Data == str);
-		ASSERT(buf.Size == 6);
+		buf ::= str::c(str);
+		ASSERT(&*buf[] == &str[0]);
+		ASSERT(##buf == 6);
 	}
 
 	TEST "str::len"
@@ -19,18 +19,18 @@ INCLUDE "../std/string"
 
 	TEST "str::cmp"
 	{
-		ASSERT((str::view("a") <> "b") < 0);
-		ASSERT((str::view("a") <> "a") == 0);
-		ASSERT((str::view("aa") <> "a") > 0);
-		ASSERT((str::view("") <> "a") < 0);
+		ASSERT(str::order("a", "b") < 0);
+		ASSERT(str::order("a", "a") == 0);
+		ASSERT(str::order("aa", "a") > 0);
+		ASSERT(str::order("", "a") < 0);
 	}
 
 	TEST "str::starts_with"
 	{
-		ASSERT(str::view("hello") >= "hell");
-		ASSERT(!(str::view("hell") >= "hello"));
-		ASSERT(str::view("test") >= "test");
-		ASSERT(str::view("test") >= "");
-		ASSERT(str::view("") >= "");
+		ASSERT(str::starts_with("hello", "hell"));
+		ASSERT(!str::starts_with("hell", "hello"));
+		ASSERT(str::starts_with("test", "test"));
+		ASSERT(str::starts_with("test",  ""));
+		ASSERT(str::starts_with("",  ""));
 	}
 }

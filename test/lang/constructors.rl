@@ -103,7 +103,7 @@ INCLUDE 'std/heap'
 		
 		ASSERT(SIZEOF(#d2) == SIZEOF(#b));
 		
-		clone ::= <Base *>(std::heap::alloc_raw(SIZEOF(#b)));
+		clone ::= <Base *>(std::heap::alloc.alloc_raw_object(SIZEOF(#b), 8));
 		COPY_RTTI(b, clone);
 		clone->VIRTUAL{b};
 		
@@ -111,14 +111,14 @@ INCLUDE 'std/heap'
 		ASSERT(TYPE(<<D1*>>(clone)) == TYPE TYPE(D2));
 		ASSERT(<<D2#*>>(clone)->x == 25);
 		
-		std::heap::delete(clone);
+		std::heap::alloc.delete(clone);
 	}
 
 	NoDefaultCtor {
 		Member: UM;
 
 		{x: INT *} {
-			std::io::write(&std::io::out, "ctor(x: ", :addr(x), ")\n");
+			//std::io::write(&std::io::out, "ctor(x: ", :addr(x), ")\n");
 		}
 	}
 
@@ -142,5 +142,54 @@ INCLUDE 'std/heap'
 		u.{:Field3(:f(7))};
 		ASSERT(u.Field3.X == 7);
 		ASSERT(u.Field3.Y == 5*7);
+	}
+
+	TEST "UNION tag enums" {
+		e: ENUM CtorUnion (BARE);
+		e := :Field1;
+		e := :Field2;
+		e := :Field3;
+	}
+
+	TEST "TAGGED unions" {
+		t: TAGGED CtorUnion (BARE);
+
+		t := :Field1(5);
+		ASSERT(t.(0) == :Field1);
+		ASSERT(t.(1).Field1 == 5);
+		t := :Field2(FALSE);
+		ASSERT(t.(0) == :Field2);
+		ASSERT(t.(1).Field2 == FALSE);
+		t := :Field3(:f,7);
+		t := :Field3(:f(7));
+		ASSERT(t.(0) == :Field3);
+		ASSERT(t.(1).Field3.X == 7);
+		ASSERT(t.(1).Field3.Y == 5*7);
+	}
+
+	DefaultCtorable { X: INT; {}: X := 12345; }
+	DefaultCtorable2 { X: INT; {}: X := 987654; }
+	UNION CtorUnionDefault {
+		Field1: DefaultCtorable2;
+		Field2: BOOL;
+		Field3: BOOL;
+	*	Field4: DefaultCtorable;
+		Field5: BOOL;
+		Field6: DefaultCtorable2;
+	}
+	TEST "DEFAULT TAGGED union" {
+		t: TAGGED CtorUnionDefault;
+		ASSERT(t.(0) == :Field4);
+		ASSERT(t.(1).Field4.X == 12345);
+	}
+
+	DestroyingClass { X: INT; Into: INT *; DESTRUCTOR { *Into := X; } }
+	UNION DestroyingUnion { Pod: INT; Dtor1: DestroyingClass; Dtor2: DestroyingClass; }
+	TEST "TAGGED union destructor" {
+		test: INT := 0;
+		{ t: TAGGED DestroyingUnion := :Dtor1(5, &test); }
+		ASSERT(test == 5);
+		{ t: TAGGED DestroyingUnion := :Dtor1(4, &test); t.(0) := :Pod; }
+		ASSERT(test == 5);
 	}
 }

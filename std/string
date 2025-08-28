@@ -3,25 +3,27 @@
 INCLUDE 'std/memory'
 
 INCLUDE 'std/str'
+INCLUDE 'std/heap'
 
 /// Dynamic container for an std::str::View.
-::std [C: TYPE] String
+::std [Alloc] String -> PRIVATE Alloc
 {
-	PRIVATE Content: [C!]Buffer;
+	PRIVATE Content: CHAR[#];
 
 	{};
 	{BARE} ();
 
-	{data: str::[C#]View} --: Content(heap::clone_buf(data));
-	:cstring{data: str::[C#]View #&}: Content(heap::[C]alloc_array(##data+1))
+	{data: CHAR#[#]} --: Content(Alloc::clone(data));
+	:cstring{data: CHAR#[#]}: Content(Alloc::[CHAR]alloc_array(##data+1))
 	{
-		range::copy_construct(Content.Data, data.Data, ##data);
-		Content.Data[--Content.Size] := 0;
+		range::[CHAR]copy_construct(Content[], data[], ##data);
+		Content[##data] := 0;
+		##Content := ##data;
 	}
-	:transfer{data: [C!]Buffer #&}: Content(data);
+	:transfer{data: CHAR#[#]}: Content := data;
 
-	{#&cpy}:
-		Content(heap::clone_buf(cpy.Content));
+	{#&cpy} -> (cpy):
+		Content(->(Alloc).clone(cpy.Content));
 	{&&mv}:
 		Content(mv.Content)
 	{
@@ -29,40 +31,33 @@ INCLUDE 'std/str'
 	}
 	DESTRUCTOR
 	{
-		IF(Content.Data)
-			heap::free_buf(Content);
+		IF(Content[])
+			heap::alloc.free_array(<CHAR#[#]>(Content));
 		Content := NULL;
 	}
 
-	# THIS <> (rhs: THIS#&) S1 := THIS! <> rhs!;
+	# THIS <> (rhs: THIS#&) S1 := str::order(THIS!, rhs!);
 
-	# data() ? -- := Content.Data;
+	# data() ? -- := Content[];
 	# ##THIS ? -- := ##Content;
-	# THIS[i: Index #&] ?#& -- := Content[i];
-	# THIS! str::[C#]View -- := Content++;
+	# THIS[i: Index] ?#& -- := Content[i(##Content)];
+	#? THIS! CHAR#?[#] -- := Content;
 
 	[T...: TYPE]
 	append(v: T!&&...) VOID --
-	{ append_impl(<str::[C#]View>(<T!&&>(v))...); }
-	[T...: TYPE]
-	PRIVATE append_impl(v: T!&&...) VOID {
+	{
 		sz: UM := ##THIS;
-		(sz += ##v)...;
+		(sz += ##<CHAR#[#]>(v))...;
 
-		new ::= heap::[C]alloc_array(sz);
-		start ::= new.Data;
-		start += range::copy_construct(start, Content.Data, ##Content);
-		(start += range::copy_construct(start, v.Data, ##v))...;
+		new ::= Alloc::[CHAR]alloc_array(sz);
+		start ::= new[];
+		start += range::copy_construct(start, Content[], ##Content);
+		(start += range::copy_construct(start, <CHAR#[#]>(v)[], ##<CHAR#[#]>(v)))...;
 		THIS := :transfer(new);
 	}
 
-	THIS+=(str: std::str::[C#]View #&) VOID --
+	THIS+=(str: CHAR#[#]) VOID --
 	{ append(str); }
 }
 
-::std
-{
-	TYPE Str := [CHAR]String;
-	TYPE Str2 := [U2]String;
-	TYPE Str4 := [U4]String;
-}
+::std TYPE Str := [heap::Alloc]String;

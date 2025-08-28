@@ -7,21 +7,21 @@ INCLUDE 'std/string'
 
 	TEST "TYPE TYPE: native types"
 	{
-		ASSERT(std::str::view(TYPE TYPE(S1)) == "S1");
-		ASSERT(std::str::view(TYPE TYPE(U1)) == "U1");
-		ASSERT(std::str::view(TYPE TYPE(S2)) == "S2");
-		ASSERT(std::str::view(TYPE TYPE(U2)) == "U2");
-		ASSERT(std::str::view(TYPE TYPE(S4)) == "S4");
-		ASSERT(std::str::view(TYPE TYPE(U4)) == "U4");
-		ASSERT(std::str::view(TYPE TYPE(S8)) == "S8");
-		ASSERT(std::str::view(TYPE TYPE(U8)) == "U8");
-		ASSERT(std::str::view(TYPE TYPE(BOOL)) == "BOOL");
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(S1)[]), "S1"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(U1)[]), "U1"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(S2)[]), "S2"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(U2)[]), "U2"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(S4)[]), "S4"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(U4)[]), "U4"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(S8)[]), "S8"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(U8)[]), "U8"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(BOOL)[]), "BOOL"));
 	}
 
 	TEST "TYPE TYPE: classes"
 	{
-		ASSERT(std::str::view(TYPE TYPE(Base)) == "rl::lang::typeof::Base");
-		ASSERT(std::str::view(TYPE TYPE(Derived)) == "rl::lang::typeof::Derived");
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(Base)[]), "rl::lang::typeof::Base"));
+		ASSERT(std::str::eq(std::str::c(TYPE TYPE(Derived)[]), "rl::lang::typeof::Derived"));
 	}
 
 

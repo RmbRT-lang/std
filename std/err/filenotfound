@@ -12,6 +12,6 @@ INCLUDE 'std/io/streamutil'
 
 	# FINAL stream(o: std::io::OStream &) VOID
 	{
-		io::write(o, "File not found: '", FileName!++, "'.");
+		io::write(o, "File not found: '", FileName!, "'.");
 	}
 }

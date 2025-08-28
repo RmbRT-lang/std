@@ -19,14 +19,14 @@
 	is_follow(byte: U1) ? --
 		:= byte & 0xc0 == 0x80;
 
-	point(in: CHAR #\) U4
+	point(in: CHAR #[]) U4
 	{
 		size: UM;
 		= point_and_len(in, &size);
 	}
 
 	point_and_len(
-		in: CHAR #\,
+		in: CHAR #[],
 		size: UM \
 	) U4
 	{
@@ -34,7 +34,7 @@
 		IF(*size == 1)
 			= in[0];
 
-		STATIC masks: U1#[](0x1f, 0x0f, 0x07);
+		STATIC masks: U1#[?](>0x1f, >0x0f, >0x07); // c++ error narrowing int->u8...
 
 		out ::= <U4>(in[0] & masks[*size-2]);
 
@@ -56,7 +56,7 @@
 			(src < 0x10000) ?? 3 :
 			4;
 
-		STATIC start: U1#[](0xc0, 0xe0, 0xf0);
+		STATIC start: U1#[?](>0xc0, >0xe0, >0xf0);
 		end ::= dst+size;
 		FOR(i ::= 0; i < size; i++)
 			*--end := <U1>(src >> 6*i);

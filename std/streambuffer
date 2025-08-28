@@ -10,10 +10,10 @@ INCLUDE 'std/io/stream'
 
 	write_some(data: VOID #\, size: UM) UM
 	{
-		THIS.append((<CHAR #\>(data), size));
+		THIS.append(<CHAR #\>(data)[FOR size]);
 		RETURN size;
 	}
 
 	# stream(o: std::io::OStream &) VOID --
-	{ o.write(THIS!.Data, THIS!.Size); }
+	{ o.write(THIS.data(), ##THIS); }
 }

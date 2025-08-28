@@ -22,7 +22,7 @@
 		ASSERT(<Class>(3,4) != (5,6));
 		ASSERT(f((1,2)) == (1,2));
 
-		STATIC a: Class#[] ((1,2), (3,4), (5,6));
+		STATIC a: Class#[?] ((1,2), (3,4), (5,6));
 		ASSERT(a[0] == (1,2));
 		ASSERT(a[1] == (3,4));
 		ASSERT(a[2] == (5,6));

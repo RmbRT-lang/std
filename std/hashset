@@ -2,21 +2,21 @@
 
 INCLUDE 'std/hashmap'
 
-::std [T: TYPE] HashSet -> [T!; T!]HashMap
+::std [Alloc; T] HashSetT -> [Alloc; T!; T!]HashMapT
 {
-	PRIVATE TYPE Map := [T!; T!]HashMap;
+	PRIVATE TYPE Map := [Alloc; T!; T!]HashMapT;
 	TYPE Location := Map::Location;
 
-	# has(v: T! #&) BOOL := Map::find(v);
-	# has_h(h: Hash #&) BOOL := Map::find_h(h);
+	# has(v: T! #&) BOOL := ->(Map).find(v);
+	# has_h(h: Hash #&) BOOL := ->(Map).find_h(h);
 
 	[Value: TYPE]
 	insert_h(h: Hash #&, v: Value!&&) BOOL
-		:= Map::insert_h(h, <Value!&&>(v));
+		:= ->(Map).insert_h(h, <Value!&&>(v));
 
 	insert(v: T!&&) BOOL
 		:= insert_h(hash(v), <T!&&>(v));
 
 }
 
-::std [T: TYPE] TYPE DynHashSet := T!-Dyn-HashSet;
+::std [T] TYPE HashSet := [heap::Alloc; T!]HashSetT;
