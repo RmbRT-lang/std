@@ -48,7 +48,7 @@
 		= out;
 	}
 
-	encode(src: U4, dst: CHAR \) UM
+	encode(src: U4, dst: CHAR []) UM
 	{
 		size: UM :=
 			(src < 0x00080) ?? 1 :

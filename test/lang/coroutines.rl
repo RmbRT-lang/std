@@ -1,5 +1,5 @@
 ::lang::coroutine
-{
+{(/
 	F
 	{
 		lel() @INT := 5;
@@ -73,4 +73,5 @@
 		// Await thread.
 		wait(1.0);
 	}
+	/)
 }

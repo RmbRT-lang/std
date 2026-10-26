@@ -1,0 +1,142 @@
+(/rl/)
+
+::std::rng
+{
+	::detail (CACHELINE, CACHELINE) Cacheline;
+	::detail UNION CachelineLUT {
+		_: Cacheline;
+		V1: U1[64];
+		V2: U2[32];
+		V4: U4[16];
+		V8: U8[8];
+	}
+
+	(/ What we want:
+		1. Strong and low-latency single-word permutation.
+		2. Strong and fast single-word-input stream generator for longer streams (throughput).
+		3. Strong and fast multi-word-input multi-word-output generator (basically multi-word permutation). One could theoretically make it run twice to make retroactive avalanching, but then the individual passes don't need to be as strong, but faster instead.
+		4. Strong and fast multi-word-input single-word digest.
+
+	Actually, we can build 3. by just running 4. and then generating a 2. sequence from it that we XOR the input with. /)
+	
+
+	// Generated with:
+	// for(let i = 0; i < 8; i++) { let b = new ArrayBuffer(8); crypto.getRandomValues(new Uint8Array(b)); console.log("0x" + new DataView(b).getBigUint64().toString(16).padStart(16, "0")); }
+	::detail k_lut: detail::CachelineLUT := :V8(
+		0xcc5dd6a31216c18b,
+		0xed02a9f15151e512,
+	>	0x751a1d7bc2ac0c42,
+	>	0x58af2e9bec6b89ac,
+		0xc832cd94f72b5a31,
+	>	0x64016f3ab2daff32,
+	>	0x46a4f2e8045a0895,
+		0xaf6e7b150b2bce01
+	);
+
+	permute_v8(index: U8) U8 := permute_v8_inl(index);
+	permute_v8_inl(index: U8) U8 --
+	{
+		// Directly look up in the LUT based on index only. Lowest-latency memory access.
+		// m1, m2 are always different, but have a period of 8. Do not plainly combine them.
+		m1_1p8v8 ::= detail::k_lut.V8[index & 7];
+		m2_1p8v8 ::= detail::k_lut.V8[~index & 7]; // Should be a single NAND + load.
+
+		sm1_1p64v8 ::= detail::k_lut.V8[(0x9695f808527266b3 <<< index) & 7];
+		sm2_64p64v8 ::= detail::k_lut.V8[(0xd1a589c26e302db1 >>> (index >> 6)) & 7];
+
+		// Generate some low-latency randomness in as few cycles as possible, not accessing memory. This should happen in parallel with m1, m2.
+		sr1 ::= ((0x5e594706b80881e8 <<< index) * index)
+			+ (0x52821bc9a63b4108 >>> index);
+		sr2 ::= ((0x12b0c98f8db632e0 >>> index) * index)
+			+ (0xd7bc9d13b78fc3fd <<< index);
+
+		t0 ::= m1_1p8v8 * sr1 <<< index;
+		t1 ::= m2_1p8v8 * sr2 >>> index;
+
+		//sm1_1v8 ::= k_lut.V8[sr1 & 7];
+		//sm2_1v8 ::= k_lut.V8[sr2 & 7];
+
+		=
+			(t0 + t1)
+			//+ (sm1_1v8 ^ sm2_1v8)
+			^ (sr1 + sr2)
+		;
+	}
+
+	V8StreamDigest {
+		{}--: Last := 0x9bed48e1edb4cfab;
+		Last: U8;
+
+		STATIC u8_masks: U8[8]#(
+			0r0000000000000000,
+			0rff00000000000000,
+			0rffff000000000000,
+			0rffffff0000000000,
+			0rffffffff00000000,
+			0rffffffffff000000,
+			0rffffffffffff0000,
+			0rffffffffffffff00);
+		// WARNING: reads words, so it might read beyond the buffer boundaries, and masks off any bytes beyond the buffer. Only ever do this at the end of a logical buffer. For reproducibility, make sure the chunking of equivalent data is always identical.
+		eat_chunk_end(v: U1#[#]) VOID {
+			eat_words_inl(<U8 #\>(&*v[])[FOR ##v >> 3]);
+			IF(##v & 7)
+				eat_word_inl(*<U8 #\>(&v[##v & ~7]) & u8_masks[][##v & 7]);
+		}
+
+		eat_last_chunk_inl(v: U1#[#]) VOID -- {
+			eat_word_inl(*<U8 #\>(&v[][##v & ~7]) & u8_masks[][##v & 7]);
+		}
+
+		// For branchless hashing. Put in the current read pos, and remaining bytes. Advance read pos by 8 bytes. After done, call digest() or digest_strong().
+		eat_word_masked_inl(data: U1#\, len: U4) VOID -- {
+			mask ::= ~(~<U8>(0) << (8*len)); //u8_masks![len & 7];
+			mask := len != 8 ?? mask : ~<U8>(0);
+
+			eat_word_inl(*<U8 #\>(data) & mask);
+		}
+
+		// "Weak" digest if you use only one-word inputs (LSB has a mod64 .
+		# digest_weak() U8 -- := Last;
+		# digest_strong() U8 -- := Last ^ permute_v8_inl(Last);
+		eat_word(w: U8) VOID { eat_word_inl(w); }
+		eat_word_inl(w: U8) VOID --
+		{
+			// Generate some low-latency randomness in as few cycles as possible, not accessing memory. This should happen in parallel with m1, m2.
+			///sm1_1p64v8 ::= k_lut.V8[(0x9695f808527266b3 <<< IT) & 7];
+			///sm2_64p64v8 ::= k_lut.V8[(0xd1a589c26e302db1 >>> (IT >> 6)) & 7];
+
+			// Directly look up in the LUT based on index only. Lowest-latency memory access.
+			// m1, m2 are always different, but have a period of 8. Do not plainly combine them.
+			m1_1p8v8 ::= detail::k_lut.V8[w & 7];
+			m2_1p8v8 ::= detail::k_lut.V8[~w & 7]; // Should be a single NAND + load.
+
+			sr1 ::= ((0x50d385d268d3f82f <<< w) * w)
+				+ (0xf7250cd59e3d89bd >>> w);
+			sr2 ::= ((0x68c9f6dcb062e6c2 >>> w) * w)
+				+ (0x6181699fd459544c <<< w);
+			sr3 ::= sr1 + sr2;
+
+			t0 ::= (m1_1p8v8 * sr1) <<< w;
+			t1 ::= (m2_1p8v8 * sr2) >>> w;
+			t2 ::= (t0 + t1) ^ sr3;
+
+			// Loop-carried dependency starts here. We benefit the most from pipelining if we squash long sequences. Also, currently, we cannot split this execution into chunks. But we only need to remember "last" to make this resumable.
+			m1_v8 ::= detail::k_lut.V8[(Last ^ w) & 7] >>> (Last + 13);
+
+			Last := ((Last ^ t2) >>> 17) ^ m1_v8;
+		}
+
+		eat_words(indices: U8#[#]) VOID { eat_words_inl(indices); }
+		eat_words_inl(indices: U8#[#]) VOID --
+		{
+			FOR(indices)
+				eat_word(IT);
+		}
+
+	}
+
+	v8_squash_weak(indices: U8#[#]) U8 --
+		{ d: V8StreamDigest; d.eat_words(indices); = d.digest_weak(); }
+	v8_squash_strong(indices: U8#[#]) U8 --
+		{ d: V8StreamDigest; d.eat_words(indices); = d.digest_strong(); }
+}

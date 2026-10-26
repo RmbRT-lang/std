@@ -1,15 +1,14 @@
 (/rl/)
 
-INCLUDE 'std/io/stream'
-
 ::std::io::format
 {
-	[T:TYPE] hex(
-		o: OStream &,
+	HexNumBuffer { Buf: CHAR[19]; Len: U1; # <CHAR#[#]> -- := Buf[FOR Len]; }
+	[T] hex_into(
+		o: CHAR[#],
 		n: T! #&,
 		minDigits: U1,
 		prefix: BOOL
-	) VOID
+	) U1
 	{
 		v: UM := n;
 
@@ -47,11 +46,31 @@ INCLUDE 'std/io/stream'
 			buf[len++] := '0';
 
 		write ::= buf[FOR len];
-		o.write(&*write[], ##write);
+		FOR(write) o[IOTA] := IT;
+		= len;
 	}
 
-	[T:TYPE] dec(o: OStream &, n: T! #&, minDigits: U1) VOID
+	[T] hex(n: T! #&) HexNumBuffer -- := [T!]hex_x(n, 0, TRUE);
+	[T] hex_x(n: T!#&, minDigits: U1, prefix: BOOL) HexNumBuffer
 	{
+		ret: HexNumBuffer (NOINIT);
+		ret.Len := [T!]hex_into(ret.Buf, n, minDigits, prefix);
+		= ret;
+	}
+
+	DecNumBuffer { Buf: CHAR[18]; Start: U1; # <CHAR#[#]> -- := Buf[FROM Start]; }
+
+
+	UNION Format {
+	!	Pad0: U1;
+		Pad: U1;
+	}
+
+	[T] dec_into(o: CHAR[#], n: T! #&, format: TAGGED Format) U1
+	{
+		minDigits ::= format.(1).Pad;
+		padChar: CHAR := format.(0) == :Pad0 ?? '0' : ' ';
+
 		v: UM := n;
 		neg: BOOL;
 		IF(n < <T>(0))
@@ -60,29 +79,37 @@ INCLUDE 'std/io/stream'
 			IF(~n)
 				v := -n;
 		}
-		IF(minDigits >= 30)
-			minDigits := 30;
+		IF(minDigits >= ##o)
+			minDigits := ##o;
 
-		buf: CHAR[32] (NOINIT);
-		i ::= ##buf-1;
+		i ::= ##o-1;
 		DO()
 		{
 			d ::= v % 10;
 			v := v / 10;
 
-			buf[i] := '0'+d;
-		} FOR(v; i--)
-		digits ::= ##buf - i;
+			o[i] := '0'+d;
+		} FOR(i && v; i--)
+		digits ::= ##o - i;
 		WHILE(digits < minDigits)
 		{
-			buf[--i] := '0';
+			o[--i] := padChar;
 			++digits;
 		}
 
-		IF(neg)
-			buf[--i] := '-';
+		IF(v || (!i && neg))
+			= ##o;
 
-		write ::= buf[FROM i];
-		o.write(&*write[], ##write);
+		IF(neg)
+			o[--i] := '-';
+
+		= i;
+	}
+
+	[T] dec(n: T! #&) DecNumBuffer -- := [T!]dec_x(n, 0);
+	[T] dec_x(n: T! #&, format: TAGGED Format) DecNumBuffer {
+		ret: DecNumBuffer (NOINIT);
+		ret.Start := [T!]dec_into(ret.Buf, n, format);
+		= ret;
 	}
 }

@@ -1,7 +1,7 @@
 INCLUDE "../std/map"
 INCLUDE "set.rl"
 
-TYPE IntBoolMap := std::[INT, BOOL]Map;
+TYPE IntBoolMap := std::[INT; BOOL]Map;
 
 ::std
 {

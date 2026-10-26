@@ -1,5 +1,5 @@
 (/rl/)
-
+(/
 INCLUDE 'std/hashmap'
 
 ::std [Alloc; T] HashSetT -> [Alloc; T!; T!]HashMapT
@@ -20,3 +20,6 @@ INCLUDE 'std/hashmap'
 }
 
 ::std [T] TYPE HashSet := [heap::Alloc; T!]HashSetT;
+/)
+
+::std {}

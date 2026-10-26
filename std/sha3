@@ -1,0 +1,113 @@
+(/rl/)
+::std::sha3 {
+
+	round_constants: U8[24]#(
+		0x0000000000000001, 0x0000000000008082, 0x800000000000808a,
+		0x8000000080008000, 0x000000000000808b, 0x0000000080000001,
+		0x8000000080008081, 0x8000000000008009, 0x000000000000008a,
+		0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
+		0x000000008000808b, 0x800000000000008b, 0x8000000000008089,
+		0x8000000000008003, 0x8000000000008002, 0x8000000000000080,
+		0x000000000000800a, 0x800000008000000a, 0x8000000080008081,
+		0x8000000000008080, 0x0000000080000001, 0x8000000080008008
+	);
+
+	rotates: U1[24]#(
+		1,  3,  6,  10, 15, 21, 28, 36, 45, 55, 2,  14,
+		27, 41, 56, 8,  25, 43, 62, 18, 39, 61, 20, 44);
+
+	indices: U1[24]#(
+		10, 7,  11, 17, 18, 3, 5,  16, 8,  21, 24, 4,
+		15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1);
+
+
+	keccak_function(state: U8[25] #&) VOID
+	{
+
+		FOR(round_constants)
+		{
+			bc: U8[5] (NOINIT);
+			// "Theta"
+			FOR(bc)
+				IT := state[IOTA] ^ state[IOTA+5] ^ state[IOTA+10] ^ state[IOTA+15] ^ state[IOTA+20];
+
+			FOR(5)
+			{
+				next ::= IOTA == 4 ?? 0 : IOTA+1;
+				prev ::= IOTA == 0 ?? 4 : IOTA-1;
+				t ::= bc[prev] ^ (bc[next] <<< 1);
+				state[IOTA]    ^= t;
+				state[IOTA+5]  ^= t;
+				state[IOTA+10] ^= t;
+				state[IOTA+15] ^= t;
+				state[IOTA+20] ^= t;
+			}
+
+			// Rho-pi
+			t ::= state[1];
+			FOR(indices)
+			{
+				old ::= state[IT];
+
+				bc[0] := old;
+				state[IT] := (t <<< rotates[IOTA]);
+				t := old;
+			}
+
+			// Chi
+			FOR(i ::= 0; i < 25; i += 5)
+			{
+				bc[0] := state[i];
+				bc[1] := state[i+1];
+				bc[2] := state[i+2];
+				bc[3] := state[i+3];
+				bc[4] := state[i+4];
+
+				state[i]   := ~bc[1] & bc[2];
+				state[i+1] := ~bc[2] & bc[3];
+				state[i+2] := ~bc[3] & bc[4];
+				state[i+3] := ~bc[4] & bc[0];
+				state[i+4] := ~bc[0] & bc[1];
+			}
+
+			// Iota
+			state[0] ^= IT;
+		}
+	}
+
+	State {
+		Buffer: U8[25];
+		Progress: U1;
+
+		update(data: U1#[#]) VOID
+		{
+			p ::= Progress;
+			FOR(data)
+			{
+				Buffer[p++] ^= IT;
+				IF(p >= 136) {
+					keccak_function(Buffer);
+					p := 0;
+				}
+			}
+			Progress := p;
+		}
+
+		final() U8[4] & {
+
+			<U1 *>(Buffer!)[0] ^= 0x06;
+			<U1 *>(Buffer!)[135] ^= 0x80;
+
+			keccak_function(Buffer);
+
+			= *<U8[4] *>(<VOID *>(&Buffer));
+		}
+	}
+
+	sha3_256(data: U1#[#]) U8[4] {
+		s: State;
+		s.update(data);
+		ret: U8[4] := s.final();
+		= ret;
+	}
+}

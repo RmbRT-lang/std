@@ -91,12 +91,22 @@ INCLUDE 'std/rawstorage'
 		{
 		:buffer: o.write(Value.Buf.Data, Value.Buf.Bytes);
 		:streamable: Value.StreamableStorage.[Streamable#]to()->stream(o);
-		:dec: Value.DecNumber.(0)
-			?? format::[SM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2))
-			: format::[UM]dec(o, Value.DecNumber.(1), Value.DecNumber.(2));
-		:hex: Value.HexNumber.(0)
-			?? format::[SM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
-			: format::[UM]hex(o, Value.HexNumber.(1), Value.HexNumber.(2), TRUE);
+		:dec:
+		{
+			buf ::= Value.DecNumber.(0)
+				?? format::[SM]dec_x(Value.DecNumber.(1), Value.DecNumber.(2))
+				: format::[UM]dec_x(Value.DecNumber.(1), Value.DecNumber.(2));
+			slice: CHAR#[#] := buf;
+			o.write(<CHAR#*>(slice[]), ##slice);
+		}
+		:hex:
+		{
+			buf ::= Value.HexNumber.(0)
+				?? format::[SM]hex_x(Value.HexNumber.(1), Value.HexNumber.(2), TRUE)
+				: format::[UM]hex_x(Value.HexNumber.(1), Value.HexNumber.(2), TRUE);
+			slice: CHAR#[#] := buf;
+			o.write(<CHAR#*>(slice[]), ##slice);
+		}
 		:char: o.write(&Value.Char, 1);
 		}
 	}

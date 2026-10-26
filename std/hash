@@ -1,51 +1,17 @@
 (/rl/)
 
-INCLUDE 'std/io/stream'
-INCLUDE 'std/io/streamutil'
-INCLUDE 'std/io/format'
 INCLUDE 'std/rng'
 
 ::std
 {
+	// TODO PERFORMANCE: Add a faster hash that is based on sums of prime multiplications or something. Basically, we want something that approaches 8 bytes per cycle in hashing speed.
+
 	MASK CustomHashable { # hash(Hasher &) VOID; }
 
-	Hash
-	{
-		TYPE Word := U8;
-		Words: Word[1];
-
-		# THIS==(rhs: THIS#&) BOOL -- := std::mem::eq(Words[], rhs.Words[], ##Words);
-		# THIS!=(rhs: Hash#&) BOOL -- := !(THIS == rhs);
-
-		# THIS<>(rhs: Hash#&) S1
-		{
-			FOR(i ::= 0; i < ##Words; i++)
-				IF(unequal ::= Words[i] <> rhs.Words[i])
-					= unequal;
-			= 0;
-		}
-
-		# stream(into: io::OStream &) VOID
-		{
-			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex(into, Words[i], 2 * SIZEOF(Word), !i);
-		}
-
-		# stream_noprefix(into: io::OStream &) VOID
-		{
-			FOR(i ::= 0; i < ##Words; i++)
-				io::format::hex(into, Words[i], 2 * SIZEOF(Word), FALSE);
-		}
-
-		# hash(h: std::Hasher &) VOID
-		{
-			FOR(i ::= 0; i < ##Words; i++)
-				h(Words[i]);
-		}
-	}
+	TYPE Hash := U8;
 
 	[T...: TYPE]
-	hash(v: T! &&...) Hash! --
+	hash(v: T! &&...) Hash --
 	{
 		h: Hasher;
 		h(<T!&&>(v))...;
@@ -54,10 +20,187 @@ INCLUDE 'std/rng'
 
 	hash_str(str: CHAR#[#]) Hash --
 	{
-		h: Hasher;
-		h(##str);
-		h.bytes(<U1#*>(&*str)[FOR ##str]);
-		= h.digest();
+		= Hasher::digest_str(str);
+	}
+
+	hash_str_weak(str: CHAR#[#]) Hash --
+	{
+		h: FastWeakHash;
+		IF#(1)
+		{
+			h.feed_words(<U8 #*>(<VOID#*>(str[]))[], ##str >> 3);
+			//IF(##str & 7)
+				h.feed_partial_word(*<U8 *>(&str[][##str & ~7]), ##str & 7);
+		} ELSE
+		{
+			h.feed_bytes_masked_min2(<U1#*>(<VOID#*>(str[]))[], ##str);
+		}
+		= h.digest(##str);
+	}
+
+	hash_str_reference(str: CHAR#[#]) Hash --
+	{
+		h: U8 := 1125899906842597; // prime
+
+		FOR(str) {
+			h := 31*h + <U8>(IT);
+		}
+		= h;
+	}
+
+	FastWeakHash {
+		I: U8;
+		Acc: U8;
+
+		// Start I := 1 to ensure that process_word always has word|i != 0
+		{} --: I := 1, Acc := 0xc8ef3a86fedcc83d;
+		{...} --;
+
+		// Can run once every 2 cycles (3 xor, 2 mul), and should have a latency of ~8 cycles. The ALU is guaranteed to handle 4 bit operations per cycle, and commonly one extended multiply per cycle. Should be 5 operations in total, ignoring loads and register moves.
+		STATIC process_word(i: U8, word: U8) U8 --
+		{
+			prod0 ::= LONGMUL(i, 0x9ee4fd72a70662fe);
+			xor0 ::= prod0.(0) ^ prod0.(1);
+			prod ::= LONGMUL(word ^ 0x2f9a29add4f8493b, 0xaf5f8e227a75dc97);
+			xor ::= prod.(0) ^ prod.(1);
+
+			= xor ^ (word >>> 37) ^ xor0;
+
+			// we could also remove this step and simply add ^i to the result, removing the need for an additional register move, multiply, and xor, getting us from 10 to 7 operations per full hash cycle, plus the loop jump, getting us to 8, allowing us to run at 2 cycles per iteration, the full 4 instructions per cycle. Though we also have a compare instruction, getting us to 9 instructions, unless we use loop and count backwards. So, if we want stronger hashing, we need something that makes identical words behave completely different in different positions. Also, currently, 0-words would behave equally in all positions due to the multiplication.
+
+			//prod2 ::= LONGMUL(i, 0x703a3779bb671cd9);
+			//xor2 ::= prod2.(0) ^ prod2.(1);
+
+			//= xor ^ xor2;
+		}
+
+		// Arithmetic latency should be ~9 cycles.
+		feed_word(word: U8) VOID --
+		{
+			Acc := (BSWAP Acc >>> 13) ^ process_word(I++, word);
+		}
+
+		feed_partial_word(word: U8, len: U1) VOID --
+		{
+			STATIC u8_masks: U8[8]#(
+				0r0000000000000000,
+				0rff00000000000000,
+				0rffff000000000000,
+				0rffffff0000000000,
+				0rffffffff00000000,
+				0rffffffffff000000,
+				0rffffffffffff0000,
+				0rffffffffffffff00);
+			mask ::= ~(~<U8>(0) << (8*len));
+			//mask := len < 8 ?? mask : ~<U8>(0);
+			(/mask2 : U8 := <U8>(0xffffffffffffffff) >> <U8>(64 - 8*len);
+			mask2 := len != 0 ?? mask2 : <U8>(0);
+			mask3 ::= u8_masks![len & 7];
+			IF!(mask3 == mask2) term::error(HERE, "mask 3 != mask2: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask2));
+			IF!(mask3 == mask) term::error(HERE, "mask 3 != mask: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask), ", len: ", std::io::format::hex(len));/)
+
+			Acc := (BSWAP Acc >>> 13) ^ process_word(I++, word & mask);
+		}
+
+		// Amortised: up to 4 bytes/cycle, as throughput is capped by 2-chain accumulation operation, taking at least 2 cycles. Could only be made faster if we remove the rotation, or if we have multiple distinct accumulators. Probably less because additional instructions are required that exceed the 4/cycle limit.
+		feed_words(words: U8#[], count: U8) VOID --
+		{
+			acc ::= Acc;
+			FOR(words[FOR count])
+				acc := (BSWAP acc >>> 13) ^ process_word(I + IOTA, IT);
+			Acc := acc;
+			I += count;
+		}
+
+		feed_bytes_masked(bytes: U1#[], count: U8) VOID --
+		{
+			words ::= <U8#*>(<VOID#*>(bytes))[FOR (count + 7) >> 3];
+			len ::= count;
+			acc ::= Acc;
+			i ::= I;
+			FOR(words)
+			{
+				mask ::= ~(~<U8>(0) << (8*len));
+				mask := len < 8 ?? mask : ~<U8>(0);
+				(/mask2 : U8 := <U8>(0xffffffffffffffff) >> <U8>(64 - 8*len);
+				mask2 := len != 0 ?? mask2 : <U8>(0);
+				mask3 ::= u8_masks![len & 7];
+				IF!(mask3 == mask2) term::error(HERE, "mask 3 != mask2: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask2));
+				IF!(mask3 == mask) term::error(HERE, "mask 3 != mask: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask), ", len: ", std::io::format::hex(len));/)
+
+				acc := (BSWAP acc >>> 13) ^ process_word(i++, IT & mask);
+				len -= 8;
+			}
+			Acc := acc;
+			I := i;
+		}
+
+		feed_bytes_masked_min2(bytes: U1#[], count: U8) VOID --
+		{
+			wordc ::= (count + 7) >> 3;
+			words ::= <U8#*>(<VOID#*>(bytes))[];
+			len: S8 := count;
+			acc ::= Acc;
+			i ::= I;
+
+			{
+				word0 ::= words[0];
+				mask0 ::= ~(~<U8>(0) << (8*<U8>(len)));
+				mask0 := len < 8 ?? mask0 : ~<U8>(0);
+				word0 &= mask0;
+
+				len -= 8;
+
+				word1 ::= words[1];
+				mask1 ::= ~(~<U8>(0) << (8*<U8>(len)));
+				mask1 := len < 8 ?? mask1 : ~<U8>(0);
+				mask1 := len < 0 ?? 0 : mask1; // saturating sub would be good.
+				word1 &= mask1;
+				len -= 8;
+
+				pw0 ::= process_word(i, word0);
+				pw1 ::= process_word(i+1, word1);
+
+				nextAcc ::= (BSWAP acc >>> 13) ^ pw0;
+				acc := mask0 ?? nextAcc : acc;
+				i += <BOOL>(mask0);
+				nextAcc := (BSWAP acc >>> 13) ^ pw1;
+				acc := mask1 ?? nextAcc : acc;
+				i += <BOOL>(mask1);
+			
+
+				words += 2;
+			}
+
+			IF(wordc > 2) DO(wordc -= 2)
+			{
+				word ::= *words++;
+				mask ::= ~(~<U8>(0) << (8*<U8>(len)));
+				mask := len < 8 ?? mask : ~<U8>(0);
+				(/mask2 : U8 := <U8>(0xffffffffffffffff) >> <U8>(64 - 8*len);
+				mask2 := len != 0 ?? mask2 : <U8>(0);
+				mask3 ::= u8_masks![len & 7];
+				IF!(mask3 == mask2) term::error(HERE, "mask 3 != mask2: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask2));
+				IF!(mask3 == mask) term::error(HERE, "mask 3 != mask: ", std::io::format::hex(mask3), " vs ", std::io::format::hex(mask), ", len: ", std::io::format::hex(len));/)
+
+				nextAcc ::= (BSWAP acc >>> 13) ^ process_word(i, word & mask);
+				acc := mask ?? nextAcc : acc;
+				i += <BOOL>(mask);
+				len -= 8;
+			} WHILE(--wordc)
+			Acc := acc;
+			I := i;
+		}
+
+		// Latency: 6-7 cycles.
+		digest(bytes: U8) U8 --
+		{
+			prod ::= LONGMUL(Acc, 0xb447148d36bc969c);
+			xor ::= prod.(0) ^ prod.(1);
+			prod2 ::= LONGMUL(I, 0x846a7b9c755097c9);
+			xor2 ::= prod2.(0) ^ prod2.(1);
+			= (xor ^ (xor2 >>> 17) ^ (Acc <<< 37));
+		}
 	}
 
 	Hasher
@@ -67,7 +210,7 @@ INCLUDE 'std/rng'
 			V8: U8[64];
 			V1: U1[512];
 		}
-		PRIVATE AccBuf: AccBufU;
+		PRIVATE AccBuf: @(CACHELINE) AccBufU;
 		PRIVATE Current: U4;
 		PRIVATE Digester: rng::V8StreamDigest;
 
@@ -77,7 +220,7 @@ INCLUDE 'std/rng'
 			Digester.eat_word(Current);
 			//Digester.eat_word(0xf8c6942c18e01d15);
 			h: Hash (NOINIT);
-			h.Words[0] := Digester.digest_strong(); // weak digest is not enough when we have very short inputs that only vary in a few bits.
+			h := Digester.digest_strong(); // weak digest is not enough when we have very short inputs that only vary in a few bits.
 			= h;
 		}
 
@@ -87,6 +230,15 @@ INCLUDE 'std/rng'
 				[U8]accum(IT);
 			IF(rest ::= ##v & 7)
 				[U8]accum_half(*<U8*>(&v[##v & ~7]), rest);
+		}
+
+		STATIC digest_str(str: CHAR#[#]) U8 --
+		{
+			digester: rng::V8StreamDigest;
+			digester.eat_words_inl(<U8 #*>(<VOID#*>(str[]))[FOR ##str >> 3]);
+			digester.eat_chunk_end(<U1 #*>(<VOID#*>(str[]))[FROM ##str & ~7 FOR ##str & 7]);
+			digester.eat_word(##str);
+			= digester.digest_strong();
 		}
 
 		[T; T_...] THIS(v:T! #&, v_: T_!#&...) Hasher& --

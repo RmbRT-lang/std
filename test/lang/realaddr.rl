@@ -1,7 +1,7 @@
 INCLUDE 'std/memory'
 
 ::lang::realaddr {
-
+(/
 	Base1 VIRTUAL { INT; }
 	Base2 VIRTUAL { INT; }
 
@@ -26,4 +26,5 @@ INCLUDE 'std/memory'
 		ASSERT(<VOID#*>(&base2) == &d);
 		ASSERT(<VOID#*>(&derived1) == &base1);
 	}
+/)
 }

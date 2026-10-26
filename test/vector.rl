@@ -3,7 +3,7 @@ INCLUDE "../os/file"
 ::std
 {
 	TEST "tmp" {
-		ASSERT(os::fs::ReadFile(<os::fs::FilePath>(), NULL).(0) == :NotFound);
+		ASSERT(os::fs::ReadFile(<os::fs::FilePath>("/doesnotexist"), NULL).(0) == :NotFound);
 	}
 	TEST "emplace"
 	{

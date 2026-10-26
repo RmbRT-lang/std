@@ -10,11 +10,6 @@ INCLUDE 'std/io/streamutil'
 	Size: UM;
 	Index: UM;
 
-	{start: UM, size: UM, index: UM}:
-		Start(start),
-		Size(size),
-		Index(index);
-
 	{size: UM, index: UM}:
 		Start(0),
 		Size(size),

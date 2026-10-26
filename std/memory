@@ -1,8 +1,5 @@
 (/rl/)
 
-INCLUDE 'std/range'
-INCLUDE 'std/math/limit'
-
 ::std
 {
 	::mem [T] eq(lhs: T!#[], rhs: T!#[], count: UM) BOOL --
@@ -24,6 +21,22 @@ INCLUDE 'std/math/limit'
 		= 0;
 	}
 
+	::mem [T]zero_array(arr: T![#]) VOID -- { set(arr, 0, SIZEOF(T) * ##arr); }
+	::mem set(p: VOID *, v: U1, size: UM) VOID --
+	{
+		__builtin_memset(p, v, size);
+		RETURN;
+		v8: U8 := v * 0x0101010101010101;
+		FOR(size>>5)
+		{
+			<U8 *>(p)[4*IOTA]   := v8;
+			<U8 *>(p)[4*IOTA+1] := v8;
+			<U8 *>(p)[4*IOTA+2] := v8;
+			<U8 *>(p)[4*IOTA+3] := v8;
+		}
+		FOR(<U1 *>(p)[FROM size & ~<UM>(31) UNTIL size]) IT := v;
+	}
+
 	::mem [T] cmp_array(
 		lhs: T![#],
 		rhs: T![#]) S1
@@ -35,10 +48,17 @@ INCLUDE 'std/math/limit'
 
 	::mem cpy(dst: VOID \, src: VOID #\, size: UM) VOID --
 	{
+		__builtin_memcpy(dst, src, size);
+		RETURN;
 		d ::= <U1 \>(dst);
 		s ::= <U1 #\>(src);
 		WHILE(size--)
 			*d++ := *s++;
+	}
+
+	::mem [T] cpy_array(dst: T![], src: T!#[], size: UM) VOID --
+	{
+		__builtin_memcpy(dst, src, size * SIZEOF(T));
 	}
 
 	/// Simple non-null reference type with value-comparison behaviour.
@@ -53,7 +73,7 @@ INCLUDE 'std/math/limit'
 		# *THIS T!& -- := *V;
 		# THIS! T!& -- := *V;
 		# THIS() T!& -- := *V;
-		# |THIS T! \ -- := V;
+		//# |THIS T! \ -- := V;
 
 		# THIS <>(rhs: THIS) S1 -- := *V <> *rhs;
 	}

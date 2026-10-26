@@ -4,17 +4,19 @@ INCLUDE 'std/memory'
 
 INCLUDE 'std/str'
 INCLUDE 'std/heap'
+INCLUDE 'std/range'
 
 /// Dynamic container for an std::str::View.
-::std [Alloc] String -> PRIVATE Alloc
+::std [Allocator] String
 {
+	PRIVATE Alloc: Allocator;
 	PRIVATE Content: CHAR[#];
 
 	{};
 	{BARE} ();
 
-	{data: CHAR#[#]} --: Content(Alloc::clone(data));
-	:cstring{data: CHAR#[#]}: Content(Alloc::[CHAR]alloc_array(##data+1))
+	{data: CHAR#[#]} --: Content(Alloc.clone(data));
+	:cstring{data: CHAR#[#]}: Content(Alloc.[CHAR]alloc_array(##data+1))
 	{
 		range::[CHAR]copy_construct(Content[], data[], ##data);
 		Content[##data] := 0;
@@ -22,8 +24,8 @@ INCLUDE 'std/heap'
 	}
 	:transfer{data: CHAR#[#]}: Content := data;
 
-	{#&cpy} -> (cpy):
-		Content(->(Alloc).clone(cpy.Content));
+	{#&cpy}:
+		Content(Alloc.clone(cpy.Content));
 	{&&mv}:
 		Content(mv.Content)
 	{
@@ -32,7 +34,7 @@ INCLUDE 'std/heap'
 	DESTRUCTOR
 	{
 		IF(Content[])
-			heap::alloc.free_array(<CHAR#[#]>(Content));
+			Alloc.free_array(<CHAR#[#]>(Content));
 		Content := NULL;
 	}
 
@@ -40,7 +42,7 @@ INCLUDE 'std/heap'
 
 	# data() ? -- := Content[];
 	# ##THIS ? -- := ##Content;
-	# THIS[i: Index] ?#& -- := Content[i(##Content)];
+	# THIS[i: Index] CHAR#& -- := Content[i(##Content)];
 	#? THIS! CHAR#?[#] -- := Content;
 
 	[T...: TYPE]
@@ -49,7 +51,7 @@ INCLUDE 'std/heap'
 		sz: UM := ##THIS;
 		(sz += ##<CHAR#[#]>(v))...;
 
-		new ::= Alloc::[CHAR]alloc_array(sz);
+		new ::= Alloc.[CHAR]alloc_array(sz);
 		start ::= new[];
 		start += range::copy_construct(start, Content[], ##Content);
 		(start += range::copy_construct(start, <CHAR#[#]>(v)[], ##<CHAR#[#]>(v)))...;

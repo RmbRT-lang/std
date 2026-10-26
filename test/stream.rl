@@ -3,6 +3,7 @@ INCLUDE "../std/vector"
 INCLUDE "../std/string"
 INCLUDE "../std/streambuffer"
 INCLUDE 'std/io/streamutil'
+INCLUDE 'os/terminal'
 
 ::std::io
 {

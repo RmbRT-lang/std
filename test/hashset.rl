@@ -1,5 +1,5 @@
 INCLUDE 'std/hashset'
-
+(/
 ::std::test::hash_set
 {
 	Point
@@ -20,4 +20,4 @@ INCLUDE 'std/hashset'
 		ASSERT(set.remove((0,1)));
 		ASSERT(!set.remove((0,1)));
 	}
-}
+}/)

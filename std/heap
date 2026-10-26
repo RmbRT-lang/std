@@ -1,19 +1,45 @@
 (/rl/)
 
-INCLUDE 'std/range'
 INCLUDE 'std/alloc'
 
 ::std::heap
 {
+	::debug
+	{
+		Where {
+			Col: U4;
+			Line: U4;
+			F: CHAR #*;
+			{x: WHERE}: F := x.(0), Line := x.(1), Col := x.(2);
+		}
+		EXTERN [OS_heap_debug_free] free(VOID *, U4, U4) VOID;
+		EXTERN [OS_heap_debug_malloc] malloc(U4, U4) VOID *;
+	}
+
 	AllocImpl {
 		STATIC alloc_raw_object(bytes: U4, align: U4) VOID * --
-			:= detail::libc::malloc(bytes);
+			:= alloc_raw_region(bytes, align);//detail::libc::malloc(bytes);
 		STATIC free_raw_object(ptr: VOID *, size: U4, align: U4) VOID --
-			{ detail::libc::free(ptr); }
+			:= free_raw_region(ptr, size, align); //{ (/detail::libc::free(ptr);/) }
 		STATIC free_raw_region(ptr: VOID #\, size: U4, align: U4) VOID --
-			{ detail::libc::free(ptr); }
+			{
+				ASSERT(ptr);
+				IF(DEBUG_HEAP)
+				{
+					debug::free(<VOID \>(ptr), size, align);
+				} ELSE {
+					detail::libc::free(ptr);
+				}
+			}
 		STATIC alloc_raw_region(bytes: U4, align: U4) VOID * --
-			:= detail::libc::malloc(bytes);
+		{
+			IF(DEBUG_HEAP)
+			{
+				= debug::malloc(bytes, align);
+			} ELSE {
+				= detail::libc::malloc(bytes);
+			}
+		}
 		STATIC resize_raw_region_in_place(VOID #\, U4, U4, U4) BOOL --
 			:= FALSE;
 	}

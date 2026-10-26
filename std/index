@@ -17,6 +17,16 @@ INCLUDE 'std/err/indexoutofrange'
 		Checked := TRUE,
 		I := i;
 
+	:nok {i: U4} --:
+		I := i;
+
+	:opt {i: U4} --:
+		I := i;
+
+	:allow{i: U4} --:
+		Checked := TRUE,
+		I := i;
+
 	# THIS(range: U4) U4 --
 	{
 		IF(Checked || I < range)

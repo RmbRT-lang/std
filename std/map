@@ -18,10 +18,11 @@ INCLUDE 'std/set'
 
 ::std [Alloc; K; V] MapT
 {
+	TYPE Entry := [K!;V!]Pair;
+	TYPE Location := [Alloc; Entry]VecSetT::Location;
 
-	PRIVATE Set: [Alloc; [K!;V!]Pair]VecSetT;
+	Set: [Alloc; Entry]VecSetT;
 
-	TYPE Location := [Alloc; [K!;V!]Pair]VecSetT::Location;
 
 	{};
 	:reserve{cap: UM}: Set := :reserve(cap);
@@ -44,6 +45,36 @@ INCLUDE 'std/set'
 		ELSE
 			= NULL;
 	}
+
+	(/[#kN]
+	#? multi_find_loc2(k: K#[], out: {V! #? *, Location}[]) VOID --
+	{
+		steps ::= 1+ILOG2 ##Elems;
+
+		r: U4[kN] := ##Elems;
+		l: U4[kN];
+
+		WHILE(steps--)
+		{
+			|||{kN}
+			{
+				l ::= l[IOTA];
+				r ::= r[IOTA];
+				i ::= (l + r)>>1;
+				sign ::= Elems[i] <> k[IOTA];
+				{
+					*location := i;
+					= &Elems[i];
+				}
+
+				r[IOTA] := (sign > 0) ?? i : r;
+				l[IOTA] := (sign < 0) ?? i+1: l;
+			}
+		}
+
+		*location := l;
+		= NULL;
+	}/)
 
 	[T:TYPE]
 	#? find(k: T! #&) V! #?-OptRef
@@ -112,6 +143,9 @@ INCLUDE 'std/set'
 	}
 
 	remove_at(l: Location) VOID -- { Set.remove_at(l); }
+
+	clear_reuse() VOID -- { Set.clear_reuse(); }
+	reserve(cap: U4) VOID -- { Set.reserve(cap); }
 
 	# data() VOID #* -- := Set.data();
 

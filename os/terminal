@@ -1,0 +1,48 @@
+(/rl/)
+
+::os::term
+{
+	ENUM Font {
+	*	same,
+		normal,
+		bold,
+		dim
+	}
+	ENUM Colour {
+	*	same,
+		default,
+		red,
+		yellow,
+		cyan,
+		green
+	}
+
+	UNION PrintChunk {
+		style: {term::Font, term::Colour};
+	!	text: CHAR#[#];
+	}
+
+	EXTERN [OS_term_init]           init()                      VOID;
+
+	[PrintChunk...] Print_v(chunks: PrintChunk!&& ...) VOID --
+	{
+		Print_array(<TAGGED term::PrintChunk[SIZEOF...(PrintChunk!)]>(
+			<PrintChunk! &&>(chunks)...
+		));
+	}
+	[PrintChunk...] PrintLine_v(chunks: PrintChunk!&& ...) VOID --
+	{
+		Print_array(<TAGGED term::PrintChunk[SIZEOF...(PrintChunk!)+1]>(
+			<PrintChunk! &&>(chunks)...,
+			"\n"
+		));
+	}
+	EXTERN [OS_term_Print_array]    Print_array(TAGGED PrintChunk#[#]) VOID;
+	EXTERN [OS_term_Print]          Print(string: CHAR#[#])     VOID;
+	EXTERN [OS_term_PrintLine]      PrintLine(line: CHAR#[#])   VOID;
+
+(/
+	EXPORT [OS_term_ReadLine_into]  ReadLine_into(CHAR[#])      CHAR[#];
+	EXPORT [OS_term_Read]           Read(CHAR[#])               CHAR[#];
+/)
+}

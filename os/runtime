@@ -1,0 +1,3 @@
+(/rl/)
+
+::os EXTERN [__OS_terminate_error] terminate_error() VOID;

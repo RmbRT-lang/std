@@ -4,10 +4,11 @@
 INCLUDE 'std/heap'
 INCLUDE 'std/index'
 INCLUDE 'std/iterator'
+INCLUDE 'std/math/limit'
 
 ::std [Allocator; T] VecT
 {
-PRIVATE:
+PUBLIC:
 	Alloc: Allocator; // Must be the first member, because we might want to access its value in member initialisers.
 	Content: T[#];
 	Capacity: U4;
@@ -16,17 +17,21 @@ PUBLIC:
 	{BARE} -- ();
 
 	[AllocArgs...]
+	:init_alloc{a: AllocArgs!&&...}:
+		Alloc(<AllocArgs!&&>(a)...);
+
+	[AllocArgs...]
 	:noinit{size: U4, a: AllocArgs!&&...}:
 		Alloc(<AllocArgs!&&>(a)...),
 		Content := Alloc.[T]alloc_array(size),
 		Capacity := size;
 
 	[AllocArgs...]
-	{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs!&&>(a)...)
+	{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs! &&>(a)...)
 		{ FOR(Content) IT.{}; }
 
 	[AllocArgs...]
-	:bare{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs!&&>(a)...)
+	:bare{size: U4, a: AllocArgs!&&...} := :noinit(size, <AllocArgs! &&>(a)...)
 		{ FOR(Content) IT.{BARE}; }
 
 	[AllocArgs...]
@@ -71,11 +76,7 @@ PUBLIC:
 		(THIS[:ok(i++)].{<A!&&>(a)})...; // TODO: IOTA in variadics expansions.
 	}
 
-	DESTRUCTOR --
-	{
-		IF(Content[])
-			Alloc.delete_array(Content[FOR Capacity]);
-	}
+	DESTRUCTOR -- { clear_delete(); }
 
 	erase(at: U4) VOID
 	{
@@ -83,7 +84,7 @@ PUBLIC:
 
 		THIS[:ok(at)].~;
 		--##Content;
-		FOR(Content[FROM at]) IT.{&&SIMD[IOTA+1]};
+		FOR(Content[FROM at]) IT.{&&RANGE[][IOTA+1]};
 	}
 
 	drop_back() VOID --
@@ -95,7 +96,7 @@ PUBLIC:
 	{
 		ASSERT(!empty());
 
-		*dst := &&THIS![:ok(##THIS-1)];
+		*dst := &&THIS[:ok(##THIS-1)];
 		THIS[:ok(##THIS-1)].~;
 		--##Content;
 	}
@@ -134,6 +135,28 @@ PUBLIC:
 		##Content += ##rhs;
 	}
 
+	clear_reuse() VOID --
+	{
+		FOR(Content) IT.~;
+		##Content := 0;
+	}
+
+	clear_delete() VOID --
+	{
+		IF(Content[])
+		{
+			FOR(Content) IT.~;
+			Alloc.free_array(Content[FOR Capacity]);
+		}
+		Content := 0;
+		Capacity := 0;
+	}
+
+	set_size_ok(size: U4) VOID --
+	{
+		##Content := size;
+	}
+
 	(//
 		Reserve the requested amount of space, and leave an uninitialised hole
 		in the contents at the requested location. If the hole is within the
@@ -155,7 +178,7 @@ PUBLIC:
 			{
 				/// Shift contents right.
 				FOR(Content[FROM at]; --)
-					SIMD[IOTA+1].{&&SIMD[IOTA]}; // This sucks because it overrides the moved-out-of memory with a dummy value, and then overrides it again. Should we have a special instruction to move out of memory without modifying it? We could have a move out of a const value, which then {BARE} constructs it if it's not const. Make BARE constructing an implicit part of moving, and if you move out of a cref, then it doesn't modify it. But also, we do not want to accidentally move out of actual const objects. How can we prevent this while fitting it into the type system?
+					RANGE[][IOTA+1].{&&RANGE[IOTA]}; // This sucks because it overrides the moved-out-of memory with a dummy value, and then overrides it again. Should we have a special instruction to move out of memory without modifying it? We could have a move out of a const value, which then {BARE} constructs it if it's not const. Make BARE constructing an implicit part of moving, and if you move out of a cref, then it doesn't modify it. But also, we do not want to accidentally move out of actual const objects. How can we prevent this while fitting it into the type system?
 					// Make anything that got moved out of simply not get destroyed. If something got moved out of, it is left in a potentially invalid state. If you want to continue using it, manually construct it with BARE again.
 					// Although this also sucks because then we have a borrow checker and it would depend on the compiler to recognise or track what values had been destroyed. Although again, we usually don't want to destroy values anyway.
 					// Maybe we can make it so that certain types of objects simply force tracking? But it would be an opt-in. But if we never really destroy objects anyway, what is it to us?
@@ -200,7 +223,8 @@ PUBLIC:
 		{
 			new ::= Alloc.[T]alloc_array(cap);
 			FOR(Content) new[IOTA].{&&IT};
-			Alloc.[T]free_array(Content[FOR Capacity]);
+			IF(Capacity)
+				Alloc.[T]free_array(Content[FOR Capacity]);
 			Content := new[FOR ##Content];
 			Capacity := cap;
 		}
@@ -261,27 +285,51 @@ PUBLIC:
 		elem.{<A!&&>(a)...};
 		= elem;
 	}
+	prepare_pushback() VOID --
+	{
+		IF(Capacity == ##Content)
+		{
+			new_cap ::= Capacity + 1 + (Capacity >> 2) | 3;
+			reserve(new_cap);
+		}
+	}
 
 	[A]
 	THIS+=(v: A!&&) T! & --
 	{
-		IF(Capacity == ##Content)
-		{
-			new_cap ::= Capacity + 1 + (Capacity >> 4) | 3;
-			reserve(new_cap);
-		}
+		prepare_pushback();
 		last ::= ##Content;
-		Content[##Content].{<A!&&>(v)};
+		ASSERT(last < Capacity);
+		ASSERT(##Content < Capacity);
+		Content[][##Content].{<A!&&>(v)};
 		++##Content;
 		= Content[last];
 	}
 
-	#? THIS[i: Index] T!#?& -- := Content[i(##Content)];
+
+	[A...]pushback_if_ok(do: BOOL, v: A!&&...) VOID --
+	{
+		last ::= ##Content;
+		Content[][##Content].{<A!&&>(v)...};
+		##Content += do;
+	}
+
+	[A...]pushback_if(do: BOOL, v: A!&&...) VOID --
+	{
+		prepare_pushback();
+		last ::= ##Content;
+		Content[][##Content].{<A!&&>(v)...};
+		##Content += do;
+	}
+
+	#? THIS[i: Index] T!#?& -- := Content[][i(##Content)];
 
 	# <BOOL> := ##Content;
 
 	# ##THIS U4 -- := ##Content;
 	# data() T! #* -- := Content[]!;
+	# cdata() T! #* -- := Content[]!;
+	mdata() T! * -- := Content[]!;
 	# capacity() U4 -- := Capacity;
 	# empty() BOOL -- := ##THIS == 0;
 
@@ -310,3 +358,19 @@ PUBLIC:
 	}/)
 }
 ::std [T] TYPE Vec := [heap::Alloc; T!]VecT;
+::std::vec
+{
+	// interleaved operation: push back values into multiple vectors.
+	[Vec...;Val...] pushback(v: {Vec!&,Val!}&&...) VOID --
+	{
+		v.(0).prepare_pushback()...;
+		vec::pushback_ok((&&v)...);
+	}
+
+	// invariant: the vector must have spare capacity.
+	[Vec...;Val...] pushback_ok(v: {Vec!&,Val!}&&...) VOID --
+	{
+		v.(0).Content[][##v.(0).Content].{<Val!&&>(v.(1))}...;
+		(++##v.(0).Content)...;
+	}
+}

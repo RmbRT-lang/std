@@ -69,6 +69,6 @@ INCLUDE 'std/optional'
 		ASSERT(!NeverDestruct::Dtor);
 		v: TrackedDtor-Opt := :a();
 		v.~;
-		ASSERT(v->Dtor);
+		ASSERT(v.ok().Dtor);
 	}
 }

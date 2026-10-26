@@ -4,7 +4,7 @@ INCLUDE 'std/vector'
 
 ::std [Alloc; T] VecSetT
 {
-	PRIVATE Elems: [Alloc; T!]VecT;
+	Elems: [Alloc; T!]VecT;
 
 	TYPE Location := UM;
 
@@ -57,10 +57,8 @@ INCLUDE 'std/vector'
 				= &Elems[i];
 			}
 
-			IF(sign > 0)
-				r := i;
-			ELSE
-				l := i+1;
+			r := (sign > 0) ?? i : r;
+			l := (sign > 0) ?? l : i+1;
 		}
 
 		*location := l;
@@ -131,6 +129,9 @@ INCLUDE 'std/vector'
 		Elems.emplace_at(position, <A!&&>(a)...);
 		= Elems[position];
 	}
+
+	clear_reuse() VOID -- { Elems.clear_reuse(); }
+	reserve(cap: U4) VOID -- { Elems.reserve(cap); }
 
 	# THIS <> (rhs: THIS #&) S1 := Elems <> rhs.Elems;
 }

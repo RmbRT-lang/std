@@ -1,10 +1,6 @@
 (/rl/)
 
-INCLUDE 'std/io/streamutil'
-INCLUDE 'std/hashable'
-INCLUDE 'std/hash'
-
-::std [T]Opt -> std::CustomHashable0Cost
+::std [T]Opt
 {
 PRIVATE:
 	UNION U
@@ -12,12 +8,14 @@ PRIVATE:
 	*	none;
 	!?	a: T;
 	}
-	V: TAGGED U;
+	V: TAGGED [T!]Opt::U;
 PUBLIC:
 
 	{}--;
 	{BARE}--();
 	{NULL}--;
+
+	DESTRUCTOR -- { IF(V) V->~; }
 
 	[Args...:TYPE]
 	:a{args: Args!&&...} --: V := :a(<Args!&&>(args)...);
@@ -31,10 +29,19 @@ PUBLIC:
 			V!.{<Args!&&>(args)...};
 	}
 
-	{#&};
+	{#&cpy}: V(NOINIT)
+	{
+		IF(cpy.V)
+			V.{:a(*cpy.V)};
+		ELSE
+			V.{:none};
+	}
 	{&&rhs}: V(NOINIT)
 	{
-		V.{&&rhs.V};
+		IF(rhs.V)
+			V.{:a(&&*rhs.V)};
+		ELSE
+			V.(0).{:none};
 		rhs.{NULL};
 	}
 
@@ -63,11 +70,5 @@ PUBLIC:
 		IF(!rhs) = 1;
 
 		= *THIS <> *rhs;
-	}
-
-	# hash(h: std::Hasher &) VOID
-	{
-		IF(!THIS) h(FALSE);
-		ELSE h(TRUE, *THIS);
 	}
 }

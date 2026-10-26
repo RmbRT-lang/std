@@ -1,6 +1,6 @@
-INCLUDE "../std/hashmap"
-
-TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
+//INCLUDE "../std/hashmap"
+(/
+TYPE IntBoolHashMap := std::[INT, BOOL]HashBucketT;
 
 ::std
 {
@@ -54,3 +54,6 @@ TYPE IntBoolHashMap := std::[INT, BOOL]HashMap;
 		ASSERT(!map.find(4) && !map.find_loc2(4, &l));
 	}
 }
+/)
+
+::std {}

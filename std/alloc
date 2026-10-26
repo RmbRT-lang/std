@@ -1,0 +1,181 @@
+(/rl/)
+
+// Lifetimes destroy and deallocate objects / data. Lifetimes own memory, not the objects.
+// Do not mix lifetimes in objects, if possible, so that you can treat them as POD and free the entire lifetime's memory.
+// This way you can have dynamically sized objects. A lifetime containing dynamic objects needs an allocator, while a statically sized lifetime has a fixed memory buffer. If all objects in a lifetime are of the same lifetime / allocator, then no destructors are needed.
+
+(// (/Types of allocations:/)
+	- (/completely unknown lifetime/) -> malloc/free
+	- (/reference counted / multiple parents / potentially long-lived /) -> worst lifetime.
+	- (/same lifetime as parent/) -> should be freed with the parent in a single allocation.
+		-> This means we want an allocator that can allocate a growable object, and this object can tell us when it is done growing. So it could be a bunch of overallocated tempallocs or something, and once they are marked as done, the excess can be trimmed. Depends on what the (/lifetime of the parent/) is, actually.
+			-> (/unknown parent lifetime/): separate arena inside global allocator
+			-> (/parent inside tempalloc/): just use the same tempalloc? Must ensure that we do not mix this with other allocations. We might have to make a tempalloc within the tempalloc. But then, resizing is ridiculously expensive.
+			As soon as we will have multiple ones, it might be better to just use a global bucket of arenas or something with a free list. This also means we need to pass the parent's allocator to the code that constructs the child.
+	- (/just for returning a dynamic value/) -> maybe tempalloc, although it should maybe be a separate one. Especially since we might want to make other temporary allocations in-between, which might also be required for the final construction. So we would have one return-value tempalloc, and one inner-function tempalloc.
+	- (/same lifetime as function/) -> tempalloc
+	- (/short-mid-term, fixed timeframe slot / epoch/) -> another tempalloc. Such as per-frame allocator in a video game, or something. /)
+
+(// (/Types of allocations:/)
+	- (/Freeing/) -> This needs to know how to free itself. Might have to destroy itself.
+	- (/Automatically freed/) -> This does not need to do anything. Destructor might be a no-op.
+
+	(/Destructors are mostly about freeing member data/). So unless a member has data that is not automatically freed, an object does not need a destructor. So we need to consider (/ownership and allocation type/) of an object and its (indirect) members. Another thing is when we have polymorphic types with virtual destructors: we want to know whether any child type in the current allocation mode even needs a destructor.
+
+	(/Context/) -> We want to be able to access the parent's allocator within the child, ideally without templating. But we either need templates or we need some kind of automation that automatically sets some global context whenever we enter a non-automatic object with the intent to allocate children. This should probably be part of a member function signature or something: [ADDS_CHILDREN] or something. Only something within such a function can add children (what does it mean to add a child? maybe we also need to tag pointers?) -> this might turn real ugly real quick. But that's at least the concept behind it. But in general, it's a lifetime system, and lifetimes can have a context, so we can do (/SUPER::alloc()/) or something to allocate from a parent. Although I guess we can also do it via templating, if it can guarantee that stuff that's not dependent on some template argument will get deduplicated. Then we could have implicit lifetime templates or something. But then it should actually be its own system anyway. /)
+
+::libc EXTERN getenv(CHAR #*) CHAR#*;
+::std DEBUG_HEAP: BOOL :=
+	std::str::eq(std::str::c(getenv("RL_DEBUG_HEAP"!)[]), "1")
+	|| std::str::eq(std::str::c(getenv("RL_DEBUG_HEAP"!)[]), "2");
+
+(/ Allocators:
+	- General global / root allocator
+	- Resettable temporary allocator: stack on the heap, basically.
+/)
+
+::std [Implementation] AllocPimpl {
+	Impl: Implementation *;
+
+	{...};
+
+	alloc_raw_object(size: U4, alignment: U4) VOID \ --
+		:= Impl->alloc_raw_object(size, alignment);
+	alloc_raw_region(size: U4, alignment: U4) VOID \ --
+		:= Impl->alloc_raw_region(size, alignment);
+	free_raw_region(region: VOID #\, size: U4, alignment: U4) VOID --
+		:= Impl->free_raw_region(region, size, alignment);
+	free_raw_object(object: VOID #\, size: U4, alignment: U4) VOID --
+		:= Impl->free_raw_object(object, size, alignment);
+	resize_raw_region_in_place(
+		region: VOID #\,
+		size: U4,
+		alignment: U4,
+		newsize: U4
+	) BOOL -- :=
+		Impl->resize_raw_region_in_place(
+			region,
+			size,
+			alignment,
+			newsize);
+	resize_raw_region(
+		region: VOID #\,
+		size: U4,
+		alignment: U4,
+		newsize: U4
+	) VOID #\ -- :=
+		Impl->resize_raw_region(
+			region,
+			size,
+			alignment,
+			newsize);
+}
+// TODO: implement our own allocator - see wasm project. We want to manage our own memory entirely, but it can wait for now.
+::std [Implementation] Alloc
+{
+	Impl: Implementation;
+
+	[T] clone(data: T![#]) T[#]
+	{
+		tmp ::= [T]alloc_array(##data);
+		FOR(tmp) IT.{data[IOTA]};
+		= tmp;
+	}
+
+	[T] alloc() T \ --
+	{
+		ptr ::= Impl.alloc_raw_object(SIZEOF(T), ALIGNOF(T));
+		ASSERT(ptr != NULL);
+		= <T \>(ptr);
+	}
+	[T] free(p: T! \) VOID --
+		{ Impl.free_raw_object(p, SIZEOF(T), ALIGNOF(T)); }
+	alloc_raw_object(size: U4, alignment: U4) VOID \ -- := Impl.alloc_raw_object(size, alignment);
+
+	alloc_raw_region(size: U4, alignment: U4) VOID \ --
+		:= Impl.alloc_raw_region(size, alignment);
+	free_raw_region(region: VOID #\, size: U4, alignment: U4) VOID --
+		{ Impl.free_raw_region(region, size, alignment); }
+	resize_raw_region_in_place(
+		region: VOID #\,
+		size: U4,
+		alignment: U4,
+		newsize: U4
+	) BOOL -- :=
+		Impl.resize_raw_region_in_place(
+			region,
+			size,
+			alignment,
+			newsize);
+	resize_raw_region(
+		region: VOID #\,
+		size: U4,
+		alignment: U4,
+		newsize: U4
+	) VOID #\ -- :=
+		Impl.resize_raw_region(
+			region,
+			size,
+			alignment,
+			newsize);
+
+	[T]resize_array_in_place(array: T!#[#], newsize: U4) BOOL --
+		:= resize_raw_region_in_place(
+			&*array[],
+			##array * SIZEOF(T),
+			ALIGNOF(T),
+			newsize * SIZEOF(T));
+
+	[T]resize_array(array: T![#], newsize: U4) T[#] --
+		:= <T*>(resize_raw_region(
+			&*array[],
+			##array * SIZEOF(T),
+			ALIGNOF(T),
+			newsize * SIZEOF(T)))[FOR newsize];
+
+	// We actually don't want a generic allocator for everything.
+	[T] alloc_array(count: U4) T[#] --
+	{
+		b ::= Impl.alloc_raw_region(count * SIZEOF(T), ALIGNOF(T));
+		ASSERT(!count || b);
+		= <T\>(b)[FOR count];
+	}
+	[T] alloc_array_aligned(count: U4, alignment: U4) T[#] --
+	{
+		b ::= Impl.alloc_raw_region(count * SIZEOF(T), alignment);
+		ASSERT(!count || b);
+		= <T\>(b)[FOR count];
+	}
+
+	[T] free_array(array: T![#]) VOID --
+		{ Impl.free_raw_region(&*array[], SIZEOF(T) * ##array, ALIGNOF(T)); }
+
+	[T; Args...] new(args: Args!&&...) T! *
+	{
+		// Do we want allocations to be able to fail?
+		p ::= [T]alloc();
+		TRY
+		{
+			p->{<Args!&&>(args)...};
+			x ::= p;
+			p := NULL;
+			= x;
+		}
+		FINALLY IF(p)
+			[T]free(p);
+	}
+
+
+	[T] delete_array(v: T![#]) VOID --
+	{
+		FOR(v) IT.~;
+		THIS.[T]free_array(v);
+	}
+
+	[T] delete(ptr: T! \) VOID --
+	{
+		ptr->~;
+		[T]free(ptr);
+	}
+}
+::std [Implementation] TYPE PAlloc := Implementation-AllocPimpl-Alloc;

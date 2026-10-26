@@ -15,7 +15,7 @@ INCLUDE 'std/io/stream'
 		{v: TestType2, c: INT}: v(v), c(c);
 	}
 
-	EmptyHashable -> CustomHashable0Cost
+	EmptyHashable
 	{
 		X: INT;
 
@@ -24,12 +24,12 @@ INCLUDE 'std/io/stream'
 
 	TEST "Hashing"
 	{
-		ASSERT(<Hasher>()++ == hash());
-		ASSERT(hash(<EmptyHashable>()) == :seed);
-		ASSERT(hash(hash()) != :seed);
-		ASSERT(hash(<TestType>((3235, 211), 32)) != :seed);
+		seed ::= hash();
+		ASSERT(<Hasher>().digest() == hash());
+		ASSERT(hash(<EmptyHashable>()) == seed);
+		ASSERT(hash(hash()) != seed);
+		ASSERT(hash(<TestType>((3235, 211), 32)) != seed);
 		ASSERT(hash(0) != hash(1));
-		ASSERT(<Hash>().Words[0] == 0);
 
 		(/val: INT -Vec- std::Val := :vec();
 		s: INT - Vec-std::Shared := val.shared();

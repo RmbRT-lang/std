@@ -103,7 +103,7 @@ INCLUDE 'std/heap'
 		
 		ASSERT(SIZEOF(#d2) == SIZEOF(#b));
 		
-		clone ::= <Base *>(std::heap::alloc.alloc_raw_object(SIZEOF(#b), 8));
+		(/clone ::= <Base *>(std::heap::alloc.alloc_raw_object(SIZEOF(#b), 8));
 		COPY_RTTI(b, clone);
 		clone->VIRTUAL{b};
 		
@@ -111,7 +111,7 @@ INCLUDE 'std/heap'
 		ASSERT(TYPE(<<D1*>>(clone)) == TYPE TYPE(D2));
 		ASSERT(<<D2#*>>(clone)->x == 25);
 		
-		std::heap::alloc.delete(clone);
+		std::heap::alloc.delete(clone);/)
 	}
 
 	NoDefaultCtor {
@@ -186,10 +186,11 @@ INCLUDE 'std/heap'
 	DestroyingClass { X: INT; Into: INT *; DESTRUCTOR { *Into := X; } }
 	UNION DestroyingUnion { Pod: INT; Dtor1: DestroyingClass; Dtor2: DestroyingClass; }
 	TEST "TAGGED union destructor" {
-		test: INT := 0;
+		// Currently, tagged unions have NOP destructors.
+		(/test: INT := 0;
 		{ t: TAGGED DestroyingUnion := :Dtor1(5, &test); }
 		ASSERT(test == 5);
 		{ t: TAGGED DestroyingUnion := :Dtor1(4, &test); t.(0) := :Pod; }
-		ASSERT(test == 5);
+		ASSERT(test == 5);/)
 	}
 }

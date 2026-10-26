@@ -1,0 +1,383 @@
+(/rl/)
+
+INCLUDE 'std/str'
+
+::os::fs {
+	DirectoryPath {
+		RelUpDirs: U1;
+		IsAbsolute: BOOL;
+		Directory: CHAR#[#];
+
+
+		{};
+
+		:dir{string: CHAR#[#]}: RelUpDirs := 0
+		{
+			IF(!##string)
+			{
+				IsAbsolute := TRUE;
+				RelUpDirs := 0;
+				Directory := NULL;
+				RETURN;
+			}
+			ASSERT(##string);
+
+			IsAbsolute := string[0] == '/';
+			IF(IsAbsolute)
+				Directory := string[FROM 1];
+			ELSE
+			{
+				FOR(i ::= 2; i < ##string; i+=3)
+					IF(std::str::eq(string[FROM i-2 FOR 3], "../"))
+						++RelUpDirs;
+					ELSE BREAK;
+				Directory := string[FROM 3 * RelUpDirs];
+				IF(##Directory >= 2 && std::str::eq(Directory[FROM ##Directory-2], ".."))
+				{
+					++RelUpDirs;
+					Directory := Directory[FOR ##Directory-2];
+				}
+			}
+		}
+
+		# is_normal() BOOL
+		{
+			IF(Directory)
+			{
+				start ::= 0;
+				FOR(Directory)
+				{
+					IF(IT == '/')
+					{
+						dir ::= Directory[FROM start UNTIL IOTA];
+						start := IOTA+1;
+						IF(std::str::eq(dir, ".") || std::str::eq(dir, ".."))
+							= FALSE;
+
+						IF(##dir == 0)
+							= FALSE;
+					}
+				}
+			}
+
+			= TRUE;
+		}
+		# c_path_length() UINT --
+			:= 3 * RelUpDirs + IsAbsolute + ##Directory;
+
+		# to_c_path(dst: CHAR[#]) U4
+		{
+			path_length ::= c_path_length();
+			IF(##dst < path_length + 1)
+				= 0;
+
+			dir: UM := encode_ok(dst[]);
+			write ::= dst[] + dir;
+			*write := 0;
+
+			// Just make sure we do not have any bugs here.
+			ASSERT(path_length == write! - &dst[0]);
+
+			= path_length;
+		}
+
+
+		# encode_ok(dst: CHAR[]) U4 {
+			prefix: UM := 0;
+			IF(IsAbsolute)
+			{
+				prefix := 1;
+				dst[0] := '/';
+			}
+			ELSE
+			{
+				prefix := 3 * RelUpDirs;
+				FOR(RelUpDirs)
+				{
+					dst[IOTA * 3    ] := '.';
+					dst[IOTA * 3 + 1] := '.';
+					dst[IOTA * 3 + 2] := '/';
+				}
+			}
+
+			write ::= dst[] + prefix;
+
+			FOR(Directory) write[IOTA] := IT;
+			write += ##Directory;
+
+			written ::= write! - &dst[0];
+			ASSERT(written == c_path_length());
+			= written;
+		}
+
+		# THIS==(rhs: THIS#&) BOOL --
+			:= IsAbsolute == rhs.IsAbsolute
+			&& RelUpDirs == rhs.RelUpDirs
+			&& std::str::eq(Directory, rhs.Directory);
+	}
+
+	FilePath
+	{
+		Directory: DirectoryPath;
+		File: CHAR#[#];
+
+		:empty{};
+
+		{string: CHAR#[#]}: Directory(NOINIT)
+		{
+			File := string;
+			FOR(string; --)
+				IF(IT == '/')
+				{
+					IF(IOTA)
+						Directory := :dir(string[UNTIL IOTA]);
+					ELSE Directory := :dir("/");
+					File := string[AFTER IOTA];
+					RETURN;
+				}
+
+			Directory.RelUpDirs := 0;
+			Directory.IsAbsolute := 0;
+			Directory.Directory := NULL;
+		}
+
+		# is_normal() BOOL {
+			IF(File)
+			{
+				IF(std::str::eq(File, ".") || std::str::eq(File, ".."))
+					= FALSE;
+			}
+
+			= Directory.is_normal();
+		}
+
+		# c_path_length() U4 -- {
+			d ::= Directory.c_path_length();
+			= d + (d != 0) + ##File;
+		}
+
+		# to_c_path(dst: CHAR[#]) U4
+		{
+			path_length ::= c_path_length();
+			IF(##dst < path_length + 1)
+				= 0;
+
+			dir: UM := Directory.encode_ok(dst[]);
+			write ::= dst[] + dir;
+			IF(dir)
+				*write++ := '/';
+			FOR(File) write[IOTA] := IT;
+			write += ##File;
+			*write := 0;
+
+			// Just make sure we do not have any bugs here.
+			ASSERT(path_length == write! - &dst[0]);
+
+			= path_length;
+		}
+
+		# THIS == (rhs: THIS) BOOL --
+			:= Directory == rhs.Directory
+			&& std::str::eq(File, rhs.File);
+	}
+
+	EXTERN [OS_fs_current_dir] current_dir() CHAR#[#];
+
+	UNION DirResult {
+	!?	Result: DirectoryPath;
+		Error;
+	}
+
+	dir_up(in: DirectoryPath #&, steps: U1) TAGGED DirResult
+	{
+		IF(!steps) = in;
+
+		dir ::= in.Directory;
+		FOR(dir; --)
+		{
+			IF(IT == '/')
+			{
+				--steps;
+				IF(!steps)
+				{
+					ret ::= in;
+					IF(IOTA)
+						ret.Directory := dir[UNTIL IOTA];
+					ELSE ret.Directory := "/";
+					= ret;
+				}
+			}
+		}
+
+		IF(steps == 1) {
+			ret ::= in;
+			ret.Directory := NULL;
+			= ret;
+		}
+
+		IF(in.IsAbsolute)
+			= :Error;
+
+		ret: DirectoryPath (BARE);
+		ret.IsAbsolute := FALSE;
+		ret.RelUpDirs := in.RelUpDirs + steps;
+		ret.Directory := NULL;
+
+		= ret;
+	}
+
+	ResolvedPath {
+		BaseDir: DirectoryPath;
+		ExtendDir: CHAR#[#];
+		File: CHAR#[#];
+
+		{...};
+
+		# c_path_length() UINT {
+			base ::= BaseDir.c_path_length();
+			= base + (base != 0) + ##ExtendDir + (##ExtendDir != 0) + ##File;
+		}
+
+		to_c_path(into: CHAR[#]) UINT
+		{
+			path_length ::= c_path_length();
+
+			IF(##into < path_length + 1)
+				= 0;
+
+			prefix: UM := 0;
+			IF(BaseDir.IsAbsolute)
+			{
+				prefix := 1;
+				into[0] := '/';
+			}
+			ELSE
+			{
+				prefix := 3 * BaseDir.RelUpDirs;
+				FOR(BaseDir.RelUpDirs)
+				{
+					into[IOTA * 3    ] := '.';
+					into[IOTA * 3 + 1] := '.';
+					into[IOTA * 3 + 2] := '/';
+				}
+			}
+
+			write ::= into[] + prefix;
+
+			FOR(BaseDir.Directory) write[IOTA] := IT;
+			write += ##BaseDir.Directory;
+			IF(##BaseDir.Directory)
+				*write++ := '/';
+			IF(ExtendDir)
+			{
+				FOR(ExtendDir) write[IOTA] := IT;
+				write += ##ExtendDir;
+				IF(##ExtendDir)
+					*write++ := '/';
+			}
+			FOR(File) write[IOTA] := IT;
+			write += ##File;
+			*write := 0;
+
+			// Just make sure we do not have any bugs here.
+			ASSERT(path_length == write! - &into[0]);
+
+			= path_length;
+		}
+	}
+
+	UNION ResolveResult
+	{
+	!?	Resolved: ResolvedPath;
+		Error;
+	}
+
+	resolve_relative(base: DirectoryPath, rel: FilePath) TAGGED ResolveResult
+	{
+		IF(rel.Directory.IsAbsolute)
+			= (rel.Directory, NULL, rel.File);
+
+		IF:!(rel_base ::= dir_up(base, rel.Directory.RelUpDirs))
+			= :Error;
+
+		= (*rel_base, rel.Directory.Directory, rel.File);
+	}
+
+	// IDEA: async file allocator that notifies completion or progress via atomic(???) memory write. One for "we had an event", and one for the counter? Then we could have a general structure in place for events that way.
+
+	UNION FileSizeResult {
+	*!?	Size: U8;
+		Other;
+		NotFound;
+		IsDirectory;
+		InvalidPath;
+		Forbidden;
+		Memory;
+	}
+	EXTERN [OS_fs_FileSize] FileSize(FilePath) TAGGED FileSizeResult;
+
+
+	LargeBuf { Data: VOID *; Size: U8; }
+
+	UNION ReadFileResult {
+	*!?	Data: LargeBuf;
+		// OS-level errors for file access.
+		Other;
+		NotFound;
+		IsDirectory;
+		InvalidPath;
+		Forbidden;
+		Memory;
+		ReadError;
+	}
+
+	// Read a whole file, optionally using a custom allocator.
+	EXTERN [OS_fs_ReadFile] ReadFile(
+		FilePath,
+		alloc: UserAlloc *) TAGGED ReadFileResult;
+
+	UserAlloc {
+		Fn: ((U8, VOID *) VOID*) \;
+		Context: VOID *;
+	}
+
+	UNION WriteFileResult {
+		OK;
+		// OS-level errors for file access.
+		Other;
+		NotFound;
+		IsDirectory;
+		InvalidPath;
+		Forbidden;
+		Memory;
+		WriteError;
+	}
+	UNION WriteFilePath {
+		Overwrite_Existing: FilePath;
+		Create_New: FilePath;
+	!	Overwrite_or_Create: FilePath;
+	}
+	EXTERN [OS_fs_WriteFile] WriteFile(
+		TAGGED WriteFilePath,
+		data: RAW#[#]) TAGGED WriteFileResult;
+
+
+	TEST "file paths" {
+		buf: CHAR[512];
+		file: FilePath := >"afwef/lel/x.txt";
+		ASSERT(file.is_normal());
+		ASSERT(file.to_c_path(buf));
+		printf("path: %s\n"!, buf!);
+		printf("dir: %.*s\n"!, ##file.Directory.Directory, file.Directory.Directory[]);
+		printf("file: %.*s\n"!, ##file.File, file.File[]);
+
+		printf("%s + "!, buf!);
+		rel: FilePath(>"bloopa/test.txt");
+		ASSERT(rel.to_c_path(buf));
+		printf("%s = "!, buf!);
+		result ::= resolve_relative(file.Directory, rel);
+		ASSERT(result);
+		ASSERT(result->to_c_path(buf[#]));
+		printf("%s\n"!, buf!);
+	}
+}

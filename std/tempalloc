@@ -1,0 +1,328 @@
+(/rl/)
+
+::std::temp
+{
+	[OuterAlloc] AllocT
+	{
+		Chunk
+		{
+			Memory: UM;
+			Size: U4;
+			Capacity: U4;
+			MemoryAlignment: U4;
+			AlignmentWaste: U4;
+
+			{} --;
+			:alloc{mem: VOID *, size: U4, alignment: U4} --:
+				Memory := >mem,
+				Capacity := size,
+				MemoryAlignment := alignment;
+
+			# end() UM -- := Memory + Size;
+			# exists() BOOL -- := Memory != 0;
+			# free_capacity() U4 -- := Capacity - Size;
+		}
+
+		PRIVATE OAlloc: OuterAlloc;
+
+		LastChunk: Chunk;
+		TotalSize: U4;
+		PeakSize: U4;
+		TotalCapacity: U4; /// Current overall capacity across all chunks.
+		InitSize: U4; // TODO: total / peak tracking is probably incomplete. Redo or maybe remove? It's not critical for allocation correctness, but we need robust statistics to allow the caller to properly configure his allocator at runtime to adapt it to changing loads.
+		MinGrowSize: U4;
+		ChunkEndWaste: U4;
+		PeakCapacity: U4; /// The largest capacity the allocator had.
+		PeakWaste: U4; /// The largest waste this allocator had.
+
+		PrevChunks: Chunk - std::[OuterAlloc]VecT;
+
+		{} -- (:with_alloc);
+		{BARE} ();
+
+		[AllocArgs...]
+		:with_alloc{args: AllocArgs!&&...}:
+			OAlloc(<AllocArgs!&&>(args)...),
+			InitSize := 32*1024,
+			MinGrowSize := 64*1024;
+
+		[AllocArgs...]
+		:custom{
+			init_size: U4,
+			min_grow_size: U4,
+			args: AllocArgs!&&...
+		}:
+			OAlloc(<AllocArgs!&&>(args)...),
+			InitSize := init_size,
+			MinGrowSize := min_grow_size;
+
+		DESTRUCTOR
+		{
+			delete();
+		}
+
+		delete() VOID --
+		{
+			FOR(PrevChunks!)
+				OAlloc.free_raw_region(
+					>IT.Memory,
+					IT.Capacity,
+					IT.MemoryAlignment);
+			IF(LastChunk.exists())
+				OAlloc.free_raw_region(
+					>LastChunk.Memory,
+					LastChunk.Capacity,
+					LastChunk.MemoryAlignment);
+		}
+
+		Checkpoint
+		{
+			Chunk: U4;
+			Offset: U4;
+			TotalSize: U4;
+			AlignmentWaste: U4;
+		}
+
+		force_allocation() VOID {
+			IF!(LastChunk.exists())
+				alloc_chunk(InitSize, PAGE);
+		}
+
+		clear_and_optimise(buffer: U4) VOID
+		{
+			FOR(PrevChunks!)
+				OAlloc.free_raw_region(
+					>IT.Memory,
+					IT.Capacity,
+					IT.MemoryAlignment);
+			PrevChunks.clear_reuse();
+
+			targetCap ::= PeakSize + buffer;
+			InitSize := InitSize > targetCap ?? InitSize : targetCap;
+
+			// If the peak size fits into the first chunk, do nothing. Else, reallocate it and add a buffer.
+			IF(LastChunk.exists() && LastChunk.Capacity < PeakSize)
+			{
+				OAlloc.free_raw_region(
+					>LastChunk.Memory,
+					LastChunk.Capacity,
+					LastChunk.MemoryAlignment);
+				LastChunk.Memory := 0;
+				LastChunk.Capacity := 0;
+				LastChunk.MemoryAlignment := 0;
+			}
+			LastChunk.Size := 0;
+			PeakSize := 0; // reset PeakSize tracking.
+		}
+
+		/// Make a checkpoint of the allocator that we can later reset it to.
+		// TODO: allow :FieldName(value) as constructor arguments.
+		# save() Checkpoint := (
+			##PrevChunks,
+			LastChunk.Size,
+			TotalSize,
+			LastChunk.AlignmentWaste);
+		/// Partially free the allocator.
+		restore(save: Checkpoint) VOID
+		{
+			// If not within the same chunk, delete all chunks after the checkpoint and make the checkpoint chunk the last chunk.
+			IF(save.Chunk != ##PrevChunks)
+			{
+				// TODO: refactor the removal of chunks into a separate function.
+
+				// delete current chunk
+				OAlloc.free_raw_region(>LastChunk.Memory,
+					LastChunk.Capacity,
+					LastChunk.MemoryAlignment);
+
+				// delete all previous chunks after the checkpoint
+				FOR(PrevChunks![AFTER save.Chunk])
+				{
+					ChunkEndWaste -= IT.free_capacity();
+					OAlloc.free_raw_region(>IT.Memory, IT.Capacity, IT.MemoryAlignment);
+				}
+
+				LastChunk := PrevChunks[save.Chunk];
+				PrevChunks.resize(save.Chunk);
+			}
+
+			// Reset the last chunk
+			LastChunk.Size := save.Offset;
+			LastChunk.AlignmentWaste := save.AlignmentWaste;
+			// Restore general tracking.
+			TotalSize := save.TotalSize;
+		}
+
+		alloc_raw_unaligned(size: U4) VOID \
+		{
+			IF(LastChunk.free_capacity() < size)
+				alloc_chunk(size, 1);
+
+			old ::= LastChunk.end();
+			next ::= old;
+			end ::= next + size;
+			LastChunk.Size += end - old;
+			TotalSize += size;
+			PeakSize := PeakSize > TotalSize ?? PeakSize : TotalSize;
+
+			IF(DEBUG_HEAP)
+				std::mem::set(>next, 0xba, size);
+			= >next;
+		}
+
+		alloc_raw_object(size: U4, alignment: U4) VOID \ --
+			:= alloc_raw(size, alignment);
+		alloc_raw_region(size: U4, alignment: U4) VOID \ --
+			:= alloc_raw(size, alignment);
+		free_raw_region(p: VOID #\, size: U4, alignment: U4) VOID -- { }
+
+		try_grow_last_allocation_by(amount: U4) BOOL
+		{
+			IF(LastChunk.free_capacity() < amount)
+				= FALSE;
+
+			LastChunk.Size += amount;
+			TotalSize += amount;
+			PeakSize := PeakSize > TotalSize ?? PeakSize : TotalSize;
+
+			= TRUE;
+		}
+		shrink_last_allocation_by(amount: U4) VOID --
+		{
+			ASSERT(LastChunk.Size > amount);
+			LastChunk.Size -= amount;
+			TotalSize -= amount;
+		}
+
+		alloc_raw(size: U4, alignment: U4) VOID \
+		{
+			alignment_bits: UM := alignment-1;
+			ASSERT(alignment & alignment_bits == 0);
+
+			aligned: UM := (LastChunk.end() + alignment_bits) & ~alignment_bits;
+			misalignment ::= aligned - LastChunk.end();
+			LastChunk.AlignmentWaste += misalignment;
+
+			IF(LastChunk.free_capacity() < size + misalignment)
+				alloc_chunk(size, alignment);
+
+			old ::= LastChunk.end();
+			next_aligned ::= (old + alignment_bits) & ~alignment_bits;
+			end ::= next_aligned + size;
+			LastChunk.Size += end - old;
+			TotalSize += size;
+			PeakSize := PeakSize > TotalSize ?? PeakSize : TotalSize;
+
+
+			IF(DEBUG_HEAP)
+				std::mem::set(>next_aligned, 0xba, size);
+			= >next_aligned;
+		}
+
+		[T] alloc_raw_array(size: U2) T[#] -- :=
+			<T \>(alloc_raw(size * SIZEOF(T), ALIGNOF(T)))[FOR size];
+
+
+		resize_raw_region_in_place(
+			region: VOID #\,
+			size: U4,
+			alignment: U4,
+			newsize: U4) BOOL --
+		{
+			IF(<UM>(region) + size != LastChunk.end())
+				= FALSE;
+
+			IF(size > newsize) {
+				LastChunk.Size -= size - newsize;
+				TotalSize -= size - newsize;
+				= TRUE;
+			}
+
+			IF(LastChunk.free_capacity() >= newsize - size)
+			{
+				LastChunk.Size += newsize - size;
+				TotalSize += newsize - size;
+				= TRUE;
+			}
+
+			= FALSE;
+		}
+
+		PRIVATE alloc_chunk(min_size: U4, alignment: U4) VOID
+		{
+			cap: U4 (NOINIT);
+
+			IF(LastChunk.exists())
+			{
+				cap := MinGrowSize;
+				ChunkEndWaste += LastChunk.free_capacity();
+				PrevChunks += LastChunk;
+			} ELSE
+			{
+				cap := InitSize;
+			}
+
+			cap := cap < min_size ?? min_size : cap;
+
+			TotalCapacity += cap;
+			PeakCapacity := TotalCapacity > PeakCapacity ?? TotalCapacity : PeakCapacity;
+			LastChunk := :alloc(OAlloc.alloc_raw_region(cap, alignment), cap, alignment);
+		}
+	}
+
+	TYPE Alloc := temp::[std::heap::Alloc]AllocT;
+
+	/// For easily creating distinct singleton temp allocators.
+	// Create global portable named allocators via [:name]SingletonOAlloc.
+	[T]SingletonAlloc {
+		STATIC instance: temp::Alloc;
+
+		{};
+		:custom{ init_size: U4, min_grow_size: U4 } {
+			instance.InitSize := init_size;
+			instance.MinGrowSize := min_grow_size;
+		}
+
+		TYPE Alloc := std::[[T]SingletonAlloc]Alloc;
+
+		alloc_raw_region(size: U4, alignment: U4) VOID \ --
+			:= instance.alloc_raw(size, alignment);
+		free_raw_region(p: VOID #\, size: U4, alignment: U4) VOID -- { }
+		resize_raw_region_in_place(
+			region: VOID #\,
+			size: U4,
+			alignment: U4,
+			newsize: U4
+		) BOOL -- := instance.resize_raw_region_in_place(
+			region, size, alignment, newsize);
+
+		alloc_raw_object(size: U4, alignment: U4) VOID \ --
+			:= instance.alloc_raw(size, alignment);
+		free_raw_object(p: VOID \, size: U4, alignment: U4) VOID -- { }
+
+		# save() temp::Alloc::Checkpoint -- := instance.save();
+		# restore(save: temp::Alloc::Checkpoint) VOID --
+			{ instance.restore(save); }
+
+		Scope
+		{
+			Cp: temp::Alloc::Checkpoint;
+			{}: Cp := [T]SingletonAlloc::instance.save();
+			DESTRUCTOR { [T]SingletonAlloc::instance.restore(Cp); }
+		}
+	}
+
+
+	/// Epoch allocator, to be used for temporary allocations of a common maximum duration that do not necessarily fit a clear callstack lifetime, such as one frame of a game or something.
+	Epoch -> [Epoch]SingletonAlloc;
+
+	/// Local-lifetime allocator for allocations that are freed within the function that allocated them. Basically for heap-extended stackframes that can also be grown from within helper functions. Example: parsing a tree and extending it within helper routines.
+	Locals -> [Locals]SingletonAlloc;
+
+	/// Stuff that would mess up either the locals or the return values (because it would interleave with other allocations that need to be sequential). Basically a second Locals alloc for things that don't fit the original Locals allocator well due to interference.
+	Scratchpad -> [Scratchpad]SingletonAlloc;
+
+	/// Allocator for returning dynamic allocations that are then freed by the caller. These explicitly exceed local allocations in lifetime and therefore need a different allocator. The caller cannot always allocate result buffers because the size might not be known before calling. Example: you first perform a dynamic workload using Locals, and during that, you construct the result in Results bit by bit as one contiguous memory sequence. You can free up the locals without destroying the result, even if the locals came earlier. And you can free up the result without destroying locals.
+	// TODO: needs some more thought for clear guidelines on how to use this properly, and how to tell functions when to use this vs. locals vs. scratchpad, etc.
+	Results -> [Results]SingletonAlloc;
+}

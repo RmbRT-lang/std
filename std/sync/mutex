@@ -6,8 +6,6 @@ INCLUDE 'std/math/limit'
 ::std::sync Mutex
 {
 	PRIVATE Locked: BOOL.;
-	std::NoCopy;
-	std::NoMove;
 
 	{}: Locked(FALSE);
 
@@ -25,15 +23,20 @@ INCLUDE 'std/math/limit'
 
 		{}: M(NULL);
 		{m: BOOL. \}: M(m);
-		{v: Handle&&}: M(v.M) { v.{}; }
+		{&&v}: M(v.M) { v.{}; }
 	}
 
 	lock(:ok) VOID
 	{
-		FOR(i ::= 1; Locked(:<>(TRUE));)
+		WHILE(Locked :=: :<>(TRUE))
 		{
-			IF(i < 25) ++i;
-			...0.0005 * i;
+			FOR(i ::= 1; Locked(:?);)
+			{
+				PAUSE;
+				IF(i < 50) ++i;
+				IF(i > 25)
+					...500*KILO * (i-25);
+			}
 		}
 	}
 	THIS() Handle --
