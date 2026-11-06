@@ -11,6 +11,17 @@ all:
 	fi
 
 	@RL_LINK_LIBRARIES="$(OS_FILE)" rmbrtbc --testrun $(TEST_FILES) $(OS_FILE_RL)
+	@#RL_LINK_LIBRARIES="$(OS_FILE)" rmbrtbc --test $(TEST_FILES) $(OS_FILE_RL) && gdbtui ./a.out
 	@#rmbrtbc --test $(TEST_FILES) && (time -p ./a.out && valgrind -q --error-exitcode=1 --leak-check=yes ./a.out)
 
 	@#ARGS="--testrun $(TEST_FILES)" gdbtui rmbrtbc
+
+debug-test:
+	@# link the OS alongside.	
+	@if [ -z "$(OS_FILE)" ]; then \
+		echo "[DEP] os.out: NOT FOUND"; \
+		exit 1; \
+	else \
+		echo "[DEP] os.out: $(OS_FILE)"; \
+	fi
+	@RL_LINK_LIBRARIES="$(OS_FILE)" rmbrtbc --test $(TEST_FILES) $(OS_FILE_RL) && gdbtui ./a.out
