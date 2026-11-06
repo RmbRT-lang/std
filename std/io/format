@@ -16,8 +16,7 @@
 		IF(n < <T>(0))
 		{
 			neg := TRUE;
-			IF(~n) // If -max, ignore value.
-				v := -n;
+			v := -v;
 		}
 
 		buffer: CHAR[32] (NOINIT);
@@ -71,13 +70,12 @@
 		minDigits ::= format.(1).Pad;
 		padChar: CHAR := format.(0) == :Pad0 ?? '0' : ' ';
 
-		v: UM := n;
+		v: U8 := n;
 		neg: BOOL;
 		IF(n < <T>(0))
 		{
 			neg := TRUE;
-			IF(~n)
-				v := -n;
+			v := -v;
 		}
 		IF(minDigits >= ##o)
 			minDigits := ##o;
@@ -106,7 +104,7 @@
 		= i;
 	}
 
-	[T] dec(n: T! #&) DecNumBuffer -- := [T!]dec_x(n, 0);
+	[T] dec(n: T! #&) DecNumBuffer -- := [T!]dec_x(n, 1);
 	[T] dec_x(n: T! #&, format: TAGGED Format) DecNumBuffer {
 		ret: DecNumBuffer (NOINIT);
 		ret.Start := [T!]dec_into(ret.Buf, n, format);
