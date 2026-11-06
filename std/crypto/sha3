@@ -123,11 +123,42 @@
 			}
 			Progress := p;
 		}
+
+		// For OAEP in-place without copying.
+		shake_output_xor(out: U1[#]) VOID {
+			p ::= Progress;
+			FOR(out)
+			{
+				IF(p > 135)
+				{
+					keccak_function(Buffer);
+					p := 0;
+				}
+				IT ^= <U1 *>(Buffer!)[p++];
+			}
+			Progress := p;
+		}
 	}
 
 	sha3_256(data: U1#[#]) U8[4] {
 		s: State;
 		s.update(data);
 		= s.sha_digest();
+	}
+
+	shake_256(data: U1#[#], output: U1[#]) VOID
+	{
+		s: State;
+		s.update(data);
+		s.shake_start();
+		s.shake_output(output);
+	}
+
+	shake_256_xor(data: U1#[#], output: U1[#]) VOID
+	{
+		s: State;
+		s.update(data);
+		s.shake_start();
+		s.shake_output_xor(output);
 	}
 }
