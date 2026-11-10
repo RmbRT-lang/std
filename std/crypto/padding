@@ -1,0 +1,227 @@
+(/rl/)
+
+INCLUDE 'std/crypto/sha3'
+
+::std::crypto::padding
+{
+	// flips a message around. Call this manually if you need big-endian encodings.
+	to_big_endian(msg: U1[#]) VOID
+	{
+		FOR(msg[FOR ##msg / 2]) IT :=: msg[(##msg-1) - IOTA];
+	}
+
+	OAEPParams {
+		ModuloLength: U2;
+		LabelLength: U1;
+		FixedLabel: U1#[#]; // optional
+		SeedLength: U1;
+		Selector: U1;
+
+		{...};
+
+		{mod: U2, seed: U1, label: U1#[#]} -- (mod, ##label, label, seed, 0x1);
+		:variable{mod: U2, seed: U1, label: U1} -- (mod, label, NULL, seed, 0x1);
+		:custom{mod: U2, seed: U1, label: U1#[#], selector: U1} -- (mod, ##label, label, seed, selector);
+		:custom_variable{mod: U2, seed: U1, label: U1, selector: U1} -- (mod, label, NULL, seed, selector);
+
+		MessageStructure {
+			ZeroBuffer: U2;
+			# selector() U2 -- := MessageEnd;
+
+			SeedStart: U2; # seed_end() U2 -- := ZeroBuffer;
+			# zero_start() U2 -- := selector()+1; # zero_end() U2 -- := LabelStart;
+			LabelStart: U2; # label_end() U2 -- := SeedStart;
+
+			# message_start() U2 -- := 0; MessageEnd: U2;
+			# payload_start() U2 -- := 0; # payload_end() U2 -- := SeedStart;
+		}
+
+		# configure(message_length: U4) MessageStructure {
+			m: MessageStructure (NOINIT);
+			ASSERT(message_length < ModuloLength-2-SeedLength-LabelLength);
+
+			m.ZeroBuffer := ModuloLength-1;
+			m.SeedStart := ModuloLength - 1 - SeedLength;
+			m.LabelStart := m.SeedStart - LabelLength;
+			m.MessageEnd := message_length;
+
+			= m;
+		}
+	}
+
+	// OAEP, little-endian encoding (for use in little-endian bigints). NOTE: the message is not flipped. If you want to have strict compliance, flip the message via to_big_endian.
+	oaep_mask(
+		buffer: U1[#],
+		oaep: OAEPParams #&,
+		label: U1#[#],
+		message: U1#[#],
+		rng: sha3::State &) VOID
+	{
+		ASSERT(oaep.ModuloLength == ##buffer);
+		IF!(label) label := oaep.FixedLabel;
+		IF(label) ASSERT(oaep.LabelLength == ##label);
+
+		desc ::= oaep.configure(##message);
+
+		seed ::= buffer[FROM desc.SeedStart UNTIL desc.seed_end()];
+		payload ::= buffer[FROM desc.payload_start() UNTIL desc.payload_end()];
+
+		buffer[desc.ZeroBuffer] := 0;
+		rng.shake_output(seed);
+		IF(label)
+			FOR(buffer[FROM desc.LabelStart UNTIL desc.label_end()]) IT := label[IOTA];
+		ELSE
+			FOR(buffer[FROM desc.LabelStart UNTIL desc.label_end()]) IT := 0;
+		FOR(buffer[FROM desc.zero_start() UNTIL desc.zero_end()]) IT := 0;
+		buffer[desc.selector()] := oaep.Selector;
+		FOR(buffer[FROM desc.message_start() UNTIL desc.MessageEnd]) IT := message[IOTA];
+
+		sha3::shake_256_xor(seed, payload);
+		sha3::shake_256_xor(payload, seed);
+	}
+
+	UnmaskResult {
+		Label: U1[#];
+		Message: U1[#];
+
+		# <BOOL> -- := Message;
+	}
+
+	oaep_unmask(masked_buffer: U1[#], oaep: OAEPParams #&) UnmaskResult
+	{
+		// This must be ensured at the type system level.
+		ASSERT(##masked_buffer == oaep.ModuloLength);
+
+		desc ::= oaep.configure(0);
+
+		seed ::= masked_buffer[FROM desc.SeedStart UNTIL desc.seed_end()];
+		payload ::= masked_buffer[FROM desc.payload_start() UNTIL desc.payload_end()];
+
+		// unmask
+		sha3::shake_256_xor(payload, seed);
+		sha3::shake_256_xor(seed, payload);
+
+		// verify & extract
+		ok ::= masked_buffer[desc.ZeroBuffer] == 0;
+
+		IF(oaep.FixedLabel)
+			FOR(masked_buffer[FROM desc.LabelStart UNTIL desc.label_end()])
+				ok &= IT == oaep.FixedLabel[IOTA];
+
+		zero ::= masked_buffer[FROM desc.zero_start() UNTIL desc.zero_end()];
+		last0 ::= ##zero;
+		all0 ::= TRUE;
+		FOR(zero; --) {
+			all0 &= IT == 0;
+			last0 := all0 ?? IOTA : last0;
+		}
+		selector_pos ::= desc.zero_start() + last0 -1;
+		selector: U1 := masked_buffer[selector_pos];
+
+		ok &= selector == oaep.Selector;
+
+		IF(ok)
+			= (masked_buffer[FROM desc.LabelStart UNTIL desc.label_end()],
+				masked_buffer[FROM desc.message_start() UNTIL selector_pos]);
+		ELSE = ();
+	}
+
+	emsr_pss(m1: U1#[#], m2: U1[#], seed_len: U1, w_len: U1, buffer: U1[#], rng: sha3::State &) VOID
+	{
+		// message layout (big endian): w | seed | 0... | 1 | m1
+		// since our bigints are little-endian, we use the reverse encoding:
+		// (little endian): m1 | 1 | 0... | seed | w
+		// note that m1 appears flipped with respect to the paper.
+
+		wstart ::= ##buffer - w_len;
+		seedstart ::= wstart - seed_len;
+		padstart ::= ##m1;
+		pad ::= buffer[FROM padstart UNTIL seedstart];
+		m1_ ::= buffer[FOR ##m1];
+
+		w ::= buffer[FROM ##buffer - w_len];
+		seed ::= buffer[FROM seedstart FOR seed_len];
+
+		FOR(m1_) IT := m1[IOTA]; // m1
+		pad[0] := 1; FOR(pad[AFTER 0]) IT := 0; // padding
+		rng.shake_output(seed); // seed
+		g: sha3::State; // w
+			g.update(seed);
+			g.update(m1);
+			g.update(m2);
+			g.shake_start();
+			g.shake_output(w);
+
+		sha3::shake_256_xor(w, buffer[UNTIL wstart]);
+	}
+
+	// KEM
+	encapsulate(key: U1[#], buffer: U1[#], rng: sha3::State &) VOID
+	{
+		rng.shake_output(buffer);
+		rng.shake_output(key);
+		sha3::shake_256_xor(buffer, key);
+		sha3::shake_256_xor(key, buffer);
+	}
+
+	decapsulate(key: U1[#], buffer: U1[#]) VOID
+	{
+		sha3::shake_256_xor(key, buffer);
+		sha3::shake_256_xor(buffer, key);
+	}
+
+	// Simple OTP cipher from SHAKE-256.
+	Otp256Malleable
+	{
+		State: sha3::State;
+
+		{key: U1#[#]}
+		{
+			State.update(key);
+			State.shake_start();
+		}
+
+		transform(buffer: U1[#]) VOID -- { State.shake_output_xor(buffer); }
+	}
+
+	// Simple OTP cipher from SHAKE-256 with integrity protection from SHA3-256.
+	Otp256TamperProof
+	{
+		Otp: sha3::State;
+		Digest: sha3::State;
+
+		// key is a shared secret, and can only be used for one stream / message.
+		{key: U1#[#]}: Digest(BARE)
+		{
+			Otp.update(key);
+			Digest := Otp;
+			Otp.shake_start();
+		}
+
+		// OTP(key, msg) · H(key·msg)
+		encrypt(buffer: U1[#]) VOID --
+		{
+			Digest.update(buffer);
+			Otp.shake_output_xor(buffer);
+		}
+
+		digest() U8[4] & -- := Digest.sha_digest();
+
+		decrypt(buffer: U1[#]) VOID --
+		{
+			Otp.shake_output_xor(buffer);
+			Digest.update(buffer);
+		}
+
+		validate_digest(digest: U1#[#]) BOOL
+		{
+			ASSERT(##digest == 32);
+			d ::= <U8 #*>(<U1 #*>(digest));
+
+			FOR(THIS.digest())
+				IF(IT != d[IOTA])
+					= FALSE;
+			= TRUE;
+		}
+	}
+}

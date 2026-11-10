@@ -24,8 +24,7 @@
 		FOR(round_constants)
 		{
 			bc: U8[5] (NOINIT);
-			// "Theta"
-			FOR(bc)
+			FOR(bc) // Theta
 				IT := state[IOTA] ^ state[IOTA+5] ^ state[IOTA+10] ^ state[IOTA+15] ^ state[IOTA+20];
 
 			FOR(5)
@@ -40,8 +39,7 @@
 				state[IOTA+20] ^= t;
 			}
 
-			// Rho-pi
-			{
+			{ // Rho-pi
 				t ::= state[1];
 				FOR(indices)
 				{
@@ -51,8 +49,7 @@
 				}
 			}
 
-			// Chi
-			FOR(i ::= 0; i < 25; i += 5)
+			FOR(i ::= 0; i < 25; i += 5) // Chi
 			{
 				bc[0] := state[i];
 				bc[1] := state[i+1];
@@ -67,8 +64,7 @@
 				state[i+4] ^= bc[1] &~ bc[0];
 			}
 
-			// Iota
-			state[0] ^= IT;
+			state[0] ^= IT; // Iota
 		}
 	}
 

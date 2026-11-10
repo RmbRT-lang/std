@@ -114,26 +114,24 @@ INCLUDE "padding"
 			FOR(Digits; --)
 				IF(IT)
 					= 32 * IOTA + LAST1POS IT;
-
 			= 32 * ##Digits;
 		}
-		is_zero() BOOL -- := last1pos() == 32 * ##Digits;
+		# is_zero() BOOL -- := last1pos() == 32 * ##Digits;
 
 		# shr_into(amount: U2, result: THIS \) VOID
 		{
-			ASSERT(amount < 32 * Words); // -- GCC bug: this assert NEVER triggers, but it somehow breaks this function in -O2. But if we move it below the variables, it does not cause problems even in -O2. Swapping out the division with shift and masking does not change anything. If we use a IF!() RETURN; instead of an assert, it also does not break. If we use IF!() DIE; it also breaks, but if we do IF!() { os::term::PrintLine_v(); DIE; }, it does not break. So it clearly has something to do with conditional aborts...
+			// ASSERT(amount < 32 * Words); // -- GCC 14.2.0 bug: this assert NEVER triggers, but it somehow breaks this function in -O2. But if we move it below the variables, it does not cause problems even in -O2. Swapping out the division with shift and masking does not change anything. If we use a IF!() RETURN; instead of an assert, it also does not break. If we use IF!() DIE; it also breaks, but if we do IF!() { os::term::PrintLine_v(); DIE; }, it does not break. So it clearly has something to do with conditional aborts...
 			shift_digits ::= amount / 32;
 			shift_bits ::= amount % 32;
-
 
 			IF(shift_digits) // Zero high words.
 				FOR(result->Digits[FROM Words - shift_digits]) IT := 0;
 
-			w ::= result->Digits[];
+			write ::= result->Digits[];
 			FOR(Digits[FROM shift_digits UNTIL Words-1]) // 64-bit shift trick...
-				*w++ := *<U8 #*>(&IT) >> shift_bits;
+				*write++ := *<U8 #*>(&IT) >> shift_bits;
 
-			*w++ := Digits[Words-1] >> shift_bits; // highest word.
+			*write := Digits[Words-1] >> shift_bits; // highest word.
 		}
 		# THIS >> (amount: U2) THIS
 			{ x: THIS(NOINIT); THIS.shr_into(amount, &x); = x; }
@@ -533,7 +531,7 @@ INCLUDE "padding"
 	{
 		ASSERT(n.Digits[0] & 1);
 
-		// Quick GCD check: 
+		// Quick GCD check:
 		IF#(Words == 2048 / 32)
 		{
 			IF!(are_coprime(n, *<[#2048 / 32]BigInt #*>(&primes_2k))) = FALSE;
@@ -598,7 +596,6 @@ INCLUDE "padding"
 		candidate.Digits[0] |= 1;
 		candidate.truncate_to_bits(length-(1 + (length <= 32)));
 		candidate.set_bit(length-1);
-
 
 		mod1155: U4; {
 			mod ::= candidate; mod.mixed_mod_assign_slow_unprotected(1155);
