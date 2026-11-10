@@ -1,13 +1,12 @@
 (/rl/)
-
 INCLUDE "padding"
 
 ::std::rsa
 {
-	// We are using 32-bit words everywhere here, because bignum arithmetic without inline assembly is really hard to do properly and efficiently when using 64-bit words.
+	// We are using 32-bit words everywhere here, because bignum arithmetic without inline assembly is really hard to do properly and efficiently when using 64-bit words. We do in some places need LONGMUL and LONGDIV, regardless, though.
 
-	// Bitmap of all primes among the first 210 numbers (LE digit order).
-	// If bit(n%210) == 0, then it is not prime. This speeds up stepping through prime candidates.
+	// Bitmap of all primes among the first 1155 (3*5*7*11) numbers (LE digit order).
+	// If bit(n%1155) == 0, then it is not prime. This speeds up stepping through prime candidates.
 	primes_1155: U4[?]#(
 		U4 0xa48b2116, U4 0x6c30ca65, U4 0x524c9699, U4 0x94522da2,
 		U4 0x61b44b49, U4 0x912c32d8, U4 0xa45944a6, U4 0x4992932c,
@@ -122,80 +121,48 @@ INCLUDE "padding"
 
 		# shr_into(amount: U2, result: THIS \) VOID
 		{
-			// Use 32-bit words to make shifting easier (by using 64-bit shifts to compute the final value of each 32-bit word).
-			src_32 ::= Digits!;
-			dst_32 ::= result->Digits!;
+			ASSERT(amount < 32 * Words); // -- GCC bug: this assert NEVER triggers, but it somehow breaks this function in -O2. But if we move it below the variables, it does not cause problems even in -O2. Swapping out the division with shift and masking does not change anything. If we use a IF!() RETURN; instead of an assert, it also does not break. If we use IF!() DIE; it also breaks, but if we do IF!() { os::term::PrintLine_v(); DIE; }, it does not break. So it clearly has something to do with conditional aborts...
+			shift_digits ::= amount / 32;
+			shift_bits ::= amount % 32;
 
-			shift_digits ::= amount >> 5;
-			shift_bits ::= amount & 31;
 
-			ASSERT(amount <= 32 * Words);
-			ASSERT(amount < 32 * Words);
+			IF(shift_digits) // Zero high words.
+				FOR(result->Digits[FROM Words - shift_digits]) IT := 0;
 
-			write ::= result->Digits[];
+			w ::= result->Digits[];
+			FOR(Digits[FROM shift_digits UNTIL Words-1]) // 64-bit shift trick...
+				*w++ := *<U8 #*>(&IT) >> shift_bits;
 
-			// Zero high words.
-			IF(shift_digits)
-				FOR(dst_32[FROM Words - shift_digits]) IT := 0;
-
-			// 64-bit shift trick...
-			FOR(Words-1 - shift_digits)
-				*write++ := *<U8 #*>(&src_32[shift_digits + IOTA]) >> shift_bits;
-
-			// highest word.
-			*write := src_32[Words-1] >> shift_bits;
+			*w++ := Digits[Words-1] >> shift_bits; // highest word.
 		}
-
+		# THIS >> (amount: U2) THIS
+			{ x: THIS(NOINIT); THIS.shr_into(amount, &x); = x; }
 		THIS >>= (amount: U2) VOID
-		{ // TODO: UGLY
-			x ::= THIS;
-			x.shr_into(amount, &THIS);
-		}
+			{ x ::= THIS;      x.shr_into(amount, &THIS); }
 
-		sub(rhs: THIS #&, w: WHERE) VOID
+		sub(rhs: THIS #&) S4
 		{
-			ASSERT(&THIS != &rhs);
-			IF!(THIS >= rhs) DIE (w) "underflow"; orig ::= THIS;
 			borrow: S8;
 			FOR(Digits)
-			{ // TODO: add sub with borrow intrinsic.
-				result: S8 := (<S8>(<U8>(IT)) - <S8>(<U8>(rhs.Digits[IOTA]))) + borrow;
-				IT := result;
-				borrow := result >> 32;
+			{ // TODO: add "sub with borrow" intrinsic.
+				result: S8 := (S8 U8 IT - S8 U8 rhs.Digits[IOTA]) + borrow;
+				(IT, borrow) := (result, result >> 32);
 			}
-
-			// underflow.
-			ASSERT(!borrow);
+			= borrow;
 		}
-		reverse_subtract(rhs: THIS #&) VOID
-		{
-			ASSERT(rhs >= THIS);
-			borrow: S8;
-			FOR(Digits)
-			{
-				result: S8 := (S8 U8 rhs.Digits[IOTA] - S8 U8 IT) + borrow;
-				IT := result;
-				borrow := result >> 32;
-			}
-
-			ASSERT(!borrow); // underflow.
-		}
+		THIS -= (rhs: THIS #&) VOID { ASSERT(!sub(rhs)); }
 
 		add(rhs: THIS#&) U4
 		{
 			carry: U8;
 			FOR(Digits)
-			{ // TODO: add sub with borrow intrinsic.
+			{ // TODO: add "add with carry" intrinsic.
 				result: U8 := (U8 IT + U8 rhs.Digits[IOTA]) + carry;
-				IT := result;
-				carry := result >> 32;
+				(IT, carry) := (result, result >> 32);
 			}
 			= carry;
 		}
-		THIS += (rhs: THIS #&) VOID
-		{
-			ASSERT(!add(rhs));
-		}
+		THIS += (rhs: THIS #&) VOID { ASSERT(!add(rhs)); }
 
 		THIS <<= (amount: U2) VOID
 		{
@@ -207,7 +174,7 @@ INCLUDE "padding"
 			cut_digits ::= Words - shift_digits;
 			intact_digits ::= Words - (cut_digits + shift_digits);
 
-			ASSERT(amount < 64 * Words);
+			ASSERT(amount < 32 * Words);
 
 			count_32# ::= Words;
 
@@ -225,23 +192,23 @@ INCLUDE "padding"
 
 		# THIS <> (rhs: THIS #&) S1
 		{
+			different ::= FALSE;
+			sign: S1 := 0;
 			FOR(Digits; --)
-				IF(s ::= IT <> rhs.Digits[IOTA])
-					= s;
-			= 0;
+			{
+				s : S1 := IT <> rhs.Digits[IOTA];
+				sign := different ?? sign : s;
+				different |= s;
+			}
+			= sign;
 		}
 
-		# THIS == (rhs: THIS #&) BOOL
-		{
-			FOR(Digits; --)
-				IF(IT != rhs.Digits[IOTA])
-					= FALSE;
-			= TRUE;
-		}
-
-		# THIS >= (rhs: THIS #&) BOOL {
-			= (THIS <> rhs) > 0;
-		}
+		# THIS < (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
+		# THIS <= (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
+		# THIS == (rhs: THIS #&) BOOL -- := (THIS <> rhs) == 0;
+		# THIS != (rhs: THIS #&) BOOL -- := (THIS <> rhs) != 0;
+		# THIS >= (rhs: THIS #&) BOOL -- := (THIS <> rhs) >= 0;
+		# THIS > (rhs: THIS #&) BOOL -- := (THIS <> rhs) > 0;
 
 		# long_mul_into(rhs: THIS #&, result: [#2*Words]BigInt \) VOID --
 		{
@@ -283,23 +250,20 @@ INCLUDE "padding"
 			= carry;
 		}
 
-		// THIS -= n * d, with borrow.
+		// THIS -= n * d.
 		sub_short_mul(n: THIS #&, d: U4) VOID {
 			mul_carry: U8;
 			borrow: S8;
 			FOR(Digits)
 			{
 				// Carry is always <= 32-bit.
-				// Borrow is always 0 or -1.
-				// We can combine them.
-				// The problem is that the product can have its MSB set naturally. This would not be a problem if we had natural carry/borrow detection we could access.
 				product ::= U8(S8 U8 n.Digits[IOTA] * S8 U8 d) + mul_carry;
-				mul_carry := product >> 32;
+				digit: U4 (NOINIT);
+				(digit, mul_carry) := (U4 product, product >> 32);
 
-				digit ::= U4 product;
+				// Borrow is always 0 or -1.
 				adjusted: S8 := S8 (U8 IT - U8 digit) + borrow;
-				borrow := adjusted >> 32;
-				IT := adjusted;
+				(IT, borrow) := (adjusted, adjusted >> 32);
 			}
 			//= -S8 mul_carry + borrow;
 		}
@@ -307,33 +271,31 @@ INCLUDE "padding"
 		# shl_1_digit_into(out: THIS \) U4
 		{
 			c ::= Digits[##Digits-1];
-			FOR(out->Digits[FROM 1]; --) IT := Digits[IOTA]; out->Digits[0] := 0;
+			FOR(out->Digits[FROM 1]; --) IT := Digits[IOTA];
+			out->Digits[0] := 0;
 			= c;
 		}
 
 		//  THIS := (carry:THIS) % modulo -- This function is only used in prepping a modulus. ASSUMPTION: modulo must have some of its 64 most significant bits set. Ideally, one of its most significant 4 bits or something.
 		carry_mod(carry: U8, modulo: THIS #&) VOID
 		{
-			// q := [0][c]:[D][D] / [M][M];
-
-			msw_this_hi: U8 := U8 carry;
-			msw_this_lo: U8 := *<U8#*>(&Digits[##Digits-2]);
-			msw_mod: U8 := *<U8#*>(&modulo.Digits[##Digits-2]);
+			// q := [c][c]:[D][D] / [M][M];
+			msw_this_hi: U8 := U8 carry; // c:c
+			msw_this_lo: U8 := *<U8#*>(&Digits[##Digits-2]); // D:D
+			msw_mod: U8 := *<U8#*>(&modulo.Digits[##Digits-2]); // M:M
 			ASSERT(LAST1POS msw_mod > 60);
 
 			// estimate ratio, with error >=0, <1, erring on the side of being too low. We can never be off by more than 1. There is a real possibility of this being off by 1, but it is extremely rare. <------- This might be wrong if modulo does not have its msb set. Also, the multiplication can only handle U4 factors. This means that as soon as M does not have its msb set, and if C has its msb set, then we have a quotient exceeding 32 bits. --> we could use shifts to adjust M's msw. But then we need to ensure that we have the filler bits carried over.
-			q:U8 (NOINIT);
-			r:U8 (NOINIT);
+			q:U8 (NOINIT); r:U8 (NOINIT);
 			(q, r) := LONGDIV(msw_this_hi, msw_this_lo, msw_mod);
-			q -= (r < q);
+			q -= (r < q); // make sure we never overshoot.
 
 			mod32: THIS;
 			modulo.shl_1_digit_into(&mod32);
 			sub_short_mul(mod32, q >> 32);
 
 			THIS.sub_short_mul(modulo, U4 q);
-			// If we didn't clear, we were off by 1. Adjust.
-			THIS.sub_short_mul(modulo, THIS>=modulo);
+			THIS.sub_short_mul(modulo, THIS>=modulo); // If we were off by 1.
 
 			ASSERT(!(THIS >=modulo)); // TODO: prove this to be correct, then remove the assertion.
 		}
@@ -343,9 +305,13 @@ INCLUDE "padding"
 			acc ::= THIS;
 			*quotient := ();
 
+			ASSERT(modulo != 0);
 			// mod_ext := modulo:0 (high:low), msb should be 1.
 			missing_bits ::= (Words * 32 -1) - modulo.last1pos();
 			mod ::= modulo;
+			ASSERT(missing_bits < 32*Words);
+			IF(missing_bits < 0) RETURN;
+
 			mod <<= missing_bits;
 
 			ASSERT(mod.last1pos() == Words * 32 -1);
@@ -355,13 +321,13 @@ INCLUDE "padding"
 				IF(acc >= mod)
 				{
 					ASSERT(acc >= mod);
-					acc.sub(mod, HERE);
+					acc -= mod;
 					quotient->set_bit(i);
 				}
 			} FOR(i--; mod >>= 1)
 		}
 
-		mixed_mod_assign(modulo: [#Words/2]BigInt #&) VOID
+		mixed_mod_assign_slow_unprotected(modulo: [#Words/2]BigInt #&) VOID
 		{
 			// Shift-and-subtract, by starting with maxed-out modulo, halving the modulo every time.
 
@@ -381,20 +347,12 @@ INCLUDE "padding"
 			THIS.sub_short_mul(mod_ext, THIS >= mod_ext);
 		}
 
-		mul_mod_assign(rhs: THIS#&, modulo: THIS #&) VOID
-		{
-			tmp: [#2*Words]BigInt (NOINIT);
-			THIS.long_mul_into(rhs, &tmp);
-			tmp.mixed_mod_assign(modulo);
-
-			FOR(Digits) IT := tmp.Digits[IOTA];
-		}
-
 		ModuloAccel {
 			// For each excess digit in a long multiplication, the remainder % N if that digit had the value 1. That way, we can trivially reduce a long multiplication to a series of additions, with single-digit multiplication, and one final reduction step.
 			CarryRem: [#Words]BigInt[Words];
 
-			{n: [#Words]BigInt #&}: CarryRem(NOINIT)
+			{BARE};
+			:ladder{n: [#Words]BigInt #&}: CarryRem(NOINIT)
 			{
 				CarryRem[0] := ();
 				CarryRem[0].carry_mod(1, n);
@@ -479,6 +437,7 @@ INCLUDE "padding"
 
 			// 3. final resolve.
 			// We are now in the form: C1:C0:D...
+			// NOTE: C1 MUST NOT have its highest byte set, and modulo must have its highest byte set.
 			result.carry_mod(carry_excess, modulo);
 
 			THIS := result;
@@ -491,43 +450,29 @@ INCLUDE "padding"
 			*rem := 1;
 
 			last1pos ::= power.last1pos();
-			IF(last1pos == k_bits) RETURN;
+			ASSERT(last1pos != k_bits);
 
+			lut16: THIS[16] (NOINIT);
+			lut16[0] := 1; lut16[1] := THIS;
+			FOR(lut16[FROM 2])
+				{ IT := lut16[IOTA+1]; IT.mul_mod_assign_fast(THIS, modulo, accel); }
 
-			IF#(1)
+			FOR(last1pos/8 +1; --) // walk from highest to lowest bid, and simply push up the value by multiplying, so that we always multiply low exponents, and they get shifted to their final value later on.
 			{
-				lut16: THIS[16] (NOINIT);
-				lut16[0] := 1; lut16[1] := THIS;
-				FOR(lut16[FROM 2]) { IT := lut16[IOTA+1]; IT.mul_mod_assign_fast(THIS, modulo, accel); }
+				b ::= power.byte(IOTA);
+				hi ::= U1 b >> 4;
+				lo ::= b & 0xf;
 
-				FOR(last1pos/8 +1; --) // walk from highest to lowest bid, and simply push up the value by multiplying, so that we always multiply low exponents, and they get shifted to their final value later on.
-				{
-					b ::= power.byte(IOTA);
-
-					hi ::= U1 b >> 4;
-					lo ::= b & 0xf;
-
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-					rem->mul_mod_assign_fast(lut16[hi], modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-						rem->mul_mod_assign_fast(*rem, modulo, accel);
-					rem->mul_mod_assign_fast(lut16[lo], modulo, accel);
-				}
-			} ELSE
-			{
-
-				base: THIS := THIS;
-				FOR(i ::= 0; i <= last1pos; i++)
-				{
-					IF(power.bit(i)) rem->mul_mod_assign_fast(base, modulo, accel);
-
-					base.mul_mod_assign_fast(base, modulo, accel);
-				}
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+				rem->mul_mod_assign_fast(lut16[hi], modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+				rem->mul_mod_assign_fast(lut16[lo], modulo, accel);
 			}
 		}
 	}
@@ -539,20 +484,11 @@ INCLUDE "padding"
 		b: [#Words]BigInt #&,
 		res: [#Words]BigInt \) VOID
 	{
-		tmp_a: [#Words]BigInt (0);
-		tmp_b: [#Words]BigInt (0);
-
 		f1p_a ::= a.first1pos();
 		f1p_b ::= b.first1pos();
-
-		IF(f1p_a != 0 && f1p_b != 0) { *res := 0; RETURN; }
-
 		// Remove all trailing zeroes.
-		a.shr_into(f1p_a, &tmp_a);
-		b.shr_into(f1p_b, &tmp_b);
-
-		l1p_a ::= tmp_a.last1pos();
-		t1p_b ::= tmp_b.last1pos();
+		tmp_a ::= a >> f1p_a;
+		tmp_b ::= b >> f1p_b;
 
 		sign: S8;
 		FOR(i ::= 0; sign := (tmp_a <> tmp_b); i++)
@@ -561,28 +497,31 @@ INCLUDE "padding"
 			lesser         ::= (sign < 0) ?? &tmp_a     : &tmp_b;
 			greater        ::= (sign < 0) ?? &tmp_b     : &tmp_a;
 
-			ASSERT(*greater >= *lesser);
-			greater->sub(*lesser, HERE);
+			*greater -= *lesser;
 			*greater >>= greater->first1pos();
 		}
 
 		*res := tmp_a;
+
+		amount ::= (f1p_a > f1p_b) ?? f1p_b : f1p_a;
+		*res <<= amount;
 	}
 
 	[#Words]are_coprime(
 		a: [#Words]BigInt #&,
 		b: [#Words]BigInt #&) BOOL
 	{
-		tmp: [#Words]BigInt (0);
+		tmp: [#Words]BigInt (NOINIT);
 		gcd(a,b, &tmp);
 		= tmp.last1pos() == 0;
 	}
 
-	[#Words]lcm_into(a: [#Words]BigInt #&, b: [#Words]BigInt #&, res: [#2*Words]BigInt \) VOID
+	[#Words]lcm_unprotected_into(a: [#Words]BigInt #&, b: [#Words]BigInt #&, res: [#2*Words]BigInt \) VOID
 	{
-		long: [#2*Words]BigInt (0); a.long_mul_into(b, &long);
-		_gcd: [#2*Words]BigInt; gcd(a, b, _gcd.lower());
+		long: [#2*Words]BigInt (NOINIT); a.long_mul_into(b, &long);
+		_gcd: [#2*Words]BigInt (NOINIT); gcd(a, b, _gcd.lower()); *_gcd.upper() := ();
 		long.divide_unprotected_into(_gcd, res);
+		*res := long;
 	}
 
 	[#Words]
@@ -594,7 +533,6 @@ INCLUDE "padding"
 	{
 		ASSERT(n.Digits[0] & 1);
 
-
 		// Quick GCD check: 
 		IF#(Words == 2048 / 32)
 		{
@@ -605,18 +543,13 @@ INCLUDE "padding"
 			IF!(are_coprime(n, *<[#4096 / 32]BigInt #*>(&primes_4k))) = FALSE;
 		}
 
-		accel: [#Words]BigInt::ModuloAccel (n);
+		accel: [#Words]BigInt::ModuloAccel := :ladder(n);
 
 		n.Digits[0] ^= 1; // n-1 (since n is already odd)
 		s ::= n.first1pos(); // CTZ(n-1)
 		n.Digits[0] ^= 1; // restore n.
-		ASSERT(s != 32 * Words);
-		ASSERT(s);
 
-		d: [#Words]BigInt (NOINIT);
-		n.shr_into(s, &d);
-
-
+		d: [#Words]BigInt (NOINIT); n.shr_into(s, &d);
 
 		rem: [#Words]BigInt (NOINIT);
 		a: [#Words]BigInt ();
@@ -626,47 +559,39 @@ INCLUDE "padding"
 			a.Digits[0] := sample_start + IOTA;
 			IF(rng) rng->shake_output(a.bytes());
 
-			n.Digits[0] ^= 1;
-			IF(a >= n) { a.sub(n, HERE); a += 2; }
+			n.Digits[0] ^= 1; // keep a between 2 and n-2.
+			IF(a >= n) { a -= n; a += 3; }
 			n.Digits[0] ^= 1;
 
-			// a^d % n
-			a.pow_mod_fast_into(d, n, accel, &rem);
+			a.pow_mod_fast_into(d, n, accel, &rem); // a^d % n
 
 			n.Digits[0] ^= 1; // restore n-1
 			is_pred ::= rem == n;
 			n.Digits[0] ^= 1; // restore n
 
-			IF(rem.last1pos() == 0)
-				CONTINUE [samples];
-			IF(is_pred)
-				CONTINUE [samples];
+			IF(rem.last1pos() == 0) CONTINUE [samples];
+			IF(is_pred) CONTINUE [samples];
 
 			FOR(s-1)
 			{
-				// a^((2^r)d) % n
-				rem.mul_mod_assign_fast(rem, n, accel);
+				rem.mul_mod_assign_fast(rem, n, accel); // a^((2^r)d) % n
 
 				n.Digits[0] ^= 1; // restore n-1
 				is_pred ::= rem == n;
 				n.Digits[0] ^= 1; // restore n
 
-				IF(is_pred)
-					CONTINUE [samples];
-				IF(rem.last1pos() == 0)
-					= FALSE;
+				IF(is_pred) CONTINUE [samples];
+				IF(rem.last1pos() == 0) BREAK;
 			}
 			= FALSE;
 		}
-
 		= TRUE;
 	}
 
 	[#Bits] generate_prime(rng: sha3::State &, length: U4) {[#Bits]BitInt, U4, U8}
 	{
 		IF(!length) length := Bits;
-		ASSERT(length > 1);
-		ASSERT(length <= Bits);
+		ASSERT(length > 1 && length <= Bits);
 
 		candidate: [#Bits]BitInt (NOINIT);
 		rng.shake_output(candidate.bytes());
@@ -674,18 +599,10 @@ INCLUDE "padding"
 		candidate.truncate_to_bits(length-(1 + (length <= 32)));
 		candidate.set_bit(length-1);
 
-		os::term::PrintLine_v();
-		os::term::Print_v("\nLooking for prime: ");
-		FOR(candidate.Digits; --) os::term::Print_v(std::io::format::hex_x(IT, 8, FALSE));
-		os::term::PrintLine_v();
 
-
-		mod1155: U4;
-		IF(1){
-			x ::= candidate;
-			_1155: [#Bits/2]BitInt(1155);
-			x.mixed_mod_assign(_1155);
-			mod1155 := x.Digits[0];
+		mod1155: U4; {
+			mod ::= candidate; mod.mixed_mod_assign_slow_unprotected(1155);
+			mod1155 := mod.Digits[0];
 		}
 
 		primebits1155: ? #& := *<[# ##primes_1155]BigInt# *>(&primes_1155);
@@ -716,77 +633,80 @@ INCLUDE "padding"
 		= (candidate, i, prime_test_time);
 	}
 
+	// S:D... representation, where S is 0 or -1.
 	[#Words] SignedBigInt {
-		Sign: BOOL;
-		Int: [#Words]BigInt;
+		Int: [#Words+1]BigInt;
+
+		raw() [#Words]BigInt \ -- := <[#Words]BigInt \>(&Int);
+		#? sign() U4 #? & -- := Int.Digits[Words];
+
+		:with_sign{v: [#Words]BigInt #&, sign: BOOL}: Int(NOINIT)
+		{
+			signDigit: U4 := MASK(sign);
+			FOR(v.Digits) Int.Digits[IOTA] := IT ^ signDigit;
+			THIS.sign() := signDigit;
+			Int.add(sign);
+		}
+
+		[T] :unsigned{v: T!&&} --: Int (NOINIT)
+			{ *raw() := <T!&&>(v); sign() := 0; }
+
+		# abs() [#Words]BigInt {
+			result: [#Words]BigInt (NOINIT);
+			sign ::= THIS.sign();
+			FOR(result.Digits) IT := Int.Digits[IOTA] ^ sign;
+			result.add(sign & 1);
+			= result;
+		}
 
 		THIS += (rhs: THIS #&) VOID {
-			IF(Sign == rhs.Sign) Int += rhs.Int;
-			ELSE {
-				IF(Int >= rhs.Int) Int.sub(rhs.Int, HERE);
-				ELSE
-				{
-					Sign := !Sign;
-					Int.reverse_subtract(rhs.Int);
-				}
-			}
+			Int.add(rhs.Int);
+			sign() := S4 sign() >> 31;
 		}
 
 		THIS -= (rhs: THIS #&) VOID {
-			IF(Sign != rhs.Sign) Int += rhs.Int;
-			ELSE {
-				IF(Int >= rhs.Int) Int.sub(rhs.Int, HERE);
-				ELSE
-				{
-					Sign := !Sign;
-					Int.reverse_subtract(rhs.Int);
-				}
-			}
+			Int.sub(rhs.Int);
+			sign() := S4 sign() >> 31;
 		}
 	}
 
 	[#Words] invert(elem: [#Words]BigInt #&, modulus: [#Words]BigInt #&) [#Words]BigInt
 	{
-		t:    [#Words]SignedBigInt := (FALSE, 0);
-		newt: [#Words]SignedBigInt := (FALSE, 1);
-		r:    [#Words]SignedBigInt := (FALSE, modulus);
-		newr: [#Words]SignedBigInt := (FALSE, elem);
+		t:    [#Words]SignedBigInt := :unsigned(0);
+		newt: [#Words]SignedBigInt := :unsigned(1);
+		r:    [#Words]SignedBigInt := :unsigned(modulus);
+		newr: [#Words]SignedBigInt := :unsigned(elem);
 
 		WHILE(!newr.Int.is_zero())
 		{
-			quotient: [#Words]SignedBigInt (NOINIT);
-			long:     [#2*Words]BigInt     (NOINIT);
+			quotient: [#Words]BigInt   (NOINIT);
+			long:     [#2*Words]BigInt (NOINIT);
 
-			quotient.Sign := r.Sign ^ newr.Sign;
-			r.Int.divide_unprotected_into(newr.Int, &quotient.Int);
+			qSign ::= r.sign() ^ newr.sign();
+			r.abs().divide_unprotected_into(newr.abs(), &quotient);
 
-			lSign ::= quotient.Sign ^ newt.Sign;
-			quotient.Int.long_mul_into(newt.Int, &long);
-			ASSERT(long.last1pos() < 32*Words);
-			t :=: newt; newt -= (lSign, *long.lower());
+			lSign ::= qSign ^ newt.sign();
+			quotient.long_mul_into(newt.abs(), &long);
+			t :=: newt; newt -= :with_sign(*long.lower(), lSign);
 
-			lSign := quotient.Sign ^ newr.Sign;
-			quotient.Int.long_mul_into(newr.Int, &long);
-			r :=: newr; newr -= (lSign, *long.lower());
+			lSign := qSign ^ newr.sign();
+			quotient.long_mul_into(newr.abs(), &long);
+			r :=: newr; newr -= :with_sign(*long.lower(), lSign);
 		}
 
-		IF(!r.Sign && r.Int >= 1)
-			DIE "Not invertible";
+		IF(!r.sign() && *r.raw() >= 2) DIE "Not invertible";
+		t.raw()->add_short_mul(modulus, t.sign() & 1);
 
-		IF(t.Sign && !t.Int.is_zero())
-			t.Int.reverse_subtract(modulus);
-
-		= t.Int;
+		= *t.raw();
 	}
 
 	[#Bits] RsaPub {
 		N: [#Bits]BitInt;
 		E: U4;
+		Accel: [#Bits]BitInt::ModuloAccel;
 
-		# encrypt(padded_msg: [#Bits]BitInt #&, cipher: [#Bits]BitInt \) VOID
-		{
-			padded_msg.pow_mod_into(E, N, cipher);
-		}
+		# encrypt(padded_msg: [#Bits]BitInt #&, cipher: [#Bits]BitInt \) VOID --
+			{ padded_msg.pow_mod_fast_into(E, N, Accel, cipher); }
 	}
 
 
@@ -795,44 +715,35 @@ INCLUDE "padding"
 
 		# decrypt(
 			pub: [#Bits]RsaPub #&,
-			cipher: [#Bits]BitInt #&,
-			padded_msg: [#Bits]BitInt \) VOID
-		{
-			cipher.pow_mod_into(D, pub.N, padded_msg);
-		}
+			ciphertext: [#Bits]BitInt #&,
+			padded_msg: [#Bits]BitInt \
+		) VOID -- { ciphertext.pow_mod_fast_into(D, pub.N, pub.Accel, padded_msg); }
 	}
 
 	[#Bits]rsa_keygen(pub: [#Bits]RsaPub \, priv: [#Bits]RsaPriv \, allowed_es: U4#[#], rng: sha3::State &) VOID
 	{
+		ASSERT(##allowed_es);
 		lambda_n: [#Bits]BitInt (NOINIT);
-
-		ex: [#Bits]BitInt;
+		ex: [#Bits]BitInt ();
 		FOR[find_n](i ::= 0;; i++)
 		{
-			ASSERT(i < 1);
-
-			p ::= [#Bits/2]generate_prime(rng, Bits/2);
-			DIE "generated p";
-			q ::= [#Bits/2]generate_prime(rng, Bits/2);
+			p ::= [#Bits/2]generate_prime(rng, Bits/2).(0);
+			q ::= [#Bits/2]generate_prime(rng, Bits/2).(0);
 
 			p.long_mul_into(q, &pub->N);
-			DIE;
+			pub->Accel := :ladder(pub->N);
 
 			p.Digits[0] ^= 1; // p-1
 			q.Digits[0] ^= 1; // q-1
-			lcm_into(p, q, &lambda_n); // lambda_n := lcm(p-1, q-1)
+			lcm_unprotected_into(p, q, &lambda_n); // lambda_n := lcm(p-1, q-1)
 			p.Digits[0] ^= 1; // restore p
 			q.Digits[0] ^= 1; // restore q
 
-			DIE;
 			FOR(allowed_es)
 			{
-				ex.Digits[0] := IT;
+				ex.Digits[0] := pub->E := IT;
 				IF(are_coprime(lambda_n, ex))
-				{
-					pub->E := IT;
 					BREAK [find_n];
-				}
 			}
 		}
 

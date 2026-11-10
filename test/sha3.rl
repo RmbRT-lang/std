@@ -1,4 +1,4 @@
-INCLUDE 'std/sha3'
+INCLUDE 'std/crypto/sha3'
 
 
 ::std::sha3
