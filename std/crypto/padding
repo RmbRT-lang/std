@@ -130,7 +130,7 @@ INCLUDE 'std/crypto/sha3'
 	{
 		// message layout (big endian): w | seed | 0... | 1 | m1
 		// since our bigints are little-endian, we use the reverse encoding:
-		// (little endian): m1 | 1 | 0... | seed | w
+		// (little endian): (m1 | 1 | 0... | seed) | w | 0
 		// note that m1 appears flipped with respect to the paper.
 
 		wstart ::= ##buffer - w_len;

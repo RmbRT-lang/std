@@ -128,7 +128,7 @@ INCLUDE 'std/io/format'
 			seed: U1#[?](U1 1, U1 2, U1 3, U1 8, U1 3);// U1 CPU_COUNTER, RANDOM U1);
 		
 
-			prime: {[#4096]BitInt, U4, U8};
+			prime: {[#3840]BitInt, U4, U8};
 			now ::= NOW;
 			IF#(0)
 			{
@@ -155,11 +155,11 @@ INCLUDE 'std/io/format'
 				rng: sha3::State ();
 				rng.update(seed);
 				rng.shake_start();
-				prime := [#4096]generate_prime(rng, 0);
+				prime := [#3840]generate_prime(rng, 0);
 			}
 			end ::= NOW;
 
-			os::term::Print_v("\nFound ", std::io::format::dec(prime.(0).last1pos()+1), "-bit prime (attempt #", std::io::format::dec(prime.(1)), ", ", std::io::format::dec((end-now) / MEGA), "ms, ", std::io::format::dec(prime.(2)/MEGA), "ms: ");
+			os::term::Print_v("\nFound ", std::io::format::dec(prime.(0).last1pos()+1), "-bit prime (attempt #", std::io::format::dec(prime.(1)), ", ", std::io::format::dec((end-now) / MEGA), "ms, ", std::io::format::dec(prime.(2)/MEGA), "ms): ");
 			FOR(prime.(0).Digits; --) os::term::Print_v(std::io::format::hex_x(IT, 8, FALSE));
 			os::term::PrintLine_v();
 		}
@@ -167,16 +167,15 @@ INCLUDE 'std/io/format'
 
 	TEST "RSA" {
 		s: sha3::State;
-		(/s.Buffer[0] := RANDOM U8;
-		s.Buffer[1] := RANDOM U8;
-		s.Progress := 16;/)
+		FOR(4) s.Buffer[IOTA] := RANDOM U8;
+		s.Progress := 32;
 		s.shake_start();
 
-		pub: [#128]RsaPub (BARE);
-		priv: [#128]RsaPriv (BARE);
+		pub: [#3072]RsaPub (BARE);
+		priv: [#3072]RsaPriv (BARE);
 		allowed_e: U4[?] (U4 3,U4 5,U4 7, U4 17, U4 65537);
 
-	FOR(1000)
+	FOR(1)
 	{
 		rsa_keygen(&pub, &priv, allowed_e[#], s);
 
@@ -184,9 +183,9 @@ INCLUDE 'std/io/format'
 		raw_label: U1#[?] (U1'l', U1'a', U1'b');//, U1'e', U1'l');
 
 		raw_msg: U1#[?] (U1'h', U1'e', U1'l', U1'l', U1'o');
-		msg: [#128]BitInt;
-		cipher: [#128]BitInt;
-		msg2: [#128]BitInt;
+		msg: [#3072]BitInt;
+		cipher: [#3072]BitInt;
+		msg2: [#3072]BitInt;
 
 		{
 			oaep: crypto::padding::OAEPParams := :variable(SIZEOF(# msg), 4, ##raw_label);

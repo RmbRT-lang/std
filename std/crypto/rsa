@@ -281,21 +281,18 @@ INCLUDE "padding"
 			msw_this_hi: U8 := U8 carry; // c:c
 			msw_this_lo: U8 := *<U8#*>(&Digits[##Digits-2]); // D:D
 			msw_mod: U8 := *<U8#*>(&modulo.Digits[##Digits-2]); // M:M
-			ASSERT(LAST1POS msw_mod > 60);
+			ASSERT(msw_mod >= U8 1 << 60);
+			ASSERT(carry < U8 1<<48);
 
-			// estimate ratio, with error >=0, <1, erring on the side of being too low. We can never be off by more than 1. There is a real possibility of this being off by 1, but it is extremely rare. <------- This might be wrong if modulo does not have its msb set. Also, the multiplication can only handle U4 factors. This means that as soon as M does not have its msb set, and if C has its msb set, then we have a quotient exceeding 32 bits. --> we could use shifts to adjust M's msw. But then we need to ensure that we have the filler bits carried over.
-			q:U8 (NOINIT); r:U8 (NOINIT);
-			(q, r) := LONGDIV(msw_this_hi, msw_this_lo, msw_mod);
-			q -= (r < q); // make sure we never overshoot.
+			// estimate ratio, with error >=0, <1, erring on the side of being too low. We can never be off by more than 1. We do one final correction later.
+			q_r ::= LONGDIV(msw_this_hi, msw_this_lo, msw_mod);
+			// ($q,$r) ::= hi:lo /% mod
+			q_r.(0) -= (q_r.(1) < q_r.(0)); // make sure we never overshoot.
 
-			mod32: THIS;
-			modulo.shl_1_digit_into(&mod32);
-			sub_short_mul(mod32, q >> 32);
-
-			THIS.sub_short_mul(modulo, U4 q);
+			mod32: THIS (NOINIT); modulo.shl_1_digit_into(&mod32);
+			THIS.sub_short_mul(mod32, q_r.(0) >> 32); // remove the upper half of carry.
+			THIS.sub_short_mul(modulo, U4 q_r.(0)); // remove the lower half of carry.
 			THIS.sub_short_mul(modulo, THIS>=modulo); // If we were off by 1.
-
-			ASSERT(!(THIS >=modulo)); // TODO: prove this to be correct, then remove the assertion.
 		}
 
 		# divide_unprotected_into(modulo: THIS #&, quotient: THIS \) VOID
@@ -367,8 +364,6 @@ INCLUDE "padding"
 		{
 			result: THIS (NOINIT);
 
-			ASSERT(Words & 1 == 0);
-
 			carry_excess: U8 := 0; // C1:C0 carry digits, after the bigint.
 
 			{	// 1. Compute all digits that fit.
@@ -435,7 +430,6 @@ INCLUDE "padding"
 
 			// 3. final resolve.
 			// We are now in the form: C1:C0:D...
-			// NOTE: C1 MUST NOT have its highest byte set, and modulo must have its highest byte set.
 			result.carry_mod(carry_excess, modulo);
 
 			THIS := result;
