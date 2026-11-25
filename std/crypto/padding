@@ -170,58 +170,65 @@ INCLUDE 'std/crypto/sha3'
 		sha3::shake_256_xor(buffer, key);
 	}
 
-	// Simple OTP cipher from SHAKE-256.
-	Otp256Malleable
+	// Simple OTP cipher from SHAKE-256 with integrity protection from SHA3-256 (configurable truncation), and with configurable indistinguishability factor (choose based on expected lifetime of connection and likelihood of repeated messages).
+	[#kIndistinguishability; #kDigestStrength] Otp256Cipher
 	{
-		State: sha3::State;
+		TYPE Randomiser := U1[kIndistinguishability];
+		TYPE Digest := U8[kDigestStrength];
 
-		{key: U1#[#]}
-		{
-			State.update(key);
-			State.shake_start();
-		}
-
-		transform(buffer: U1[#]) VOID -- { State.shake_output_xor(buffer); }
-	}
-
-	// Simple OTP cipher from SHAKE-256 with integrity protection from SHA3-256.
-	Otp256TamperProof
-	{
-		Otp: sha3::State;
-		Digest: sha3::State;
+		Secret: U1[32];
+		RunningOTP: sha3::State;
+		RunningDigest: sha3::State;
 
 		// key is a shared secret, and can only be used for one stream / message.
-		{key: U1#[#]}: Digest(BARE)
+		{secret: U1#[32] #&}: Secret := secret,
+			RunningOTP(NOINIT), RunningDigest(NOINIT);
+
+		encrypt_start(rng: sha3::State &) Randomiser
 		{
-			Otp.update(key);
-			Digest := Otp;
-			Otp.shake_start();
+			r: Randomiser (NOINIT);
+			rng.shake_output(r);
+			start_msg(r);
+			= r;
 		}
 
-		// OTP(key, msg) · H(key·msg)
-		encrypt(buffer: U1[#]) VOID --
+		decrypt_start(r: Randomiser #&) VOID -- { start_msg(r); }
+
+		PRIVATE start_msg(r: Randomiser #&) VOID
 		{
-			Digest.update(buffer);
-			Otp.shake_output_xor(buffer);
+			RunningOTP.{};
+			RunningOTP.update(Secret);
+			RunningOTP.update(r);
+			RunningDigest := RunningOTP;
+
+			RunningOTP.shake_start();
 		}
 
-		digest() U8[4] & -- := Digest.sha_digest();
-
-		decrypt(buffer: U1[#]) VOID --
+		// Piecewise encryption of a message.
+		encrypt_continue(buffer: U1[#]) VOID --
 		{
-			Otp.shake_output_xor(buffer);
-			Digest.update(buffer);
+			RunningDigest.update(buffer);
+			RunningOTP.shake_output_xor(buffer);
 		}
 
-		validate_digest(digest: U1#[#]) BOOL
-		{
-			ASSERT(##digest == 32);
-			d ::= <U8 #*>(<U1 #*>(digest));
+		// Finalises the encrypted message.
+		encrypt_finish() Digest -- {
+			ASSERT(SIZEOF(Digest) <= 32);
+			= *<Digest #*>(RunningDigest.sha_digest());
+		}
 
-			FOR(THIS.digest())
-				IF(IT != d[IOTA])
-					= FALSE;
-			= TRUE;
+		decrypt_continue(buffer: U1[#], r: U1[32] &) VOID --
+		{
+			RunningOTP.shake_output_xor(buffer);
+			RunningDigest.update(buffer);
+		}
+
+		decrypt_finish(digest: Digest #&) BOOL
+		{
+			d ::= RunningDigest.sha_digest();
+			eq ::= TRUE;
+			FOR(###Digest) eq &= d[IOTA] == digest[IOTA];
+			= eq;
 		}
 	}
 }
