@@ -15,6 +15,36 @@ INCLUDE "rsa"
 		S: [#Words/2]BigInt;
 		T: [#Words/2]BigInt;
 		Derivation: StrongPrimeDerivation;
+
+		# verify() BOOL {
+			{ P_ ::= P; IF!(rabin_miller_prime_test(P_, NULL, 2, 128)) = FALSE; }
+			{ S_ ::= S; IF!(rabin_miller_prime_test(S_, NULL, 2, 128)) = FALSE; }
+			{ T_ ::= T; IF!(rabin_miller_prime_test(T_, NULL, 2, 128)) = FALSE; }
+
+			r_: [#Words]BigInt := 1; r: ?& := *r_.lower();
+			ASSERT(!r.add_short_mul(T, 2*Derivation.L));
+			ASSERT(rabin_miller_prime_test(r, NULL, 2, 128));
+
+			s_: [#Words]BigInt; s: ?& := *s_.lower(); s := S;
+			rs: [#Words]BigInt; r.long_mul_into(s, &rs);
+			accel: [#Words]BigInt::ModuloAccel := :ladder(rs);
+
+				s-=1;
+			r_mod: [#Words]BigInt; r_.pow_mod_fast_into(s_, rs, accel, &r_mod);
+				s+=1;
+
+				r-=1;
+			s_mod: [#Words]BigInt; s_.pow_mod_fast_into(r_, rs, accel, &s_mod);
+				r+=1;
+
+			urs ::= rs; urs += s_mod; urs -= r_mod; IF(urs >= rs) urs -= rs;
+
+			p0 ::= urs; IF!(p0.bit(0)) p0 += rs;
+
+			p ::= p0; p.add_short_mul(rs, 2*Derivation.K);
+
+			= (p == P);
+		}
 	}
 
 	[#Bits] generate_strong_prime(rng: sha3::State &) [#(Bits+31) / 32]StrongPrimeGen
@@ -184,7 +214,7 @@ INCLUDE "rsa"
 		ASSERT(p.last1pos()+1 >= p_bits);
 
 		ret: [# ##p.Digits]StrongPrimeGen (NOINIT);
-		ret.P := p0;
+		ret.P := p;
 		ret.S := *s.lower(); ret.Derivation.SOff := sd;
 		ret.T := *t.lower(); ret.Derivation.TOff := td;
 		ret.Derivation.L := L0 + L;

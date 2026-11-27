@@ -173,5 +173,33 @@ p: 55758661796822623257463844839638556034057715746342267028121417584650185997802
 	rng.update(bytes);
 	rng.shake_start();
 
-	dlog::[#3*128]generate_strong_prime(rng);
+	gen ::= dlog::[#3*128]generate_strong_prime(rng);
+	ASSERT(gen.verify());
+}
+
+::std::crypto::dlog TEST "Diffie-Hellman" {
+	rng: sha3::State;
+	rng.shake_start();
+
+	gen ::= dlog::[#256]generate_strong_prime(rng);
+
+	p ::= gen.P;
+
+	a: [#256]BitInt;
+	b: [#256]BitInt;
+
+	rng.shake_output(a.bytes()); a.truncate_to_bits(248);
+	rng.shake_output(b.bytes()); b.truncate_to_bits(248);
+
+	g: [#256]BitInt := 2;
+
+	p_accel: [#256]BitInt::ModuloAccel := :ladder(p);
+
+	g_a: [#256]BitInt; g.pow_mod_fast_into(a, p, p_accel, &g_a);
+	g_b: [#256]BitInt; g.pow_mod_fast_into(b, p, p_accel, &g_b);
+
+	g_a_b: [#256]BitInt; g_a.pow_mod_fast_into(b, p, p_accel, &g_a_b);
+	g_b_a: [#256]BitInt; g_b.pow_mod_fast_into(a, p, p_accel, &g_b_a);
+
+	ASSERT(g_a_b == g_b_a);
 }
