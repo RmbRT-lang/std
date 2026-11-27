@@ -187,23 +187,21 @@
 
 		# THIS <> (rhs: THIS #&) S1
 		{
-			different ::= FALSE;
 			sign: S1 := 0;
 			FOR(Digits; --)
 			{
 				s : S1 := IT <> rhs.Digits[IOTA];
-				sign := different ?? sign : s;
-				different |= s;
+				sign := sign ?? sign : s;
 			}
 			= sign;
 		}
 
-		# THIS < (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
-		# THIS <= (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
+		# THIS <  (rhs: THIS #&) BOOL -- := (THIS <> rhs) <  0;
+		# THIS <= (rhs: THIS #&) BOOL -- := (THIS <> rhs) <= 0;
 		# THIS == (rhs: THIS #&) BOOL -- := (THIS <> rhs) == 0;
 		# THIS != (rhs: THIS #&) BOOL -- := (THIS <> rhs) != 0;
 		# THIS >= (rhs: THIS #&) BOOL -- := (THIS <> rhs) >= 0;
-		# THIS > (rhs: THIS #&) BOOL -- := (THIS <> rhs) > 0;
+		# THIS >  (rhs: THIS #&) BOOL -- := (THIS <> rhs) >  0;
 
 		# long_mul_into(rhs: THIS #&, result: [#2*Words]BigInt \) VOID --
 		{
@@ -453,7 +451,7 @@
 			FOR(lut16[FROM 2])
 				{ IT := lut16[IOTA+1]; IT.mul_mod_assign_fast(THIS, modulo, accel); }
 
-			FOR(last1pos/8 +1; --) // walk from highest to lowest bid, and simply push up the value by multiplying, so that we always multiply low exponents, and they get shifted to their final value later on.
+			FOR(last1pos/8 +1; --) // walk from highest to lowest bit, and simply push up the value by multiplying, so that we always multiply low exponents, and they get shifted to their final value later on.
 			{
 				b ::= power.byte(IOTA);
 				hi ::= U1 b >> 4;
