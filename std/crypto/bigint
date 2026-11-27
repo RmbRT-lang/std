@@ -1,0 +1,697 @@
+(/rl/)
+
+::std::crypto
+{
+	// Bitmap of all primes among the first 1155 (3*5*7*11) numbers (LE digit order).
+	// If bit(n%1155) == 0, then it is not prime. This speeds up stepping through prime candidates.
+	primes_1155: U4[?]#(
+		U4 0xa48b2116, U4 0x6c30ca65, U4 0x524c9699, U4 0x94522da2,
+		U4 0x61b44b49, U4 0x912c32d8, U4 0xa45944a6, U4 0x4992932c,
+		U4 0x1a65b0c3, U4 0x36894d32, U4 0x2d065948, U4 0xcb2186d2,
+		U4 0x121a64b4, U4 0x4cb29169, U4 0xc10da652, U4 0x30c96986,
+		U4 0x6522da05, U4 0x0b4cb499, U4 0x92d32d06, U4 0x05b44a69,
+		U4 0x196930ca, U4 0xa65b0836, U4 0x6894d324, U4 0xd2658489,
+		U4 0xb6184d32, U4 0x29a60b44, U4 0xcb2916c1, U4 0x30da6584,
+		U4 0x4c94992c, U4 0x5229a253, U4 0xb4c34896, U4 0x2d22d861,
+		U4 0x5b44a299, U4 0x969324a4, U4 0x6530c369, U4 0x884d125a,
+		U4 0x00000006);
+
+	// the product of all early primes, until it reaches 2Ki digits. (LE digit order)
+	primes_2k: U4[?]#(
+		U4 0xeb88c0fe, U4 0x20e5c165, U4 0xddcaba37, U4 0x35276983,
+		U4 0xf102a2ae, U4 0xf33e5cce, U4 0x39e2688a, U4 0x37d177c1,
+		U4 0x06bac70e, U4 0x1ca2b973, U4 0x51f7d668, U4 0x24fe5c48,
+		U4 0xf7ed2dad, U4 0x8ecb1722, U4 0xd7cf7dc8, U4 0xade3bebd,
+		U4 0x862a09b8, U4 0xb2a810a9, U4 0xf208baee, U4 0x530c2818,
+		U4 0x14ea4338, U4 0xbf20164f, U4 0x065a073e, U4 0x863a8019,
+		U4 0xb5908950, U4 0x36a65b25, U4 0xcc400327, U4 0xf8bf74a2,
+		U4 0xa3898ff1, U4 0x3e177b1d, U4 0x396a1852, U4 0xc15c29e3,
+		U4 0x2aac9d60, U4 0x7b9aff30, U4 0x5d091fab, U4 0x00fbd135,
+		U4 0x8f634f74, U4 0x1c9af81c, U4 0x1609e99a, U4 0x481c533a,
+		U4 0x5ffc2bfe, U4 0x3b44a4e3, U4 0x83e1566b, U4 0xdbc5c8e7,
+		U4 0x0c566dc5, U4 0xb31110af, U4 0x238afa8d, U4 0xa0acf379,
+		U4 0x7227e8ac, U4 0x5d4ba315, U4 0x3a38e2fb, U4 0xbf9cbbad,
+		U4 0x3c80d558, U4 0x59f02173, U4 0x268a053e, U4 0x587dc933,
+		U4 0xe3b74199, U4 0x4b59b612, U4 0x82d0c775, U4 0x05defdf4,
+		U4 0x3ffe4d19, U4 0x3c0a4f25, U4 0x0a023c39, U4 0x48cb4f7b);
+
+	primes_4k: U4[?]#(
+		U4 0xab58b0fa, U4 0xa2a542ad, U4 0x6f68e8a8, U4 0xcbd7b83d,
+		U4 0xd91987d3, U4 0xfb663ed5, U4 0x97ca254c, U4 0x279692e7,
+		U4 0xa82f8db3, U4 0x520eb483, U4 0x0b92ebad, U4 0x03e1abd3,
+		U4 0x04df2697, U4 0x5461b708, U4 0xae1a9698, U4 0xec8ca282,
+		U4 0x0013ecee, U4 0x4d6c07c2, U4 0x1cce098e, U4 0x1fd04337,
+		U4 0xdd162d46, U4 0x61f68f1e, U4 0x803e7359, U4 0xea3b9dc5,
+		U4 0x316a07ec, U4 0xc884c46f, U4 0x85e0d251, U4 0xcb060b1d,
+		U4 0x4e831798, U4 0x9ad4f049, U4 0x871f6f6f, U4 0x22af7ea4,
+		U4 0xe9b96225, U4 0xc04b096e, U4 0x7e53993d, U4 0xcc95c32b,
+		U4 0xd57e9025, U4 0x85af4c85, U4 0xfb84dcd5, U4 0xa944a5b4,
+		U4 0xcfabf6c6, U4 0xb5377735, U4 0x21c01cb5, U4 0x9fd5454f,
+		U4 0x45e1cef4, U4 0xd95277b4, U4 0x9712a11b, U4 0x2bb81a8b,
+		U4 0xa70779c6, U4 0x94e91f0c, U4 0x62555410, U4 0xec4757fa,
+		U4 0x4ca6bdb1, U4 0x2135e255, U4 0x0a957956, U4 0x39277356,
+		U4 0x81c49368, U4 0xbcf203d2, U4 0x3e07dcd7, U4 0x937e6c5b,
+		U4 0x50e3373e, U4 0xb6d05f54, U4 0x516ab898, U4 0x2d3f9fb7,
+		U4 0x37ee5374, U4 0xcf43c981, U4 0xaa3d1ca8, U4 0xa1e23a41,
+		U4 0x16e2909d, U4 0x8e74ca81, U4 0x6bcc50ef, U4 0x1ddbb2c6,
+		U4 0xeb4aed49, U4 0x9cace6af, U4 0xd3813c23, U4 0xdccf5cce,
+		U4 0x7e0a802a, U4 0xcc94d0f6, U4 0x51394574, U4 0x309153fc,
+		U4 0xcd37b014, U4 0x090bd7ab, U4 0x5619c58f, U4 0xb6ecefbe,
+		U4 0x8ae07a2d, U4 0x5bbc0db5, U4 0x7293d157, U4 0x67493794,
+		U4 0x344247fe, U4 0x85957498, U4 0x9646fd2d, U4 0x3b12c1e4,
+		U4 0x4d06c306, U4 0xec9ec780, U4 0xdf87c0ea, U4 0x98904698,
+		U4 0x638ffd82, U4 0x64481817, U4 0x31f43fee, U4 0xb8df6030,
+		U4 0xc51dccfe, U4 0x9d89168a, U4 0x11cf39a0, U4 0x293f6cb8,
+		U4 0x7017d0a8, U4 0x7977a710, U4 0x8439fd86, U4 0xc9a2cf4a,
+		U4 0x420c2ad8, U4 0x6aaf2250, U4 0x8bdebbfc, U4 0xf07dc895,
+		U4 0x8683e63e, U4 0xdfd6f1df, U4 0x0bf41a31, U4 0x5d65d9c0,
+		U4 0x285a42dd, U4 0xf23cb324, U4 0xd4dc56ad, U4 0x984be1c5,
+		U4 0x276e60b6, U4 0xa16e9030, U4 0x7f2029c8, U4 0x14a95305,
+		U4 0xd86e135e, U4 0x1c6e97dc, U4 0x9633aceb, U4 0x12c40ff9);
+
+	// We are using 32-bit words everywhere here, because bignum arithmetic without inline assembly is really hard to do properly and efficiently when using 64-bit words. We do in some places need LONGMUL and LONGDIV, regardless, though.
+
+	[#Words] BigInt {
+		Digits: U4[Words];
+
+		{} --;
+		{v: U4} -- { Digits[0] := v; }
+
+		bytes() U1[#] -- := <U1 *>(Digits!)[FOR SIZEOF(#Digits)];
+
+		lower() [#Words/2]BigInt \ := <[#Words/2]BigInt \>(<VOID \>(&THIS));
+		upper() [#Words/2]BigInt \ := <[#Words/2]BigInt \>(<VOID \>(&THIS)) + 1;
+
+		# bit(i: U4) BOOL -- := Digits[i/32] & (U4 1 << (i%32));
+		# byte(i: U4) U1 -- := <U1 #*>(Digits!)[FOR SIZEOF(#Digits)][i];
+
+		set_bit(i: U4) VOID -- { Digits[i/32] |= U4 1 << (i%32); }
+		truncate_to_bits(length: U4) VOID --
+		{
+			IF(length >= 32*Words) RETURN;
+
+			// clear all whole digits.
+			FOR(i ::= (length+31)/32; i < Words; i++)
+				Digits[i] := 0;
+
+			// partial digit clear.
+			Digits[length / 32] &= ((U4 1<<(length%32))-1);
+		}
+
+		# first1pos() U2 --
+		{
+			FOR(Digits)
+				IF(IT)
+					= 32 * IOTA + FIRST1POS IT;
+			= 32 * ##Digits;
+		}
+
+		# last1pos() U2 --
+		{
+			FOR(Digits; --)
+				IF(IT)
+					= 32 * IOTA + LAST1POS IT;
+			= 32 * ##Digits;
+		}
+		# is_zero() BOOL -- := last1pos() == 32 * ##Digits;
+
+		# shr_into(amount: U2, result: THIS \) VOID
+		{
+			// ASSERT(amount < 32 * Words); // -- GCC 14.2.0 bug: this assert NEVER triggers, but it somehow breaks this function in -O2. But if we move it below the variables, it does not cause problems even in -O2. Swapping out the division with shift and masking does not change anything. If we use a IF!() RETURN; instead of an assert, it also does not break. If we use IF!() DIE; it also breaks, but if we do IF!() { os::term::PrintLine_v(); DIE; }, it does not break. So it clearly has something to do with conditional aborts...
+			shift_digits ::= amount / 32;
+			shift_bits ::= amount % 32;
+
+			IF(shift_digits) // Zero high words.
+				FOR(result->Digits[FROM Words - shift_digits]) IT := 0;
+
+			write ::= result->Digits[];
+			FOR(Digits[FROM shift_digits UNTIL Words-1]) // 64-bit shift trick...
+				*write++ := *<U8 #*>(&IT) >> shift_bits;
+
+			*write := Digits[Words-1] >> shift_bits; // highest word.
+		}
+		# THIS >> (amount: U2) THIS
+			{ x: THIS(NOINIT); THIS.shr_into(amount, &x); = x; }
+		THIS >>= (amount: U2) VOID
+			{ x ::= THIS;      x.shr_into(amount, &THIS); }
+
+		sub(rhs: THIS #&) S4
+		{
+			borrow: S8;
+			FOR(Digits)
+			{ // TODO: add "sub with borrow" intrinsic.
+				result: S8 := (S8 U8 IT - S8 U8 rhs.Digits[IOTA]) + borrow;
+				(IT, borrow) := (result, result >> 32);
+			}
+			= borrow;
+		}
+		THIS -= (rhs: THIS #&) VOID { ASSERT(!sub(rhs)); }
+
+		add(rhs: THIS#&) U4
+		{
+			carry: U8;
+			FOR(Digits)
+			{ // TODO: add "add with carry" intrinsic.
+				result: U8 := (U8 IT + U8 rhs.Digits[IOTA]) + carry;
+				(IT, carry) := (result, result >> 32);
+			}
+			= carry;
+		}
+		THIS += (rhs: THIS #&) VOID { ASSERT(!add(rhs)); }
+
+		THIS <<= (amount: U2) VOID
+		{
+			digits_32 ::= Digits!;
+
+			shift_digits ::= amount >> 5;
+			shift_bits ::= amount & 31;
+
+			cut_digits ::= Words - shift_digits;
+			intact_digits ::= Words - (cut_digits + shift_digits);
+
+			ASSERT(amount < 32 * Words);
+
+			count_32# ::= Words;
+
+			FOR(i ::= count_32; --i > shift_digits;)
+			{
+				sh ::= (*<U8 #*>(&digits_32[(i-1) - shift_digits]) << shift_bits);
+				digits_32[i] := sh >> 32;
+			}
+
+			digits_32[shift_digits] := digits_32[0] << shift_bits;
+
+			FOR(shift_digits)
+				digits_32[IOTA] := 0;
+		}
+
+		# THIS <> (rhs: THIS #&) S1
+		{
+			different ::= FALSE;
+			sign: S1 := 0;
+			FOR(Digits; --)
+			{
+				s : S1 := IT <> rhs.Digits[IOTA];
+				sign := different ?? sign : s;
+				different |= s;
+			}
+			= sign;
+		}
+
+		# THIS < (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
+		# THIS <= (rhs: THIS #&) BOOL -- := (THIS <> rhs) < 0;
+		# THIS == (rhs: THIS #&) BOOL -- := (THIS <> rhs) == 0;
+		# THIS != (rhs: THIS #&) BOOL -- := (THIS <> rhs) != 0;
+		# THIS >= (rhs: THIS #&) BOOL -- := (THIS <> rhs) >= 0;
+		# THIS > (rhs: THIS #&) BOOL -- := (THIS <> rhs) > 0;
+
+		# long_mul_into(rhs: THIS #&, result: [#2*Words]BigInt \) VOID --
+		{
+			*result := ();
+
+			FOR(rhs.Digits)
+			{
+				outer ::= IOTA;
+				d ::= IT;
+
+				c: U8;
+				w ::= result->Digits[FROM IOTA];
+				FOR(Digits)
+				{
+					product: U8 := U8 d * U8 IT;
+
+					sum: U8 := (U8 w[IOTA] + product) + c;
+					w[IOTA] := sum;
+					c := sum >> 32;
+				}
+				FOR(result->Digits[FROM IOTA + Words])
+				{
+					sum: U8 := U8 IT + c;
+					IT := sum;
+					c := sum >> 32;
+				}
+			}
+		}
+
+		// THIS += n * d, with carry.
+		add_short_mul(n: THIS #&, d: U4) U4 {
+			carry: U8;
+			FOR(Digits)
+			{
+				product ::= U8 (S8 U8 n.Digits[IOTA] * S8 U8 d) + carry + U8 IT;
+				carry := product >> 32;
+				IT := U4 product;
+			}
+			= carry;
+		}
+
+		// THIS -= n * d.
+		sub_short_mul(n: THIS #&, d: U4) S8 {
+			mul_carry: U8;
+			borrow: S8;
+			FOR(Digits)
+			{
+				// Carry is always <= 32-bit.
+				product ::= U8(S8 U8 n.Digits[IOTA] * S8 U8 d) + mul_carry;
+				digit: U4 (NOINIT);
+				(digit, mul_carry) := (U4 product, product >> 32);
+
+				// Borrow is always 0 or -1.
+				adjusted: S8 := S8 (U8 IT - U8 digit) + borrow;
+				(IT, borrow) := (adjusted, adjusted >> 32);
+			}
+			= -S8 mul_carry + borrow;
+		}
+
+		# shl_1_digit_into(out: THIS \) U4
+		{
+			c ::= Digits[##Digits-1];
+			FOR(out->Digits[FROM 1]; --) IT := Digits[IOTA];
+			out->Digits[0] := 0;
+			= c;
+		}
+
+		//  THIS := (carry:THIS) % modulo -- This function is only used in prepping a modulus. ASSUMPTION: modulo must have some of its 64 most significant bits set. Ideally, one of its most significant 4 bits or something.
+		carry_mod(carry: U8, modulo: THIS #&) VOID
+		{
+			// q := [c][c]:[D][D] / [M][M];
+			msw_this_hi: U8 := U8 carry; // c:c
+			msw_this_lo: U8 := *<U8#*>(&Digits[##Digits-2]); // D:D
+			msw_mod: U8 := *<U8#*>(&modulo.Digits[##Digits-2]); // M:M
+			ASSERT(carry <= U8 1 << 34);
+			ASSERT(msw_mod > carry);
+			ASSERT(msw_mod > U8 1<<32);
+
+			// estimate ratio, with error >=0, <1, erring on the side of being too low. We can never be off by more than 1. We do one final correction later.
+			q_r ::= LONGDIV(msw_this_hi, msw_this_lo, msw_mod);
+			// ($q,$r) ::= hi:lo /% mod
+			q_r.(0) -= (q_r.(1) < q_r.(0)); // make sure we never overshoot.
+
+			mod32: THIS (NOINIT); modulo.shl_1_digit_into(&mod32);
+			THIS.sub_short_mul(mod32, q_r.(0) >> 32); // remove the upper half of carry.
+			THIS.sub_short_mul(modulo, U4 q_r.(0)); // remove the lower half of carry.
+			THIS.sub_short_mul(modulo, THIS>=modulo); // If we were off by 1.
+		}
+
+		# divide_unprotected_into(modulo: THIS #&, quotient: THIS \) VOID
+		{
+			acc ::= THIS;
+			*quotient := ();
+
+			ASSERT(modulo != 0);
+			// mod_ext := modulo:0 (high:low), msb should be 1.
+			missing_bits ::= (Words * 32 -1) - modulo.last1pos();
+			mod ::= modulo;
+			ASSERT(missing_bits < 32*Words);
+			IF(missing_bits < 0) RETURN;
+
+			mod <<= missing_bits;
+
+			ASSERT(mod.last1pos() == Words * 32 -1);
+
+			DO(i ::= missing_bits)
+			{
+				IF(acc >= mod)
+				{
+					ASSERT(acc >= mod);
+					acc -= mod;
+					quotient->set_bit(i);
+				}
+			} FOR(i--; mod >>= 1)
+		}
+
+		mixed_mod_assign_slow_unprotected(modulo: [#Words/2]BigInt #&) VOID
+		{
+			// Shift-and-subtract, by starting with maxed-out modulo, halving the modulo every time.
+
+			// mod_ext := modulo:0 (high:low), msb should be 1.
+			mod_ext: THIS;
+			*mod_ext.lower() := modulo;
+			missing_bits ::= ((Words * 32) -1) - mod_ext.last1pos();
+			mod_ext <<= missing_bits;
+
+			ASSERT(mod_ext.last1pos() == Words * 32 -1);
+
+			FOR(missing_bits)
+			{
+				THIS.sub_short_mul(mod_ext, THIS >= mod_ext);
+				mod_ext >>= 1;
+			}
+			THIS.sub_short_mul(mod_ext, THIS >= mod_ext);
+		}
+
+		ModuloAccel {
+			// For each excess digit in a long multiplication, the remainder % N if that digit had the value 1. That way, we can trivially reduce a long multiplication to a series of additions, with single-digit multiplication, and one final reduction step.
+			CarryRem: [#Words]BigInt[Words];
+
+			{BARE};
+			:ladder{n: [#Words]BigInt #&}: CarryRem(NOINIT)
+			{
+				CarryRem[0] := ();
+				CarryRem[0].carry_mod(1, n);
+
+				FOR(CarryRem[FROM 1])
+				{
+					c ::= CarryRem[IOTA].shl_1_digit_into(&IT);
+					IT.carry_mod(c, n);
+				}
+			}
+		}
+
+		mul_mod_assign_fast(rhs: THIS #&, modulo: THIS #&, acc: ModuloAccel #&) VOID
+		{
+			result: THIS (NOINIT);
+
+			carry_excess: U8 := 0; // C1:C0 carry digits, after the bigint.
+
+			{	// 1. Compute all digits that fit.
+				// series of D*D, yields C1:C0:D.
+				carry_internal: U8; // C1:C0, produced by a single product sum.
+				FOR(result.Digits)
+				{
+					sum: U8 := carry_internal; // C0':D := C1:C0, start with last carry.
+					carry_internal := 0; // C1:C0 := 0
+
+					FOR(l ::= 0; l <= IOTA; l++)
+					{
+						ld ::= Digits[l];
+						rd ::= rhs.Digits[IOTA - l];
+
+						product: U8 := (U8 ld * U8 rd); // C0'':D'
+						product_d ::= U4 product;
+						product_c ::= product >> 32;
+
+						sum += U4 product_d; // C0':D += D'
+						carry_internal += product_c; // C1:C0 += C0''
+					}
+
+					IT := U4 sum; // IT := D
+					carry_internal += sum >> 32; // C1:C0 += C0'
+				}
+				carry_excess := carry_internal;
+			}
+
+			// 2. Compute all overflow digits.
+
+			{
+				carry_internal: U8 := carry_excess;
+				carry_excess := 0;
+
+				FOR(Words)
+				{
+					sum: U8 := carry_internal;
+					carry_internal := 0;
+
+					// The last iteration is empty, and will only handle the last carry.
+					FOR(l ::= IOTA+1; l < Words; l++)
+					{
+						ld ::= Digits[l];
+						rd ::= rhs.Digits[Words + IOTA - l];
+
+						product: U8 := (U8 ld * U8 rd);
+						product_d ::= U4 product;
+						product_c ::= product >> 32;
+
+						sum += U4 product_d;
+						carry_internal += product_c;
+					}
+
+					digit ::= U4 sum;
+					carry_internal += sum >> 32;
+
+					// Reduce overflow digit to its appropriate remainder.
+					carry_excess += result.add_short_mul(acc.CarryRem[IOTA], digit);
+				}
+
+				ASSERT(carry_internal == 0); // It should be impossible to have more carry here.
+			}
+
+			// 3. final resolve.
+			// We are now in the form: C1:C0:D...
+			// 3.1. resolve high carry (C1)
+			{ // this makes sure we have a very small C1 (up to 1 bit), so that the carry_mod() operation works properly. If mod always had its msb set, this would not be necessary.
+				c_hi ::= carry_excess >> 32;
+				carry_excess := U4 carry_excess;
+				carry_excess += result.add_short_mul(acc.CarryRem[1], c_hi);
+			}
+			result.carry_mod(carry_excess, modulo);
+
+			THIS := result;
+		}
+
+		# pow_mod_fast_into(power: THIS #&, modulo: THIS#&, accel: ModuloAccel #&, rem: THIS \) VOID
+		{
+			k_bits ::= Words * 32;
+
+			*rem := 1;
+
+			last1pos ::= power.last1pos();
+			ASSERT(last1pos != k_bits);
+
+			lut16: THIS[16] (NOINIT);
+			lut16[0] := 1; lut16[1] := THIS;
+			FOR(lut16[FROM 2])
+				{ IT := lut16[IOTA+1]; IT.mul_mod_assign_fast(THIS, modulo, accel); }
+
+			FOR(last1pos/8 +1; --) // walk from highest to lowest bid, and simply push up the value by multiplying, so that we always multiply low exponents, and they get shifted to their final value later on.
+			{
+				b ::= power.byte(IOTA);
+				hi ::= U1 b >> 4;
+				lo ::= b & 0xf;
+
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+				rem->mul_mod_assign_fast(lut16[hi], modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+					rem->mul_mod_assign_fast(*rem, modulo, accel);
+				rem->mul_mod_assign_fast(lut16[lo], modulo, accel);
+			}
+		}
+	}
+
+	[#Bits] TYPE BitInt := [#(Bits+31) / 32]BigInt;
+
+	[#Words] gcd(
+		a: [#Words]BigInt #&,
+		b: [#Words]BigInt #&,
+		res: [#Words]BigInt \) VOID
+	{
+		f1p_a ::= a.first1pos();
+		f1p_b ::= b.first1pos();
+		// Remove all trailing zeroes.
+		tmp_a ::= a >> f1p_a;
+		tmp_b ::= b >> f1p_b;
+
+		sign: S8;
+		FOR(i ::= 0; sign := (tmp_a <> tmp_b); i++)
+		{
+			ASSERT(i < 100000);
+			lesser         ::= (sign < 0) ?? &tmp_a     : &tmp_b;
+			greater        ::= (sign < 0) ?? &tmp_b     : &tmp_a;
+
+			*greater -= *lesser;
+			*greater >>= greater->first1pos();
+		}
+
+		*res := tmp_a;
+
+		amount ::= (f1p_a > f1p_b) ?? f1p_b : f1p_a;
+		*res <<= amount;
+	}
+
+	[#Words]are_coprime(
+		a: [#Words]BigInt #&,
+		b: [#Words]BigInt #&) BOOL
+	{
+		tmp: [#Words]BigInt (NOINIT);
+		gcd(a,b, &tmp);
+		= tmp.last1pos() == 0;
+	}
+
+	[#Words]lcm_unprotected_into(a: [#Words]BigInt #&, b: [#Words]BigInt #&, res: [#2*Words]BigInt \) VOID
+	{
+		long: [#2*Words]BigInt (NOINIT); a.long_mul_into(b, &long);
+		_gcd: [#2*Words]BigInt (NOINIT); gcd(a, b, _gcd.lower()); *_gcd.upper() := ();
+		long.divide_unprotected_into(_gcd, res);
+		*res := long;
+	}
+
+	[#Words]
+	rabin_miller_prime_test(
+		n: [#Words]BigInt &,
+		rng: sha3::State *,
+		sample_start: U8,
+		sample_count: U4) BOOL
+	{
+		ASSERT(n.Digits[0] & 1);
+
+		// Quick GCD check:
+		IF#(Words == 2048 / 32)
+		{
+			IF!(are_coprime(n, *<[#2048 / 32]BigInt #*>(&primes_2k))) = FALSE;
+		}
+		ELSE IF#(Words == 4096 / 32)
+		{
+			IF!(are_coprime(n, *<[#4096 / 32]BigInt #*>(&primes_4k))) = FALSE;
+		}
+
+		accel: [#Words]BigInt::ModuloAccel := :ladder(n);
+
+		n.Digits[0] ^= 1; // n-1 (since n is already odd)
+		s ::= n.first1pos(); // CTZ(n-1)
+		n.Digits[0] ^= 1; // restore n.
+
+		d: [#Words]BigInt (NOINIT); n.shr_into(s, &d);
+
+		rem: [#Words]BigInt (NOINIT);
+		a: [#Words]BigInt ();
+
+		FOR[samples](sample_count)
+		{
+			a.Digits[0] := sample_start + IOTA;
+			IF(rng) rng->shake_output(a.bytes());
+
+			n.Digits[0] ^= 1; // keep a between 2 and n-2.
+			IF(a >= n) { a -= n; a += 3; }
+			n.Digits[0] ^= 1;
+
+			a.pow_mod_fast_into(d, n, accel, &rem); // a^d % n
+
+			n.Digits[0] ^= 1; // restore n-1
+			is_pred ::= rem == n;
+			n.Digits[0] ^= 1; // restore n
+
+			IF(rem.last1pos() == 0) CONTINUE [samples];
+			IF(is_pred) CONTINUE [samples];
+
+			FOR(s-1)
+			{
+				rem.mul_mod_assign_fast(rem, n, accel); // a^((2^r)d) % n
+
+				n.Digits[0] ^= 1; // restore n-1
+				is_pred ::= rem == n;
+				n.Digits[0] ^= 1; // restore n
+
+				IF(is_pred) CONTINUE [samples];
+				IF(rem.last1pos() == 0) BREAK;
+			}
+			= FALSE;
+		}
+		= TRUE;
+	}
+
+	[#Bits] generate_prime(rng: sha3::State &, length: U4) {[#Bits]BitInt, U4, U8}
+	{
+		IF(!length) length := Bits;
+		ASSERT(length > 1 && length <= Bits);
+
+		candidate: [#Bits]BitInt (NOINIT);
+		rng.shake_output(candidate.bytes());
+		candidate.Digits[0] |= 1;
+		candidate.truncate_to_bits(length-(1 + (length <= 32)));
+		candidate.set_bit(length-1);
+
+		mod1155: U4; {
+			mod ::= candidate; mod.mixed_mod_assign_slow_unprotected(1155);
+			mod1155 := mod.Digits[0];
+		}
+
+		primebits1155: ? #& := *<[# ##primes_1155]BigInt# *>(&primes_1155);
+
+		prime_test_time: U8;
+		i ::= 0;
+		FOR(;; i++)
+		{
+			ASSERT(i < 100000);
+			IF(mod1155 >= 1155) mod1155 -= 1155;
+
+			IF(primebits1155.bit(mod1155))
+			{
+				start ::= NOW;
+				IF(rabin_miller_prime_test(candidate, NULL, 2, 128))
+				{
+					prime_test_time := NOW - start;
+					BREAK;
+				}
+			}
+
+			IF!((i+1) & 255) os::term::PrintLine_v("Still searching... (#", std::io::format::dec(i+1),")");
+			candidate += 2;
+			mod1155 += 2;
+			ASSERT(candidate.last1pos()+1 == length);
+		}
+
+		= (candidate, i, prime_test_time);
+	}
+
+	// S:D... representation, where S is 0 or -1.
+	[#Words] SignedBigInt {
+		Int: [#Words+1]BigInt;
+
+		raw() [#Words]BigInt \ -- := <[#Words]BigInt \>(&Int);
+		#? sign() U4 #? & -- := Int.Digits[Words];
+
+		:with_sign{v: [#Words]BigInt #&, sign: BOOL}: Int(NOINIT)
+		{
+			signDigit: U4 := MASK(sign);
+			FOR(v.Digits) Int.Digits[IOTA] := IT ^ signDigit;
+			THIS.sign() := signDigit;
+			Int.add(sign);
+		}
+
+		[T] :unsigned{v: T!&&} --: Int (NOINIT)
+			{ *raw() := <T!&&>(v); sign() := 0; }
+
+		# abs() [#Words]BigInt {
+			result: [#Words]BigInt (NOINIT);
+			sign ::= THIS.sign();
+			FOR(result.Digits) IT := Int.Digits[IOTA] ^ sign;
+			result.add(sign & 1);
+			= result;
+		}
+
+		THIS += (rhs: THIS #&) VOID {
+			Int.add(rhs.Int);
+			sign() := S4 sign() >> 31;
+		}
+
+		THIS -= (rhs: THIS #&) VOID {
+			Int.sub(rhs.Int);
+			sign() := S4 sign() >> 31;
+		}
+	}
+
+	[#Words] invert(elem: [#Words]BigInt #&, modulus: [#Words]BigInt #&) [#Words]BigInt
+	{
+		t:    [#Words]SignedBigInt := :unsigned(0);
+		newt: [#Words]SignedBigInt := :unsigned(1);
+		r:    [#Words]SignedBigInt := :unsigned(modulus);
+		newr: [#Words]SignedBigInt := :unsigned(elem);
+
+		WHILE(!newr.Int.is_zero())
+		{
+			quotient: [#Words]BigInt   (NOINIT);
+			long:     [#2*Words]BigInt (NOINIT);
+
+			qSign ::= r.sign() ^ newr.sign();
+			r.abs().divide_unprotected_into(newr.abs(), &quotient);
+
+			lSign ::= qSign ^ newt.sign();
+			quotient.long_mul_into(newt.abs(), &long);
+			t :=: newt; newt -= :with_sign(*long.lower(), lSign);
+
+			lSign := qSign ^ newr.sign();
+			quotient.long_mul_into(newr.abs(), &long);
+			r :=: newr; newr -= :with_sign(*long.lower(), lSign);
+		}
+
+		IF(!r.sign() && *r.raw() >= 2) DIE "Not invertible";
+		t.raw()->add_short_mul(modulus, t.sign() & 1);
+
+		= *t.raw();
+	}
+}

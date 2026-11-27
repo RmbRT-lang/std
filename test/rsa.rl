@@ -3,9 +3,7 @@ INCLUDE 'std/crypto/rsa'
 INCLUDE 'os/terminal'
 INCLUDE 'std/io/format'
 
-::std::rsa {
-
-
+::std::crypto::rsa {
 	(/TEST "RSA genprime vs. RSA32" {
 		seed: U1[?](U1 1, U1 2, U1 3, U1 CPU_COUNTER, RANDOM U1);
 		p_rsa: U4;

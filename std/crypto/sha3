@@ -1,5 +1,5 @@
 (/rl/)
-::std::sha3 {
+::std::crypto::sha3 {
 	keccak_function(state: U8[25] &) VOID
 	{
 		STATIC round_constants: U8[24]#(

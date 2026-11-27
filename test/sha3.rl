@@ -1,7 +1,7 @@
 INCLUDE 'std/crypto/sha3'
 
 
-::std::sha3
+::std::crypto::sha3
 {
 	TEST "SHA3 empty" {
 		empty ::= sha3_256(NULL);
