@@ -1,0 +1,226 @@
+(/rl/)
+INCLUDE "sha3"
+INCLUDE "rsa"
+
+::std::crypto::dlog
+{
+	StrongPrimeDerivation {
+		SOff: U2;
+		TOff: U2;
+		L: U2;
+		K: U2;
+	}
+	[#Words] StrongPrimeGen {
+		P: [#Words]BigInt;
+		S: [#Words/2]BigInt;
+		T: [#Words/2]BigInt;
+		Derivation: StrongPrimeDerivation;
+	}
+
+	[#Bits] generate_strong_prime(rng: sha3::State &) [#(Bits+31) / 32]StrongPrimeGen
+	{
+		(/ This follows "Strong primes are easy to find" by John Gordon, Cybermation Ltd., 1985.
+
+		Strong primes are defined as follows:
+			- p large prime
+			- p+1 % s = 0, s large prime
+			- p-1 % r = 0, r large prime
+			- r-1 % t = 0, t large prime
+
+		Giving s,r,t allows us to prove that p is a secure prime.
+
+		Procedure:
+			1. generate half-length prime s.
+			2. generate almost half-length prime t.
+			3. find half-length prime r: half-length multiple of t.
+			4. find full-length prime p: linear combination of s, r.
+				4.1. calculate p0 = (s^(r-1) - r^(s-1)) % rs  (Theorem 1 in the paper)
+				4.2. if p0 is even, p0 += rs
+				4.3. find full-length prime p = p0 + 2rs*k, for some k.
+					- Note: since we step with stride 2rs, we can compute p0%1155 and 2rs%1155, and use that to check p%1155 for any k very efficiently. Afterwards, we perform a normal GCD, and then the full primality test.
+
+		Note on bit lengths:
+			For desired bit length n, we expect to need up to maybe n attempts to find a prime p. This means, rs should be log2(n) bits shorter than p, and k should start at n, so that within n attempts, the bit length of k does not change, so we reach full bit length for p.
+			The same principle applies to t, for finding an appropriate r.
+			To make absolutely sure, we can start k at 8n, which should give us absolute certainty that we do not exceed the targeted bit length.
+		/)
+
+		primebits1155: ? #& := *<[# ##primes_1155]BigInt# *>(&primes_1155);
+
+		p_bits: U4 := Bits-1; // we cannot guarantee the length of p.
+
+		// Controls the expected maximum amount of attempts we need to find a prime.
+		BITLENGTH_ATTEMPTS_FACTOR: U4# := 8;
+
+		max_p_attempts: U4 := p_bits * BITLENGTH_ATTEMPTS_FACTOR;
+		p_buffer_bits: U4 := 1 + LAST1POS max_p_attempts;
+
+		rs_max_bits: U4 := p_bits - p_buffer_bits;
+		rs_min_bits: U4 := rs_max_bits-1; // r*s multiplication may be 1 bit short.
+
+		s_bits ::= rs_max_bits / 2;
+		r_max_bits ::= rs_max_bits/2;
+		r_min_bits ::= r_max_bits-1; // r might vary by 1 bit upwards.
+		// Example: t := 1.5...<<n, L0 == 1<<m, L0+2L = 1.5<<m
+		// then: r := 2.25<<(n+m), which is 1.125<<(n+m+1).
+		// Thus, we target 1 bit less, and adjust for the discrepancy later for p.
+
+		max_r_attempts: U4 := r_min_bits * BITLENGTH_ATTEMPTS_FACTOR;
+		r_buffer_bits ::= 1 + LAST1POS max_r_attempts;
+		t_bits ::= r_min_bits - r_buffer_bits;
+
+		// 1. generate s
+		s: [#Bits]BitInt; sd: U4; {
+			g ::= [#Bits/2]generate_prime(rng, s_bits);
+			*s.lower() := g.(0); sd := g.(1);
+		}
+		// 2. generate t
+		t: [#Bits]BitInt; td: U4; {
+			g ::= [#Bits/2]generate_prime(rng, t_bits);
+			*t.lower() := g.(0); td := g.(1);
+		}
+
+		L: U4 := 0;
+		K: U4 := 0;
+
+
+		r ::= t; r <<= r_buffer_bits; r += 1; // r0 = L0*t + 1
+		ASSERT(r.last1pos()+1 == r_min_bits);
+		{ // 3.
+			// r = 2L * t + 1 = 1+L*(2t)
+			two_t ::= *t.lower(); two_t <<= 1;
+
+			t_mod1155: U4; { // t % 1155
+				mod ::= *t.lower(); mod.mixed_mod_assign_slow_unprotected(1155);
+				t_mod1155 := mod.Digits[0];
+			}
+
+			r_mod1155 ::= ((t_mod1155 << r_buffer_bits) + 1) % 1155; // r % 1155
+			two_t_mod1155 ::= (2*t_mod1155) % 1155; // 2t % 1155
+
+			FOR[find_r](; ; L++)
+			{
+				ASSERT(L < max_r_attempts);
+				r_mod1155 -= (r_mod1155 >= 1155) ?? 1155 : 0;
+
+				{
+					mod ::= r;
+					mod.mixed_mod_assign_slow_unprotected(1155);
+					ASSERT(r_mod1155 == mod.Digits[0]);
+				}
+
+				IF(primebits1155.bit(r_mod1155))
+					IF(rabin_miller_prime_test(*r.lower(), NULL, 2, 128))
+						BREAK [find_r];
+
+				*r.lower() += two_t; r_mod1155 += two_t_mod1155;
+			}
+
+			ASSERT(r.last1pos()+1 >= r_min_bits);
+			ASSERT(r.last1pos()+1 <= r_max_bits);
+		}
+
+		// 4.
+		rs: [#Bits]BitInt (NOINIT); r.lower()->long_mul_into(*s.lower(), &rs);
+
+
+		// 4.1.
+		p0: [#Bits]BitInt (0); {
+			s_mod: [#Bits]BitInt (NOINIT);
+			r_mod: [#Bits]BitInt (NOINIT);
+
+			accel: [#Bits]BitInt::ModuloAccel := :ladder(rs);
+
+			ASSERT(r.Digits[0] & 1);
+			ASSERT(s.Digits[0] & 1);
+			r.Digits[0] ^= 1; // r-1
+			s.pow_mod_fast_into(r, rs, accel, &s_mod); // s_mod = s^(r-1) % rs
+			r.Digits[0] ^= 1; // restore r
+
+			ASSERT(r.Digits[0] & 1);
+			ASSERT(s.Digits[0] & 1);
+			s.Digits[0] ^= 1; // s-1
+			r.pow_mod_fast_into(s, rs, accel, &r_mod); // r_mod = r^(s-1) % rs
+			s.Digits[0] ^= 1; // restore s
+
+			// p0 := (s_mod - r_mod) % rs
+			p0 := rs;
+			p0 += s_mod;
+			p0 -= r_mod;
+			IF(p0 >= rs) p0 -= rs;
+			ASSERT(p0 < rs);
+		}
+
+		// 4.2.
+		IF(p0.bit(0) == 0) ASSERT(!p0.add(rs));
+		ASSERT(p0.bit(0) == 1);
+		//p: ?& := p0;
+
+		p: [#Bits]BitInt;
+
+		// 4.3.
+		{
+			p_buffer_bits := p_bits - (rs.last1pos()+1);
+			os::term::PrintLine_v("p_buffer_bits: ", std::io::format::dec(p_buffer_bits));
+			// Make sure we do not overflow here.
+			ASSERT(!p0.add_short_mul(rs, 1<<p_buffer_bits));
+
+			p := p0;
+
+			// p = p0 + 2K * rs = p0 + K*(2rs)
+			two_rs ::= rs; two_rs += rs;
+
+			p0_mod1155: U4; { // p0 % 1155
+				mod ::= p0; mod.mixed_mod_assign_slow_unprotected(1155);
+				p0_mod1155 := mod.Digits[0];
+			}
+			two_rs_mod1155: U4; { // 2rs % 1155
+				mod ::= two_rs; mod.mixed_mod_assign_slow_unprotected(1155);
+				two_rs_mod1155 := mod.Digits[0];
+			}
+
+			p_mod1155 ::= p0_mod1155 % 1155; // p % 1155
+
+			FOR[find_p](; ; K++)
+			{
+				ASSERT(p.bit(0));
+				IF!(K < max_p_attempts)
+				{
+					os::term::PrintLine_v("max_p_attempts: ", std::io::format::dec(max_p_attempts), " exceeded without finding a prime!"
+					"\nBits: ", std::io::format::dec(p_bits));
+					DIE;
+				}
+				p_mod1155 -= (p_mod1155 >= 1155) ?? 1155 : 0;
+
+				{
+					mod ::= p;
+					mod.mixed_mod_assign_slow_unprotected(1155);
+					ASSERT(p_mod1155 == mod.Digits[0]);
+				}
+
+				IF(primebits1155.bit(p_mod1155))
+					IF(rabin_miller_prime_test(p, NULL, 2, 128))
+						BREAK [find_p];
+
+				p += two_rs; p_mod1155 += two_rs_mod1155;
+			}
+		}
+		os::term::PrintLine_v(
+			"t bits: ", std::io::format::dec(t.last1pos()+1), "\n"
+			"r bits: ", std::io::format::dec(r.last1pos()+1), ", L: ", std::io::format::dec(1<<(r_buffer_bits-1)), " + ", std::io::format::dec(L), "\n"
+			"s bits: ", std::io::format::dec(s.last1pos()+1), "\n"
+			"rs bits: ", std::io::format::dec(rs.last1pos()+1), "\n"
+			"p target bits: ", std::io::format::dec(p_bits), "\n"
+			"p bits: ", std::io::format::dec(p.last1pos()+1), ", K: ", std::io::format::dec(1<<(p_buffer_bits-1)), " + ", std::io::format::dec(K));
+
+		ASSERT(p.last1pos()+1 >= p_bits);
+
+		ret: [# ##p.Digits]StrongPrimeGen (NOINIT);
+		ret.P := p0;
+		ret.S := *s.lower(); ret.Derivation.SOff := sd;
+		ret.T := *t.lower(); ret.Derivation.TOff := td;
+		ret.Derivation.L := L + max_r_attempts;
+		ret.Derivation.K := K + max_p_attempts;
+		= ret;
+	}
+}
