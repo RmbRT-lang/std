@@ -80,15 +80,21 @@ INCLUDE "rsa"
 			*t.lower() := g.(0); td := g.(1);
 		}
 
+		L0: U4;
 		L: U4 := 0;
+		K0: U4;
 		K: U4 := 0;
 
 
-		r ::= t; r <<= r_buffer_bits; r += 1; // r0 = L0*t + 1
-		ASSERT(r.last1pos()+1 == r_min_bits);
+		r: [#Bits]BitInt := 1;
 		{ // 3.
+		 	
 			// r = 2L * t + 1 = 1+L*(2t)
 			two_t ::= *t.lower(); two_t <<= 1;
+
+			r_buffer_bits := r_min_bits - (two_t.last1pos()+1);
+		 	r.lower()->add_short_mul(two_t, L0 := 1<<r_buffer_bits); // r0 = L0*t + 1
+			ASSERT(r.last1pos()+1 == r_min_bits);
 
 			t_mod1155: U4; { // t % 1155
 				mod ::= *t.lower(); mod.mixed_mod_assign_slow_unprotected(1155);
@@ -103,21 +109,12 @@ INCLUDE "rsa"
 				ASSERT(L < max_r_attempts);
 				r_mod1155 -= (r_mod1155 >= 1155) ?? 1155 : 0;
 
-				{
-					mod ::= r;
-					mod.mixed_mod_assign_slow_unprotected(1155);
-					ASSERT(r_mod1155 == mod.Digits[0]);
-				}
-
 				IF(primebits1155.bit(r_mod1155))
 					IF(rabin_miller_prime_test(*r.lower(), NULL, 2, 128))
 						BREAK [find_r];
 
 				*r.lower() += two_t; r_mod1155 += two_t_mod1155;
 			}
-
-			ASSERT(r.last1pos()+1 >= r_min_bits);
-			ASSERT(r.last1pos()+1 <= r_max_bits);
 		}
 
 		// 4.
@@ -131,14 +128,10 @@ INCLUDE "rsa"
 
 			accel: [#Bits]BitInt::ModuloAccel := :ladder(rs);
 
-			ASSERT(r.Digits[0] & 1);
-			ASSERT(s.Digits[0] & 1);
 			r.Digits[0] ^= 1; // r-1
 			s.pow_mod_fast_into(r, rs, accel, &s_mod); // s_mod = s^(r-1) % rs
 			r.Digits[0] ^= 1; // restore r
 
-			ASSERT(r.Digits[0] & 1);
-			ASSERT(s.Digits[0] & 1);
 			s.Digits[0] ^= 1; // s-1
 			r.pow_mod_fast_into(s, rs, accel, &r_mod); // r_mod = r^(s-1) % rs
 			s.Digits[0] ^= 1; // restore s
@@ -153,50 +146,33 @@ INCLUDE "rsa"
 
 		// 4.2.
 		IF(p0.bit(0) == 0) ASSERT(!p0.add(rs));
-		ASSERT(p0.bit(0) == 1);
+
 		//p: ?& := p0;
 
 		p: [#Bits]BitInt;
 
 		// 4.3.
 		{
-			p_buffer_bits := p_bits - (rs.last1pos()+1);
-			os::term::PrintLine_v("p_buffer_bits: ", std::io::format::dec(p_buffer_bits));
-			// Make sure we do not overflow here.
-			ASSERT(!p0.add_short_mul(rs, 1<<p_buffer_bits));
-
-			p := p0;
-
 			// p = p0 + 2K * rs = p0 + K*(2rs)
 			two_rs ::= rs; two_rs += rs;
 
-			p0_mod1155: U4; { // p0 % 1155
-				mod ::= p0; mod.mixed_mod_assign_slow_unprotected(1155);
-				p0_mod1155 := mod.Digits[0];
+			p_buffer_bits := p_bits - (two_rs.last1pos()+1);
+			ASSERT(!p0.add_short_mul(two_rs, K0 := 1<<p_buffer_bits)); // Make sure we do not overflow here.
+
+			p := p0;
+
+			p_mod1155: U4; { // p % 1155
+				mod ::= p; mod.mixed_mod_assign_slow_unprotected(1155);
+				p_mod1155 := mod.Digits[0];
 			}
 			two_rs_mod1155: U4; { // 2rs % 1155
 				mod ::= two_rs; mod.mixed_mod_assign_slow_unprotected(1155);
 				two_rs_mod1155 := mod.Digits[0];
 			}
 
-			p_mod1155 ::= p0_mod1155 % 1155; // p % 1155
-
 			FOR[find_p](; ; K++)
 			{
-				ASSERT(p.bit(0));
-				IF!(K < max_p_attempts)
-				{
-					os::term::PrintLine_v("max_p_attempts: ", std::io::format::dec(max_p_attempts), " exceeded without finding a prime!"
-					"\nBits: ", std::io::format::dec(p_bits));
-					DIE;
-				}
 				p_mod1155 -= (p_mod1155 >= 1155) ?? 1155 : 0;
-
-				{
-					mod ::= p;
-					mod.mixed_mod_assign_slow_unprotected(1155);
-					ASSERT(p_mod1155 == mod.Digits[0]);
-				}
 
 				IF(primebits1155.bit(p_mod1155))
 					IF(rabin_miller_prime_test(p, NULL, 2, 128))
@@ -205,22 +181,14 @@ INCLUDE "rsa"
 				p += two_rs; p_mod1155 += two_rs_mod1155;
 			}
 		}
-		os::term::PrintLine_v(
-			"t bits: ", std::io::format::dec(t.last1pos()+1), "\n"
-			"r bits: ", std::io::format::dec(r.last1pos()+1), ", L: ", std::io::format::dec(1<<(r_buffer_bits-1)), " + ", std::io::format::dec(L), "\n"
-			"s bits: ", std::io::format::dec(s.last1pos()+1), "\n"
-			"rs bits: ", std::io::format::dec(rs.last1pos()+1), "\n"
-			"p target bits: ", std::io::format::dec(p_bits), "\n"
-			"p bits: ", std::io::format::dec(p.last1pos()+1), ", K: ", std::io::format::dec(1<<(p_buffer_bits-1)), " + ", std::io::format::dec(K));
-
 		ASSERT(p.last1pos()+1 >= p_bits);
 
 		ret: [# ##p.Digits]StrongPrimeGen (NOINIT);
 		ret.P := p0;
 		ret.S := *s.lower(); ret.Derivation.SOff := sd;
 		ret.T := *t.lower(); ret.Derivation.TOff := td;
-		ret.Derivation.L := L + max_r_attempts;
-		ret.Derivation.K := K + max_p_attempts;
+		ret.Derivation.L := L0 + L;
+		ret.Derivation.K := K0 + K;
 		= ret;
 	}
 }

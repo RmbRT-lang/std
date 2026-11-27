@@ -84,7 +84,6 @@
 		}
 
 		sha_digest() U8[4] & {
-
 			<U1 *>(Buffer!)[Progress] ^= 0x06;
 			<U1 *>(Buffer!)[135] ^= 0x80;
 			keccak_function(Buffer);
