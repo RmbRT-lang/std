@@ -126,21 +126,24 @@ INCLUDE 'std/crypto/sha3'
 		ELSE = ();
 	}
 
-	emsr_pss(m1: U1#[#], m2: U1[#], seed_len: U1, w_len: U1, buffer: U1[#], rng: sha3::State &) VOID
+	emsr_pss_mask(m1: U1#[#], m2: U1[#], seed_len: U1, w_len: U1, buffer: U1[#], rng: sha3::State &) VOID
 	{
 		// message layout (big endian): w | seed | 0... | 1 | m1
 		// since our bigints are little-endian, we use the reverse encoding:
 		// (little endian): (m1 | 1 | 0... | seed) | w | 0
 		// note that m1 appears flipped with respect to the paper.
 
-		wstart ::= ##buffer - w_len;
+		final0 ::= ##buffer-1;
+		wstart ::= final0 - w_len;
 		seedstart ::= wstart - seed_len;
 		padstart ::= ##m1;
 		pad ::= buffer[FROM padstart UNTIL seedstart];
 		m1_ ::= buffer[FOR ##m1];
 
-		w ::= buffer[FROM ##buffer - w_len];
+		w ::= buffer[FROM wstart FOR w_len];
 		seed ::= buffer[FROM seedstart FOR seed_len];
+
+		buffer[final0] := 0;
 
 		FOR(m1_) IT := m1[IOTA]; // m1
 		pad[0] := 1; FOR(pad[AFTER 0]) IT := 0; // padding
@@ -153,6 +156,41 @@ INCLUDE 'std/crypto/sha3'
 			g.shake_output(w);
 
 		sha3::shake_256_xor(w, buffer[UNTIL wstart]);
+	}
+	UNION EMSRPSSUnmaskResult {
+		Ok: U1[#];
+		IntegrityError;
+	}
+	emsr_pss_unmask(masked_buffer: U1[#], m2: U1#[#], seed_len: U1, w_len: U1) EMSRPSSUnmaskResult
+	{
+		final0 ::= ##masked_buffer-1;
+		wstart ::= final0 - w_len;
+		seedstart ::= wstart - seed_len;
+
+		w ::= masked_buffer[FROM wstart FOR w_len];
+		seed ::= masked_buffer[FROM seedstart FOR seed_len];
+		pad ::= masked_buffer[UNTIL seedstart];
+
+		IF(masked_buffer[final0] != 0) = :IntegrityError;
+
+		sha3::shake_256_xor(w, masked_buffer[UNTIL wstart]);
+
+		selector_pos: U4;
+		FOR(pad; --) IF(IT != 0) { selector_pos := IOTA; BREAK; }
+		IF(pad[selector_pos] != 1) = :IntegrityError;
+
+		m1 ::= masked_buffer[UNTIL selector_pos];
+
+		// (little endian): (m1 | 1 | 0... | seed) | w | 0
+		g: sha3::State; // w: Recompute, and xor onto found value, insist XOR result is 0.
+			g.update(seed);
+			g.update(m1);
+			g.update(m2);
+			g.shake_start();
+			g.shake_output_xor(w);
+		FOR(w) IF(IT != 0) RETURN :IntegrityError;
+
+		= :Ok(m1);
 	}
 
 	// KEM
