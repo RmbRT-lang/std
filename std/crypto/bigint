@@ -349,9 +349,9 @@
 		{
 			STATIC ASSERT(ModWords < Words);
 			result: [#ModWords]BigInt := :trunc(THIS);
-			carry: U8 := 0;
-			FOR(Digits[FROM ModWords])
-				carry += result.add_short_mul(accel.CarryRem[IOTA], IT);
+			carry: U8 := Digits[ModWords];
+			FOR(Digits[FROM ModWords+1])
+				carry += result.add_short_mul(accel.CarryRem[IOTA+1], IT);
 			c1 ::= carry >> 32; carry := U4 carry;
 			carry += result.add_short_mul(accel.CarryRem[1], c1);
 			result.carry_mod(carry, modulo);
