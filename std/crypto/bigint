@@ -77,6 +77,19 @@
 		{} --;
 		{v: U4} -- { Digits[0] := v; }
 
+		[#LargerWords] :trunc{v: [#LargerWords]BigInt #&}: Digits(NOINIT)
+		{
+			STATIC ASSERT(LargerWords >= Words);
+			FOR(Digits) IT := v.Digits[IOTA];
+		}
+
+		[#SmallerWords] :zx{v: [#SmallerWords]BigInt #&}: Digits(NOINIT)
+		{
+			STATIC ASSERT(SmallerWords <= Words);
+			FOR(v.Digits) Digits[IOTA] := IT;
+			FOR(Digits[FROM SmallerWords]) IT := 0;
+		}
+
 		bytes() U1[#] -- := <U1 *>(Digits!)[FOR SIZEOF(#Digits)];
 
 		lower() [#Words/2]BigInt \ := <[#Words/2]BigInt \>(<VOID \>(&THIS));
@@ -274,8 +287,15 @@
 		{
 			// q := [c][c]:[D][D] / [M][M];
 			msw_this_hi: U8 := U8 carry; // c:c
-			msw_this_lo: U8 := *<U8#*>(&Digits[##Digits-2]); // D:D
-			msw_mod: U8 := *<U8#*>(&modulo.Digits[##Digits-2]); // M:M
+
+			msw_this_lo: U8 (NOINIT); // D:D
+			IF#(Words >= 2) msw_this_lo := *<U8#*>(&Digits[##Digits-2]);
+			ELSE            msw_this_lo := U8 Digits[0] << 32;
+
+			msw_mod: U8 (NOINIT); // M:M
+			IF#(Words >= 2) msw_mod := *<U8#*>(&modulo.Digits[##Digits-2]);
+			ELSE            msw_mod := U8 modulo.Digits[0] << 32;
+
 			ASSERT(carry <= U8 1 << 34);
 			ASSERT(msw_mod > carry);
 			ASSERT(msw_mod > U8 1<<32);
@@ -318,45 +338,30 @@
 			} FOR(i--; mod >>= 1)
 		}
 
-		mixed_mod_assign_slow_unprotected(modulo: [#Words/2]BigInt #&) VOID
+		# accel_mod() [#2*Words; #Words]TModuloAccel := :ladder(THIS);
+		[#ForWords] # accel_mod_for_words() [#ForWords; #Words]TModuloAccel := :ladder(THIS);
+		[#ForBits] # accel_mod_for_bits() [#(ForBits+31)/32; #Words]TModuloAccel := :ladder(THIS);
+		
+		[#ModWords]
+		# mod_fast(
+			modulo: [#ModWords]BigInt #&,
+			accel: [#Words; #ModWords]TModuloAccel #&) [#ModWords]BigInt --
 		{
-			// Shift-and-subtract, by starting with maxed-out modulo, halving the modulo every time.
-
-			// mod_ext := modulo:0 (high:low), msb should be 1.
-			mod_ext: THIS;
-			*mod_ext.lower() := modulo;
-			missing_bits ::= ((Words * 32) -1) - mod_ext.last1pos();
-			mod_ext <<= missing_bits;
-
-			ASSERT(mod_ext.last1pos() == Words * 32 -1);
-
-			FOR(missing_bits)
-			{
-				THIS.sub_short_mul(mod_ext, THIS >= mod_ext);
-				mod_ext >>= 1;
-			}
-			THIS.sub_short_mul(mod_ext, THIS >= mod_ext);
+			STATIC ASSERT(ModWords < Words);
+			result: [#ModWords]BigInt := :trunc(THIS);
+			carry: U8 := 0;
+			FOR(Digits[FROM ModWords])
+				carry += result.add_short_mul(accel.CarryRem[IOTA], IT);
+			c1 ::= carry >> 32; carry := U4 carry;
+			carry += result.add_short_mul(accel.CarryRem[1], c1);
+			result.carry_mod(carry, modulo);
+			= result;
 		}
 
-		ModuloAccel {
-			// For each excess digit in a long multiplication, the remainder % N if that digit had the value 1. That way, we can trivially reduce a long multiplication to a series of additions, with single-digit multiplication, and one final reduction step.
-			CarryRem: [#Words]BigInt[Words];
+		# mod32_fast(modulo: U4, accel: [#Words; #1]TModuloAccel #&) U4
+			:= THIS.[#1]mod_fast(modulo, accel).Digits[0];
 
-			{BARE};
-			:ladder{n: [#Words]BigInt #&}: CarryRem(NOINIT)
-			{
-				CarryRem[0] := ();
-				CarryRem[0].carry_mod(1, n);
-
-				FOR(CarryRem[FROM 1])
-				{
-					c ::= CarryRem[IOTA].shl_1_digit_into(&IT);
-					IT.carry_mod(c, n);
-				}
-			}
-		}
-
-		mul_mod_assign_fast(rhs: THIS #&, modulo: THIS #&, acc: ModuloAccel #&) VOID
+		mul_mod_assign_fast(rhs: THIS #&, modulo: THIS #&, acc: [#2*Words; #Words]TModuloAccel #&) VOID
 		{
 			result: THIS (NOINIT);
 
@@ -437,7 +442,7 @@
 			THIS := result;
 		}
 
-		# pow_mod_fast_into(power: THIS #&, modulo: THIS#&, accel: ModuloAccel #&, rem: THIS \) VOID
+		# pow_mod_fast_into(power: THIS #&, modulo: THIS#&, accel: [#2*Words; #Words]TModuloAccel #&, rem: THIS \) VOID
 		{
 			k_bits ::= Words * 32;
 
@@ -472,6 +477,29 @@
 	}
 
 	[#Bits] TYPE BitInt := [#(Bits+31) / 32]BigInt;
+
+	[#Size; #ModuloSize] TModuloAccel {
+		// For each excess digit in a long multiplication, the remainder % N if that digit had the value 1. That way, we can trivially reduce a long multiplication to a series of additions, with single-digit multiplication, and one final reduction step.
+		CarryRem: [#ModuloSize]BigInt[Size-ModuloSize];
+
+		[#LesserSize] # cast() [#LesserSize; #ModuloSize]TModuloAccel #& -- {
+			STATIC ASSERT(LesserSize <= Size);
+			= *<[#LesserSize; #ModuloSize]TModuloAccel #*>(&THIS);
+		}
+
+		{BARE};
+		:ladder{n: [#ModuloSize]BigInt #&}: CarryRem(NOINIT)
+		{
+			CarryRem[0] := ();
+			CarryRem[0].carry_mod(1, n);
+
+			FOR(CarryRem[FROM 1])
+			{
+				c ::= CarryRem[IOTA].shl_1_digit_into(&IT);
+				IT.carry_mod(c, n);
+			}
+		}
+	}
 
 	[#Words] gcd(
 		a: [#Words]BigInt #&,
@@ -537,7 +565,7 @@
 			IF!(are_coprime(n, *<[#4096 / 32]BigInt #*>(&primes_4k))) = FALSE;
 		}
 
-		accel: [#Words]BigInt::ModuloAccel := :ladder(n);
+		accel: [#2*Words; #Words]TModuloAccel := :ladder(n);
 
 		n.Digits[0] ^= 1; // n-1 (since n is already odd)
 		s ::= n.first1pos(); // CTZ(n-1)
@@ -582,7 +610,11 @@
 		= TRUE;
 	}
 
-	[#Bits] generate_prime(rng: sha3::State &, length: U4) {[#Bits]BitInt, U4, U8}
+	[#Bits] generate_prime(rng: sha3::State &, length: U4) [#Bits]BitInt --
+		:= [#Bits]generate_prime_timed(rng, length).(0);
+	[#Bits] generate_prime_derivable(rng: sha3::State &, length: U4) {[#Bits]BitInt, U4} --
+		{ gen ::= [#Bits]generate_prime_timed(rng, length); = (gen.(0), gen.(1)); }
+	[#Bits] generate_prime_timed(rng: sha3::State &, length: U4) {[#Bits]BitInt, U4, U8}
 	{
 		IF(!length) length := Bits;
 		ASSERT(length > 1 && length <= Bits);
@@ -593,10 +625,7 @@
 		candidate.truncate_to_bits(length-(1 + (length <= 32)));
 		candidate.set_bit(length-1);
 
-		mod1155: U4; {
-			mod ::= candidate; mod.mixed_mod_assign_slow_unprotected(1155);
-			mod1155 := mod.Digits[0];
-		}
+		mod1155: U4 := candidate.mod32_fast(1155, [#1]BigInt(1155).[#Bits]accel_mod_for_bits());
 
 		primebits1155: ? #& := *<[# ##primes_1155]BigInt# *>(&primes_1155);
 

@@ -48,7 +48,7 @@ INCLUDE 'std/io/format'
 			n.Digits[##n.Digits-1] |= 1<<31;
 			n.Digits[0] |= 1;
 
-			accel: [#128]BitInt::ModuloAccel := :ladder(n);
+			accel # ::= n.accel_mod();
 
 			r: [#128]BitInt ();
 			r.carry_mod(1, n);
@@ -62,7 +62,7 @@ INCLUDE 'std/io/format'
 				ref.carry_mod(1, n);
 
 				sanity_r.Digits[##n.Digits] := 1;
-				sanity_r.mixed_mod_assign_slow_unprotected(n);
+				sanity_r := :zx(sanity_r.mod_fast(n, accel));
 				ASSERT(ref == *sanity_r.lower());
 
 				IF!(*sanity_r.lower() == r)
@@ -88,7 +88,7 @@ INCLUDE 'std/io/format'
 
 				sanity_r := 0;
 				sanity_r.Digits[##n.Digits+1] := 1;
-				sanity_r.mixed_mod_assign_slow_unprotected(n);
+				sanity_r := :zx(sanity_r.mod_fast(n, accel));
 				ASSERT(*sanity_r.lower() == r);
 				ASSERT(accel.CarryRem[1] == r);
 			}
@@ -153,7 +153,7 @@ INCLUDE 'std/io/format'
 				rng: sha3::State ();
 				rng.update(seed);
 				rng.shake_start();
-				prime := [#3840]generate_prime(rng, 0);
+				prime := [#3840]generate_prime_timed(rng, 0);
 			}
 			end ::= NOW;
 

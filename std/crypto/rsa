@@ -4,40 +4,43 @@ INCLUDE "bigint"
 
 ::std::crypto::rsa
 {
-	[#Bits] RsaPub {
-		N: [#Bits]BitInt;
+	[#Words] TRsaPub {
+		N: [#Words]BigInt;
 		E: U4;
-		Accel: [#Bits]BitInt::ModuloAccel;
+		Accel: [#2*Words; #Words]TModuloAccel;
 
-		# encrypt(padded_msg: [#Bits]BitInt #&, cipher: [#Bits]BitInt \) VOID --
+		# encrypt(padded_msg: [#Words]BigInt #&, cipher: [#Words]BigInt \) VOID --
 			{ padded_msg.pow_mod_fast_into(E, N, Accel, cipher); }
 	}
+	[#Bits] TYPE RsaPub := [#(Bits+31)/32]TRsaPub;
 
-	[#Bits] RsaPriv {
-		D: [#Bits]BitInt;
+	[#Words] TRsaPriv {
+		D: [#Words]BigInt;
 
 		# decrypt(
-			pub: [#Bits]RsaPub #&,
-			ciphertext: [#Bits]BitInt #&,
-			padded_msg: [#Bits]BitInt \
+			pub: [#Words]TRsaPub #&,
+			ciphertext: [#Words]BigInt #&,
+			padded_msg: [#Words]BigInt \
 		) VOID -- { ciphertext.pow_mod_fast_into(D, pub.N, pub.Accel, padded_msg); }
 	}
+	[#Bits] TYPE RsaPriv := [#(Bits+31)/32]TRsaPriv;
 
-	[#Bits] rsa_keygen(
-		pub: [#Bits]RsaPub \, priv: [#Bits]RsaPriv \,
+	[#Words] rsa_keygen(
+		pub: [#Words]TRsaPub \, priv: [#Words]TRsaPriv \,
 		allowed_es: U4#[#],
 		rng: sha3::State &) VOID
 	{
 		ASSERT(##allowed_es);
-		lambda_n: [#Bits]BitInt (NOINIT);
-		ex: [#Bits]BitInt ();
+		lambda_n: [#Words]BigInt (NOINIT);
+		ex: [#Words]BigInt ();
 		FOR[find_n](i ::= 0;; i++)
 		{
-			p ::= [#Bits/2]generate_prime(rng, Bits/2).(0);
-			q ::= [#Bits/2]generate_prime(rng, Bits/2).(0);
+			Bits ::= Words*32;
+			p ::= [#Words*32/2]generate_prime(rng, Bits/2);
+			q ::= [#Words*32/2]generate_prime(rng, Bits/2);
 
 			p.long_mul_into(q, &pub->N);
-			pub->Accel := :ladder(pub->N);
+			pub->Accel := pub->N.accel_mod();
 
 			p.Digits[0] ^= 1; q.Digits[0] ^= 1; // p-1, q-1
 			lcm_unprotected_into(p, q, &lambda_n); // lambda_n := lcm(p-1, q-1)

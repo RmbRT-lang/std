@@ -193,7 +193,7 @@ p: 55758661796822623257463844839638556034057715746342267028121417584650185997802
 
 	g: [#256]BitInt := 2;
 
-	p_accel: [#256]BitInt::ModuloAccel := :ladder(p);
+	p_accel # ::= p.accel_mod();
 
 	g_a: [#256]BitInt; g.pow_mod_fast_into(a, p, p_accel, &g_a);
 	g_b: [#256]BitInt; g.pow_mod_fast_into(b, p, p_accel, &g_b);
