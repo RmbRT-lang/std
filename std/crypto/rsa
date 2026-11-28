@@ -10,7 +10,7 @@ INCLUDE "bigint"
 		Accel: [#2*Words; #Words]TModuloAccel;
 
 		# encrypt(padded_msg: [#Words]BigInt #&, cipher: [#Words]BigInt \) VOID --
-			{ padded_msg.pow_mod_fast_into(E, N, Accel, cipher); }
+			{ padded_msg.pow_mod_fast_into(<[#Words]BigInt>(E), N, Accel, cipher); }
 	}
 	[#Bits] TYPE RsaPub := [#(Bits+31)/32]TRsaPub;
 

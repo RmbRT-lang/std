@@ -105,11 +105,11 @@ INCLUDE "rsa"
 		t_bits ::= r_min_bits - r_buffer_bits;
 
 		// 1. generate s
-		s: [#Words]BigInt; sd: U4;
-		(*s.lower(), sd) := [#Bits/2]generate_prime_derivable(rng, s_bits);
+		s: [#Words/2]BigInt; sd: U4;
+		(s, sd) := [#Bits/2]generate_prime_derivable(rng, s_bits);
 		// 2. generate t
-		t: [#Words]BigInt; td: U4;
-		(*t.lower(), td) := [#Bits/2]generate_prime_derivable(rng, t_bits);
+		t: [#Words/2]BigInt; td: U4;
+		(t, td) := [#Bits/2]generate_prime_derivable(rng, t_bits);
 
 		L0: U4;
 		L: U4 := 0;
@@ -117,17 +117,17 @@ INCLUDE "rsa"
 		K: U4 := 0;
 
 
-		r: [#Words]BigInt := 1;
+		r: [#Words/2]BigInt := 1;
 		{ // 3.
 		 	
 			// r = 2L * t + 1 = 1+L*(2t)
-			two_t ::= *t.lower(); two_t <<= 1;
+			two_t ::= t; two_t <<= 1;
 
 			r_buffer_bits := r_min_bits - (two_t.last1pos()+1);
-		 	r.lower()->add_short_mul(two_t, L0 := 1<<r_buffer_bits); // r0 = L0*t + 1
+		 	r.add_short_mul(two_t, L0 := 1<<r_buffer_bits); // r0 = L0*t + 1
 			ASSERT(r.last1pos()+1 == r_min_bits);
 
-			t_mod1155: U4 := t.lower()->mod32_fast(1155, accel_1155.[#Words/2]cast()); // t % 1155
+			t_mod1155: U4 := t.mod32_fast(1155, accel_1155.[#Words/2]cast()); // t % 1155
 
 			r_mod1155 ::= ((t_mod1155 << r_buffer_bits) + 1) % 1155; // r % 1155
 			two_t_mod1155 ::= (2*t_mod1155) % 1155; // 2t % 1155
@@ -138,15 +138,15 @@ INCLUDE "rsa"
 				r_mod1155 -= (r_mod1155 >= 1155) ?? 1155 : 0;
 
 				IF(primebits1155.bit(r_mod1155))
-					IF(rabin_miller_prime_test(*r.lower(), NULL, 2, 128))
+					IF(rabin_miller_prime_test(r, NULL, 2, 128))
 						BREAK [find_r];
 
-				*r.lower() += two_t; r_mod1155 += two_t_mod1155;
+				r += two_t; r_mod1155 += two_t_mod1155;
 			}
 		}
 
 		// 4.
-		rs: [#Words]BigInt (NOINIT); r.lower()->long_mul_into(*s.lower(), &rs);
+		rs: [#Words]BigInt (NOINIT); r.long_mul_into(s, &rs);
 
 
 		// 4.1.
@@ -157,11 +157,11 @@ INCLUDE "rsa"
 			accel: [#2*Words; #Words]TModuloAccel := :ladder(rs);
 
 			r.Digits[0] ^= 1; // r-1
-			s.pow_mod_fast_into(r, rs, accel, &s_mod); // s_mod = s^(r-1) % rs
+			<[#Words]BigInt>(:zx(s)).pow_mod_fast_into(r, rs, accel, &s_mod); // s_mod = s^(r-1) % rs
 			r.Digits[0] ^= 1; // restore r
 
 			s.Digits[0] ^= 1; // s-1
-			r.pow_mod_fast_into(s, rs, accel, &r_mod); // r_mod = r^(s-1) % rs
+			<[#Words]BigInt>(:zx(r)).pow_mod_fast_into(s, rs, accel, &r_mod); // r_mod = r^(s-1) % rs
 			s.Digits[0] ^= 1; // restore s
 
 			// p0 := (s_mod - r_mod) % rs
@@ -207,8 +207,8 @@ INCLUDE "rsa"
 
 		ret: [# ##p.Digits]StrongPrimeGen (NOINIT);
 		ret.P := p;
-		ret.S := *s.lower(); ret.Derivation.SOff := sd;
-		ret.T := *t.lower(); ret.Derivation.TOff := td;
+		ret.S := s; ret.Derivation.SOff := sd;
+		ret.T := t; ret.Derivation.TOff := td;
 		ret.Derivation.L := L0 + L;
 		ret.Derivation.K := K0 + K;
 		= ret;

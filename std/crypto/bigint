@@ -442,8 +442,14 @@
 			THIS := result;
 		}
 
-		# pow_mod_fast_into(power: THIS #&, modulo: THIS#&, accel: [#2*Words; #Words]TModuloAccel #&, rem: THIS \) VOID
+		[#ExpWords; #ModWords]
+		# pow_mod_fast_into(
+			power:  [#ExpWords]BigInt #&,
+			modulo: [#ModWords]BigInt #&,
+			accel:  [#2*Words; #ModWords]TModuloAccel #&,
+			rem:    THIS \) VOID
 		{
+			STATIC ASSERT(Words >= ModWords);
 			k_bits ::= Words * 32;
 
 			*rem := 1;
@@ -625,7 +631,8 @@
 		candidate.truncate_to_bits(length-(1 + (length <= 32)));
 		candidate.set_bit(length-1);
 
-		mod1155: U4 := candidate.mod32_fast(1155, [#1]BigInt(1155).[#Bits]accel_mod_for_bits());
+		accel_1155 # ::= [#1]BigInt(1155).[#Bits]accel_mod_for_bits();
+		mod1155: U4 := candidate.mod32_fast(1155, accel_1155);
 
 		primebits1155: ? #& := *<[# ##primes_1155]BigInt# *>(&primes_1155);
 
